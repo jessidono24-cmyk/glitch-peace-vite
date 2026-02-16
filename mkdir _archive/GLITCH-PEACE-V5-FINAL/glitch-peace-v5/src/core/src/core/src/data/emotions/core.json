@@ -1,0 +1,12 @@
+[
+  { "id": "awe",       "valence": 0.7,  "arousal": 0.6, "coherence": 0.8,  "col": "#ffcc00", "desc": "expansion",   "tags": ["expansive","perception"] },
+  { "id": "grief",     "valence": -0.4, "arousal": 0.3, "coherence": 0.7,  "col": "#4488cc", "desc": "release",     "tags": ["release","memory"] },
+  { "id": "anger",     "valence": -0.6, "arousal": 0.9, "coherence": 0.5,  "col": "#ff3344", "desc": "force",       "tags": ["force","heat"] },
+  { "id": "curiosity", "valence": 0.5,  "arousal": 0.7, "coherence": 0.9,  "col": "#88ffaa", "desc": "exploration", "tags": ["explore","signal"] },
+  { "id": "shame",     "valence": -0.7, "arousal": 0.6, "coherence": 0.3,  "col": "#664488", "desc": "contraction", "tags": ["contract","social"] },
+  { "id": "tender",    "valence": 0.8,  "arousal": 0.4, "coherence": 0.95, "col": "#ffaacc", "desc": "care",        "tags": ["care","bond"] },
+  { "id": "fear",      "valence": -0.5, "arousal": 0.8, "coherence": 0.4,  "col": "#6655aa", "desc": "vigilance",   "tags": ["threat","alert"] },
+  { "id": "joy",       "valence": 0.9,  "arousal": 0.8, "coherence": 0.85, "col": "#ffee44", "desc": "expansion",   "tags": ["expansive","reward"] },
+  { "id": "despair",   "valence": -0.9, "arousal": 0.4, "coherence": 0.2,  "col": "#223355", "desc": "collapse",    "tags": ["collapse","void"] },
+  { "id": "hope",      "valence": 0.6,  "arousal": 0.5, "coherence": 0.8,  "col": "#66ddaa", "desc": "possibility", "tags": ["future","spark"] }
+]

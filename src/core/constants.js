@@ -95,10 +95,35 @@ export const DIFFICULTY = {
   // TRIAL: {...}
 };
 
+// MenuSystem expects DIFF_CFG (compatible format)
+export const DIFF_CFG = DIFFICULTY;
+
 export const GRID_SIZES = {
   SMALL: 10,
   MEDIUM: 14,
   LARGE: 20
+};
+
+// Dreamscape definitions (theme + rule modifiers)
+export const DREAMSCAPES = {
+  RIFT: {
+    id: 'RIFT',
+    name: 'The Rift',
+    symbol: '◇',
+    flavor: 'A fractured space where logic bends.',
+    color: '#00eeff',
+    hazardColors: ['#ff0066', '#aa00ff'],
+    peaceColor: '#00ff88'
+  },
+  LODGE: {
+    id: 'LODGE',
+    name: 'The Lodge',
+    symbol: '◆',
+    flavor: 'A refuge where time moves gently.',
+    color: '#ffdd00',
+    hazardColors: ['#ff8800', '#ff6600'],
+    peaceColor: '#00ff88'
+  }
 };
 
 export const COLORS = {

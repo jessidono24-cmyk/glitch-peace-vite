@@ -1,15 +1,17 @@
 // GLITCH·PEACE BASE LAYER v1.0
-// Main entry point
-import { TILE_TYPES, TILE_DEFS, DIFFICULTY, GRID_SIZES, COLORS } from './core/constants.js';
+// Main entry point with integrated MenuSystem
+// Note: API agents available server-side via src/services/apiAgents.js
+import { TILE_TYPES, TILE_DEFS, DIFFICULTY, GRID_SIZES, COLORS, DREAMSCAPES, DIFF_CFG } from './core/constants.js';
 import { saveGame, loadGame, hasSaveData } from './core/storage.js';
 import { generateGrid } from './game/grid.js';
 import { createPlayer, movePlayer, takeDamage, heal } from './game/player.js';
 import { createEnemy, updateEnemies } from './game/enemy.js';
 import { createParticles, updateParticles } from './game/particles.js';
+import { MenuSystem } from './ui/menus.js';
 
 // Game state
 const game = {
-  state: 'MENU',
+  state: 'MENU', // MENU | MENU_DREAMSCAPE | PLAYING | PAUSED
   level: 1,
   score: 0,
   gridSize: 14,
@@ -21,19 +23,26 @@ const game = {
   peaceCollected: 0,
   peaceTotal: 0,
   particles: [],
+  currentDreamscape: 'RIFT', // RIFT | LODGE
   settings: {
     gridSize: 'MEDIUM',
     difficulty: 'STILLNESS',
     highContrast: false,
     reducedMotion: false,
-    particles: true
+    particles: true,
+    intensityMul: 1.0
   }
 };
 
-// Initialize UI
+// Initialize UI and MenuSystem
+const canvas = document.getElementById('canvas');
+const ctx = canvas?.getContext('2d');
+let menuSystem = null;
+
 function initUI() {
   const app = document.getElementById('app');
   app.innerHTML = `
+    <canvas id="canvas" width="700" height="700"></canvas>
     <div id="hud" style="display:none">
       <div class="hud-section">
         <div class="hud-item">
@@ -47,86 +56,126 @@ function initUI() {
         <div class="hud-item"><span class="hud-label">Objective</span><span class="hud-value" id="objective">○○○</span></div>
       </div>
     </div>
-    <canvas id="canvas" width="700" height="700" style="display:none"></canvas>
     <div class="controls-hint" style="display:none">WASD/Arrows: Move | ESC: Pause | H: Help</div>
   `;
   
-  const menu = document.getElementById('menu-overlay');
-  menu.innerHTML = `
-    <div><div class="menu-title">GLITCH·PEACE</div>
-    <div class="menu-subtitle">Begin in stillness. Emerge through pattern recognition.</div>
-    <div class="menu-items">
-      <div class="menu-item" id="btn-start">START NEW GAME</div>
-      <div class="menu-item" id="btn-continue">CONTINUE</div>
-      <div class="menu-item" id="btn-help">HELP</div>
-    </div></div>
-  `;
+  // Re-get canvas reference after creating it
+  const newCanvas = document.getElementById('canvas');
+  const newCtx = newCanvas?.getContext('2d');
   
-  document.getElementById('btn-start').onclick = startNew;
-  document.getElementById('btn-continue').onclick = continueGame;
-  document.getElementById('btn-help').onclick = showHelp;
+  // Initialize MenuSystem with callbacks
+  menuSystem = new MenuSystem({
+    CFG: game.settings,
+    onStartNew: () => {
+      game.state = 'MENU_DREAMSCAPE';
+      menuSystem.open('dreamscape');
+    },
+    onContinue: () => {
+      const save = loadGame();
+      if (save) {
+        Object.assign(game, save);
+        startGame();
+      } else {
+        game.state = 'MENU_DREAMSCAPE';
+        menuSystem.open('dreamscape');
+      }
+    },
+    onQuitToTitle: ({ to }) => {
+      if (to === 'playing') {
+        game.state = 'PLAYING';
+        menuSystem.open('title');
+      } else {
+        game.state = 'MENU';
+        menuSystem.open('title');
+      }
+    },
+    onRestart: () => {
+      game.level = 1;
+      game.score = 0;
+      game.player = createPlayer();
+      startGame();
+    },
+    onSelectDreamscape: (dreamscapeId) => {
+      game.currentDreamscape = dreamscapeId;
+      startGame();
+    }
+  });
+
+  // Check for existing save
+  menuSystem.setSaveState({ hasSave: hasSaveData(), meta: null });
 }
 
-function startNew() {
+function startGame() {
   game.state = 'PLAYING';
-  game.level = 1;
-  game.score = 0;
-  game.player = createPlayer();
+  if (game.level === 1) {
+    game.player = createPlayer();
+  }
   generateGrid(game);
   spawnEnemies();
-  showGame();
-}
-
-function continueGame() {
-  const save = loadGame();
-  if (save) {
-    Object.assign(game, save);
-    generateGrid(game);
-    spawnEnemies();
-    showGame();
-  } else {
-    showMessage('No save found');
-    startNew();
-  }
-}
-
-function showGame() {
-  document.getElementById('menu-overlay').classList.add('hidden');
-  document.querySelector('#hud').style.display = 'flex';
-  document.querySelector('#canvas').style.display = 'block';
-  document.querySelector('.controls-hint').style.display = 'block';
+  updateHUD();
 }
 
 function spawnEnemies() {
   const diff = DIFFICULTY[game.settings.difficulty];
   const count = Math.floor(diff.enemyCount * (1 + game.level * 0.1));
   game.enemies = [];
-  // Spawn logic here (simplified)
+  for (let i = 0; i < count; i++) {
+    const enemy = createEnemy();
+    // Position randomly (simplified)
+    let placed = false;
+    while (!placed) {
+      const x = Math.floor(Math.random() * game.gridSize);
+      const y = Math.floor(Math.random() * game.gridSize);
+      if (game.grid[y] && game.grid[y][x] === TILE_TYPES.VOID) {
+        enemy.x = x;
+        enemy.y = y;
+        placed = true;
+      }
+    }
+    game.enemies.push(enemy);
+  }
 }
 
-function showHelp() {
-  alert('GLITCH·PEACE BASE LAYER\n\nWASD/Arrows: Move\nESC: Pause\n\nCollect all ● peace nodes to advance.\n\nBegin in stillness.');
+function updateHUD() {
+  const hp = document.getElementById('hp-text');
+  const hpFill = document.getElementById('hp-fill');
+  const level = document.getElementById('level');
+  const score = document.getElementById('score');
+  
+  if (hp) hp.textContent = `${game.player.hp}/${game.player.maxHp || 100}`;
+  if (hpFill) hpFill.style.width = `${(game.player.hp / (game.player.maxHp || 100)) * 100}%`;
+  if (level) level.textContent = String(game.level);
+  if (score) score.textContent = String(game.score);
 }
 
-function showMessage(text) {
-  const msg = document.getElementById('message');
-  msg.textContent = text;
-  msg.classList.add('show');
-  setTimeout(() => msg.classList.remove('show'), 1500);
-}
-
-// Input
+// Input handling
 const keys = {};
 document.addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
-  if (e.key === 'Escape' && game.state === 'PLAYING') {
-    saveGame(game);
-    showMessage('Saved');
+  
+  // Menu input
+  if (menuSystem && (game.state === 'MENU' || game.state === 'MENU_DREAMSCAPE' || game.state === 'PAUSED')) {
+    const result = menuSystem.handleKey(e);
+    if (result.consumed) {
+      e.preventDefault();
+      return;
+    }
+  }
+  
+  // Game input
+  if (game.state === 'PLAYING') {
+    if (e.key === 'Escape') {
+      game.state = 'PAUSED';
+      menuSystem.open('pause');
+      saveGame(game);
+      e.preventDefault();
+      return;
+    }
   }
 });
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-function handleInput() {
+function handleGameInput() {
   if (game.state !== 'PLAYING') return;
   if (keys['w'] || keys['arrowup']) movePlayer(game, 0, -1);
   if (keys['s'] || keys['arrowdown']) movePlayer(game, 0, 1);
@@ -135,51 +184,90 @@ function handleInput() {
 }
 
 // Render
-const canvas = document.getElementById('canvas');
-const ctx = canvas?.getContext('2d');
-
-function render() {
-  if (!ctx) return;
-  game.tileSize = canvas.width / game.gridSize;
+function render(deltaMs = 16) {
+  if (!ctx || !canvas) return;
+  
+  // Clear canvas
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
-  // Draw grid (simplified for brevity)
-  for (let y = 0; y < game.gridSize; y++) {
-    for (let x = 0; x < game.gridSize; x++) {
-      const tile = game.grid[y][x];
-      const def = TILE_DEFS[tile];
-      const px = x * game.tileSize;
-      const py = y * game.tileSize;
-      ctx.fillStyle = def.bg;
-      ctx.fillRect(px, py, game.tileSize, game.tileSize);
-      if (def.symbol) {
-        ctx.fillStyle = def.border;
-        ctx.font = `${game.tileSize*0.6}px Courier New`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(def.symbol, px + game.tileSize/2, py + game.tileSize/2);
-      }
+  if (game.state === 'MENU' || game.state === 'MENU_DREAMSCAPE' || game.state === 'PAUSED') {
+    // Draw menu
+    if (menuSystem) {
+      menuSystem.draw(ctx, canvas.width, canvas.height, deltaMs);
     }
+    document.querySelector('#hud').style.display = 'none';
+    return;
   }
   
-  // Draw player
-  ctx.fillStyle = COLORS.PLAYER;
-  ctx.font = `${game.tileSize*0.7}px Courier New`;
-  ctx.fillText(game.player.symbol, 
-    game.player.x * game.tileSize + game.tileSize/2,
-    game.player.y * game.tileSize + game.tileSize/2
-  );
+  if (game.state === 'PLAYING') {
+    // Draw game
+    game.tileSize = canvas.width / game.gridSize;
+    
+    // Draw grid
+    for (let y = 0; y < game.gridSize; y++) {
+      for (let x = 0; x < game.gridSize; x++) {
+        const tile = game.grid[y][x];
+        const def = TILE_DEFS[tile];
+        const px = x * game.tileSize;
+        const py = y * game.tileSize;
+        
+        ctx.fillStyle = def.bg;
+        ctx.fillRect(px, py, game.tileSize, game.tileSize);
+        
+        // Draw border
+        ctx.strokeStyle = def.border || 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px, py, game.tileSize, game.tileSize);
+        
+        // Draw symbol
+        if (def.symbol) {
+          ctx.fillStyle = def.glow || def.border || '#fff';
+          ctx.font = `${game.tileSize * 0.6}px Courier New`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(def.symbol, px + game.tileSize / 2, py + game.tileSize / 2);
+        }
+      }
+    }
+    
+    // Draw player
+    const px = game.player.x * game.tileSize;
+    const py = game.player.y * game.tileSize;
+    ctx.fillStyle = COLORS.PLAYER;
+    ctx.font = `${game.tileSize * 0.7}px Courier New`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('@', px + game.tileSize / 2, py + game.tileSize / 2);
+    
+    // Draw enemies (simplified)
+    for (const enemy of game.enemies) {
+      const ex = enemy.x * game.tileSize;
+      const ey = enemy.y * game.tileSize;
+      ctx.fillStyle = COLORS.ENEMY;
+      ctx.font = `${game.tileSize * 0.6}px Courier New`;
+      ctx.fillText('■', ex + game.tileSize / 2, ey + game.tileSize / 2);
+    }
+    
+    // Show HUD
+    document.querySelector('#hud').style.display = 'flex';
+  }
 }
 
 // Game loop
-function gameLoop() {
+let lastTime = 0;
+function gameLoop(currentTime) {
+  const deltaMs = currentTime - lastTime;
+  lastTime = currentTime;
+  
   if (game.state === 'PLAYING') {
-    handleInput();
+    handleGameInput();
     updateEnemies(game);
     updateParticles(game);
-    render();
+    updateHUD();
   }
+  
+  render(Math.min(deltaMs, 32)); // Cap delta at 32ms
   requestAnimationFrame(gameLoop);
 }
 

@@ -1,0 +1,540 @@
+// ═══════════════════════════════════════════════════════════════════════
+//  UI MENUS - Title / Pause / Options / Tutorial
+//  Ported from: _archive/glitch-peace-v5/src/ui/menus.js
+// ═══════════════════════════════════════════════════════════════════════
+
+import { GRID_SIZES, DIFF_CFG } from '../core/constants.js';
+import { TUTORIAL_PAGES } from './tutorial-content.js';
+
+function listFromObjKeys(obj) { return Object.keys(obj); }
+function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+export class MenuSystem {
+  constructor({ CFG, onStartNew, onContinue, onQuitToTitle, onRestart, onSelectDreamscape }) {
+    this.CFG = CFG;
+
+    this.onStartNew = onStartNew;
+    this.onContinue = onContinue;
+    this.onQuitToTitle = onQuitToTitle;
+    this.onRestart = onRestart;
+    this.onSelectDreamscape = onSelectDreamscape;
+
+    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape'
+    this.sel = 0;
+    this.tutPage = 0;
+    this.dreamscapeSel = 0;
+
+    this.hasSave = false;
+    this.saveMeta = null;
+
+    this._difficultyKeys = listFromObjKeys(DIFF_CFG);
+    this._gridKeys = listFromObjKeys(GRID_SIZES);
+
+    this._pulseT = 0;
+  }
+
+  // Call this after boot (or when a save happens)
+  setSaveState({ hasSave, meta }) {
+    this.hasSave = !!hasSave;
+    this.saveMeta = meta || null;
+  }
+
+  open(screen) {
+    this.screen = screen;
+    this.sel = 0;
+    if (screen === 'tutorial') this.tutPage = 0;
+    if (screen === 'dreamscape') this.dreamscapeSel = 0;
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  //  INPUT
+  // ────────────────────────────────────────────────────────────────────
+
+  handleKey(e) {
+    const k = e.key;
+
+    // Global escapes
+    if (k === 'Escape') {
+      if (this.screen === 'options' || this.screen === 'tutorial' || this.screen === 'credits' || this.screen === 'dreamscape') {
+        this.open('title');
+        return { consumed: true };
+      }
+      return { consumed: false };
+    }
+
+    if (this.screen === 'title' || this.screen === 'pause') {
+      return this._handleListMenu(k);
+    }
+
+    if (this.screen === 'options') {
+      return this._handleOptions(k);
+    }
+
+    if (this.screen === 'tutorial') {
+      return this._handleTutorial(k);
+    }
+
+    if (this.screen === 'dreamscape') {
+      return this._handleDreamscape(k);
+    }
+
+    if (this.screen === 'credits') {
+      if (k === 'Enter' || k === ' ') this.open('title');
+      return { consumed: true };
+    }
+
+    return { consumed: false };
+  }
+
+  _handleListMenu(k) {
+    const items = this.getItems();
+    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
+      this.sel = (this.sel - 1 + items.length) % items.length;
+      return { consumed: true };
+    }
+    if (k === 'ArrowDown' || k === 's' || k === 'S') {
+      this.sel = (this.sel + 1) % items.length;
+      return { consumed: true };
+    }
+    if (k === 'Enter' || k === ' ') {
+      const item = items[this.sel];
+      if (item && !item.disabled && item.action) item.action();
+      return { consumed: true };
+    }
+    return { consumed: false };
+  }
+
+  _handleOptions(k) {
+    const rows = this.getOptionRows();
+
+    const go = (dir) => {
+      this.sel = clampInt(this.sel + dir, 0, rows.length - 1);
+    };
+
+    if (k === 'ArrowUp' || k === 'w' || k === 'W') { go(-1); return { consumed: true }; }
+    if (k === 'ArrowDown' || k === 's' || k === 'S') { go(+1); return { consumed: true }; }
+
+    const row = rows[this.sel];
+    if (!row) return { consumed: true };
+
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') {
+      if (row.left) row.left();
+      return { consumed: true };
+    }
+    if (k === 'ArrowRight' || k === 'd' || k === 'D') {
+      if (row.right) row.right();
+      return { consumed: true };
+    }
+    if (k === 'Enter' || k === ' ') {
+      if (row.toggle) row.toggle();
+      if (row.action) row.action();
+      return { consumed: true };
+    }
+    if (k === 'Backspace') {
+      this.open('title');
+      return { consumed: true };
+    }
+    return { consumed: false };
+  }
+
+  _handleTutorial(k) {
+    if (k === 'ArrowLeft' || k === 'a' || k === 'A') {
+      this.tutPage = Math.max(0, this.tutPage - 1);
+      return { consumed: true };
+    }
+    if (k === 'ArrowRight' || k === 'd' || k === 'D') {
+      this.tutPage = Math.min(TUTORIAL_PAGES.length - 1, this.tutPage + 1);
+      return { consumed: true };
+    }
+    if (k === 'Enter' || k === ' ') {
+      const last = TUTORIAL_PAGES.length - 1;
+      if (this.tutPage >= last) this.open('title');
+      else this.tutPage++;
+      return { consumed: true };
+    }
+    if (k === 'Backspace') {
+      this.open('title');
+      return { consumed: true };
+    }
+    return { consumed: true };
+  }
+
+  _handleDreamscape(k) {
+    const dreams = this.getDreamscapeOptions();
+    if (k === 'ArrowUp' || k === 'ArrowLeft' || k === 'w' || k === 'W' || k === 'a' || k === 'A') {
+      this.dreamscapeSel = (this.dreamscapeSel - 1 + dreams.length) % dreams.length;
+      return { consumed: true };
+    }
+    if (k === 'ArrowDown' || k === 'ArrowRight' || k === 's' || k === 'S' || k === 'd' || k === 'D') {
+      this.dreamscapeSel = (this.dreamscapeSel + 1) % dreams.length;
+      return { consumed: true };
+    }
+    if (k === 'Enter' || k === ' ') {
+      const dream = dreams[this.dreamscapeSel];
+      if (dream && this.onSelectDreamscape) {
+        this.onSelectDreamscape(dream.id);
+      }
+      return { consumed: true };
+    }
+    if (k === 'Backspace') {
+      this.open('title');
+      return { consumed: true };
+    }
+    return { consumed: false };
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  //  MENU CONTENT
+  // ────────────────────────────────────────────────────────────────────
+
+  getItems() {
+    const isPause = this.screen === 'pause';
+
+    const common = [];
+    if (isPause) {
+      common.push({ label: 'RESUME', action: () => this.onQuitToTitle({ to: 'playing' }) });
+      common.push({ label: 'RESTART RUN', action: () => this.onRestart() });
+    } else {
+      common.push({ label: 'NEW GAME', action: () => this.onStartNew() });
+      common.push({
+        label: this.hasSave ? 'CONTINUE' : 'CONTINUE (NO SAVE)',
+        disabled: !this.hasSave,
+        action: () => this.hasSave && this.onContinue(),
+      });
+    }
+
+    common.push({ label: 'TUTORIAL', action: () => this.open('tutorial') });
+    common.push({ label: 'OPTIONS', action: () => this.open('options') });
+    common.push({ label: 'CREDITS', action: () => this.open('credits') });
+    common.push({
+      label: isPause ? 'QUIT TO TITLE' : 'EXIT',
+      action: () => this.onQuitToTitle({ to: 'title' }),
+    });
+
+    return common;
+  }
+
+  getOptionRows() {
+    const cfg = this.CFG;
+
+    const nextIn = (arr, cur, dir) => {
+      const idx = Math.max(0, arr.indexOf(cur));
+      const ni = (idx + dir + arr.length) % arr.length;
+      return arr[ni];
+    };
+
+    return [
+      {
+        label: 'DIFFICULTY',
+        value: cfg.difficulty,
+        left: () => (cfg.difficulty = nextIn(this._difficultyKeys, cfg.difficulty, -1)),
+        right: () => (cfg.difficulty = nextIn(this._difficultyKeys, cfg.difficulty, +1)),
+      },
+      {
+        label: 'GRID SIZE',
+        value: cfg.gridSize,
+        left: () => (cfg.gridSize = nextIn(this._gridKeys, cfg.gridSize, -1)),
+        right: () => (cfg.gridSize = nextIn(this._gridKeys, cfg.gridSize, +1)),
+      },
+      {
+        label: 'PARTICLES',
+        value: cfg.particles ? 'ON' : 'OFF',
+        toggle: () => (cfg.particles = !cfg.particles),
+      },
+      {
+        label: 'HIGH CONTRAST',
+        value: cfg.highContrast ? 'ON' : 'OFF',
+        toggle: () => (cfg.highContrast = !cfg.highContrast),
+      },
+      {
+        label: 'REDUCED MOTION',
+        value: cfg.reducedMotion ? 'ON' : 'OFF',
+        toggle: () => (cfg.reducedMotion = !cfg.reducedMotion),
+      },
+      {
+        label: 'INTENSITY',
+        value: (cfg.intensityMul || 1.0).toFixed(2),
+        left: () => (cfg.intensityMul = Math.max(0.5, +(cfg.intensityMul - 0.1).toFixed(2))),
+        right: () => (cfg.intensityMul = Math.min(1.5, +(cfg.intensityMul + 0.1).toFixed(2))),
+      },
+      {
+        label: 'BACK',
+        value: '',
+        action: () => this.open('title'),
+      },
+    ];
+  }
+
+  getDreamscapeOptions() {
+    return [
+      { id: 'RIFT', label: 'The Rift', flavor: 'A fractured space where logic bends.' },
+      { id: 'LODGE', label: 'The Lodge', flavor: 'A refuge where time moves gently.' }
+    ];
+  }
+
+  // ────────────────────────────────────────────────────────────────────
+  //  DRAWING
+  // ────────────────────────────────────────────────────────────────────
+
+  draw(ctx, w, h, dtMs = 16) {
+    this._pulseT += dtMs;
+
+    // Background
+    ctx.fillStyle = '#02020a';
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle scanlines
+    for (let y = 0; y < h; y += 3) {
+      ctx.fillStyle = 'rgba(0,0,0,0.06)';
+      ctx.fillRect(0, y, w, 1);
+    }
+
+    if (this.screen === 'title' || this.screen === 'pause') return this._drawList(ctx, w, h);
+    if (this.screen === 'options') return this._drawOptions(ctx, w, h);
+    if (this.screen === 'tutorial') return this._drawTutorial(ctx, w, h);
+    if (this.screen === 'dreamscape') return this._drawDreamscape(ctx, w, h);
+    if (this.screen === 'credits') return this._drawCredits(ctx, w, h);
+  }
+
+  _drawHeader(ctx, w, h, subtitle) {
+    ctx.textAlign = 'center';
+
+    ctx.fillStyle = '#0a0a20';
+    ctx.font = '8px Courier New';
+    ctx.fillText('A CONSCIOUSNESS SIMULATION', w / 2, h / 2 - 170);
+
+    ctx.fillStyle = '#00ff88';
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 28;
+    ctx.font = 'bold 38px Courier New';
+    ctx.fillText('GLITCH·PEACE', w / 2, h / 2 - 130);
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#0a1a0a';
+    ctx.font = '9px Courier New';
+    ctx.fillText(subtitle, w / 2, h / 2 - 108);
+
+    ctx.textAlign = 'left';
+  }
+
+  _drawList(ctx, w, h) {
+    const isPause = this.screen === 'pause';
+    this._drawHeader(ctx, w, h, isPause ? 'PAUSED' : 'v1.0 · base layer');
+
+    const items = this.getItems();
+    const boxW = 360;
+    const boxH = 240;
+    const bx = (w - boxW) / 2;
+    const by = h / 2 - 60;
+
+    // Panel
+    ctx.fillStyle = 'rgba(7,7,20,0.9)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
+
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const y = by + 34 + i * 30;
+
+      const isSel = i === this.sel;
+      const disabled = !!it.disabled;
+
+      if (isSel) {
+        ctx.fillStyle = `rgba(0,255,136,${0.08 + pulse * 0.10})`;
+        ctx.fillRect(bx + 18, y - 18, boxW - 36, 24);
+        ctx.strokeStyle = `rgba(0,255,136,${0.20 + pulse * 0.20})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx + 18, y - 18, boxW - 36, 24);
+      }
+
+      ctx.fillStyle = disabled ? '#2a2a3a' : (isSel ? '#00ff88' : '#b8b8d0');
+      ctx.font = isSel ? 'bold 14px Courier New' : '13px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText((isSel ? '▶ ' : '  ') + it.label, w / 2, y);
+      ctx.textAlign = 'left';
+    }
+
+    // Footer hint
+    ctx.fillStyle = '#131328';
+    ctx.font = '8px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('↑/↓ to select · ENTER to confirm · ESC to ' + (isPause ? 'pause' : 'exit'), w / 2, by + boxH + 24);
+    ctx.textAlign = 'left';
+  }
+
+  _drawOptions(ctx, w, h) {
+    this._drawHeader(ctx, w, h, 'OPTIONS');
+
+    const rows = this.getOptionRows();
+
+    const boxW = 420;
+    const boxH = 270;
+    const bx = (w - boxW) / 2;
+    const by = h / 2 - 60;
+
+    ctx.fillStyle = 'rgba(7,7,20,0.9)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const y = by + 40 + i * 30;
+      const isSel = i === this.sel;
+
+      if (isSel) {
+        ctx.fillStyle = `rgba(0,255,136,${0.08 + pulse * 0.10})`;
+        ctx.fillRect(bx + 18, y - 18, boxW - 36, 24);
+        ctx.strokeStyle = `rgba(0,255,136,${0.20 + pulse * 0.20})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx + 18, y - 18, boxW - 36, 24);
+      }
+
+      ctx.fillStyle = isSel ? '#00ff88' : '#b8b8d0';
+      ctx.font = isSel ? 'bold 13px Courier New' : '12px Courier New';
+      ctx.textAlign = 'left';
+      ctx.fillText(r.label, bx + 32, y);
+
+      ctx.fillStyle = isSel ? '#00eeff' : '#667099';
+      ctx.textAlign = 'right';
+      ctx.fillText(String(r.value || ''), bx + boxW - 32, y);
+      ctx.textAlign = 'left';
+    }
+
+    ctx.fillStyle = '#131328';
+    ctx.font = '8px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('↑/↓ select · ←/→ adjust · ENTER toggle · ESC back', w / 2, by + boxH + 24);
+    ctx.textAlign = 'left';
+  }
+
+  _drawTutorial(ctx, w, h) {
+    this._drawHeader(ctx, w, h, 'TUTORIAL');
+
+    const p = TUTORIAL_PAGES[this.tutPage];
+    if (!p) return;
+
+    const boxW = 460;
+    const boxH = 280;
+    const bx = (w - boxW) / 2;
+    const by = h / 2 - 70;
+
+    ctx.fillStyle = 'rgba(7,7,20,0.92)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    ctx.fillStyle = '#00ff88';
+    ctx.font = 'bold 14px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.title, w / 2, by + 42);
+
+    ctx.fillStyle = '#b8b8d0';
+    ctx.font = '12px Courier New';
+    let y = by + 78;
+    const lineHeight = 22;
+    for (const line of p.body) {
+      ctx.fillText(line, w / 2, y);
+      y += lineHeight;
+    }
+
+    ctx.fillStyle = '#131328';
+    ctx.font = '8px Courier New';
+    ctx.fillText(`Page ${this.tutPage + 1}/${TUTORIAL_PAGES.length} · ←/→ page · ENTER next · ESC back`, w / 2, by + boxH - 22);
+
+    ctx.textAlign = 'left';
+  }
+
+  _drawDreamscape(ctx, w, h) {
+    this._drawHeader(ctx, w, h, 'SELECT DREAMSCAPE');
+
+    const dreams = this.getDreamscapeOptions();
+    const boxW = 460;
+    const boxH = 220;
+    const bx = (w - boxW) / 2;
+    const by = h / 2 - 50;
+
+    ctx.fillStyle = 'rgba(7,7,20,0.92)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
+    const cardW = (boxW - 30) / 2;
+    const cardH = 140;
+
+    for (let i = 0; i < dreams.length; i++) {
+      const dream = dreams[i];
+      const isSel = i === this.dreamscapeSel;
+      const cardX = bx + 10 + i * (cardW + 8);
+      const cardY = by + 50;
+
+      if (isSel) {
+        ctx.fillStyle = `rgba(0,255,136,${0.08 + pulse * 0.10})`;
+        ctx.fillRect(cardX, cardY, cardW, cardH);
+        ctx.strokeStyle = `rgba(0,255,136,${0.30 + pulse * 0.20})`;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cardX, cardY, cardW, cardH);
+      } else {
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cardX, cardY, cardW, cardH);
+      }
+
+      ctx.fillStyle = isSel ? '#00ff88' : '#b8b8d0';
+      ctx.font = isSel ? 'bold 13px Courier New' : '12px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText(dream.label, cardX + cardW / 2, cardY + 28);
+
+      ctx.fillStyle = isSel ? '#00eeff' : '#667099';
+      ctx.font = '9px Courier New';
+      const lines = dream.flavor.split(' ');
+      let line = '';
+      let ly = cardY + 50;
+      for (const word of lines) {
+        if ((line + ' ' + word).length > 18) {
+          ctx.fillText(line.trim(), cardX + cardW / 2, ly);
+          line = word;
+          ly += 14;
+        } else {
+          line += ' ' + word;
+        }
+      }
+      if (line) ctx.fillText(line.trim(), cardX + cardW / 2, ly);
+    }
+
+    ctx.fillStyle = '#131328';
+    ctx.font = '8px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('←/→ choose · ENTER confirm · ESC back', w / 2, by + boxH + 24);
+    ctx.textAlign = 'left';
+  }
+
+  _drawCredits(ctx, w, h) {
+    this._drawHeader(ctx, w, h, 'CREDITS');
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#b8b8d0';
+    ctx.font = '12px Courier New';
+    ctx.fillText('Made for play, pattern, and glow.', w / 2, h / 2 - 10);
+    ctx.fillText('Begin in stillness. Emerge through pattern recognition.', w / 2, h / 2 + 20);
+
+    ctx.fillStyle = '#667099';
+    ctx.font = '9px Courier New';
+    ctx.fillText('MenuSystem ported from _archive/glitch-peace-v5', w / 2, h / 2 + 50);
+
+    ctx.fillStyle = '#131328';
+    ctx.font = '8px Courier New';
+    ctx.fillText('ENTER to return', w / 2, h / 2 + 75);
+    ctx.textAlign = 'left';
+  }
+}

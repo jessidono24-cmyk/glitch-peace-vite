@@ -1,5 +1,5 @@
 // ENEMY AI - Simple chase behavior (BASE LAYER)
-import { TILE_DEFS } from '../core/constants.js';
+import { T, TILE_DEF } from '../core/constants.js';
 
 export function createEnemy(x, y, level) {
   return {
@@ -38,7 +38,8 @@ export function updateEnemies(gameState) {
     if (newX >= 0 && newX < gameState.gridSize && 
         newY >= 0 && newY < gameState.gridSize) {
       const tile = gameState.grid[newY][newX];
-      if (!TILE_DEFS[tile].solid) {
+      // Treat walls as solid; other tiles are passable
+      if (tile !== T.WALL) {
         enemy.x = newX;
         enemy.y = newY;
         enemy.lastMove = now;

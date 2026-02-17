@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 // PLAYER - Movement and state
-// BASE LAYER v1.0
+// BASE LAYER v1.0 + Phase 2A Integration
 // ═══════════════════════════════════════════════════════════
 
-import { TILE_DEFS, TILE_TYPES, COLORS } from '../core/constants.js';
+import { T, TILE_DEF, PLAYER } from '../core/constants.js';
 
 export function createPlayer() {
   return {
@@ -11,8 +11,8 @@ export function createPlayer() {
     y: 0,
     hp: 100,
     maxHp: 100,
-    symbol: '◈',
-    color: COLORS.PLAYER  // NEVER changes - stable anchor
+    symbol: PLAYER.symbol,  // ◈ - fixed anchor
+    color: PLAYER.OUTLINE   // Cyan - never changes
   };
 }
 
@@ -28,7 +28,7 @@ export function movePlayer(gameState, dx, dy) {
   
   // Check solid tiles
   const tile = gameState.grid[newY][newX];
-  const tileDef = TILE_DEFS[tile];
+  const tileDef = TILE_DEF[tile];
   
   if (tileDef.solid) {
     return false;

@@ -258,6 +258,26 @@ export class MenuSystem {
         right: () => (cfg.intensityMul = Math.min(1.5, +(cfg.intensityMul + 0.1).toFixed(2))),
       },
       {
+        label: 'TIME ZONE',
+        value: cfg.timezone || 'AUTO',
+        left: () => {
+          const local = (typeof Intl !== 'undefined') ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Local';
+          const tzOptions = Array.from(new Set(['AUTO', 'UTC', local, 'America/New_York', 'Europe/London', 'Asia/Tokyo']));
+          const idx = Math.max(0, tzOptions.indexOf(cfg.timezone || 'AUTO'));
+          cfg.timezone = tzOptions[(idx - 1 + tzOptions.length) % tzOptions.length];
+          try { localStorage.setItem('glitchpeace.timezone', cfg.timezone); } catch (e) {}
+          try { if (window && window.GlitchPeaceGame && window.GlitchPeaceGame.temporalSystem) window.GlitchPeaceGame.temporalSystem.setTimeZone(cfg.timezone === 'AUTO' ? null : cfg.timezone); } catch (e) {}
+        },
+        right: () => {
+          const local = (typeof Intl !== 'undefined') ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Local';
+          const tzOptions = Array.from(new Set(['AUTO', 'UTC', local, 'America/New_York', 'Europe/London', 'Asia/Tokyo']));
+          const idx = Math.max(0, tzOptions.indexOf(cfg.timezone || 'AUTO'));
+          cfg.timezone = tzOptions[(idx + 1) % tzOptions.length];
+          try { localStorage.setItem('glitchpeace.timezone', cfg.timezone); } catch (e) {}
+          try { if (window && window.GlitchPeaceGame && window.GlitchPeaceGame.temporalSystem) window.GlitchPeaceGame.temporalSystem.setTimeZone(cfg.timezone === 'AUTO' ? null : cfg.timezone); } catch (e) {}
+        },
+      },
+      {
         label: 'BACK',
         value: '',
         action: () => this.open('title'),
@@ -299,7 +319,7 @@ export class MenuSystem {
   _drawHeader(ctx, w, h, subtitle) {
     ctx.textAlign = 'center';
 
-    ctx.fillStyle = '#0a0a20';
+    ctx.fillStyle = '#667099';
     ctx.font = '8px Courier New';
     ctx.fillText('A CONSCIOUSNESS SIMULATION', w / 2, h / 2 - 170);
 
@@ -310,7 +330,7 @@ export class MenuSystem {
     ctx.fillText('GLITCH·PEACE', w / 2, h / 2 - 130);
     ctx.shadowBlur = 0;
 
-    ctx.fillStyle = '#0a1a0a';
+    ctx.fillStyle = '#667099';
     ctx.font = '9px Courier New';
     ctx.fillText(subtitle, w / 2, h / 2 - 108);
 
@@ -359,7 +379,7 @@ export class MenuSystem {
     }
 
     // Footer hint
-    ctx.fillStyle = '#131328';
+    ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.textAlign = 'center';
     ctx.fillText('↑/↓ to select · ENTER to confirm · ESC to ' + (isPause ? 'pause' : 'exit'), w / 2, by + boxH + 24);
@@ -408,7 +428,7 @@ export class MenuSystem {
       ctx.textAlign = 'left';
     }
 
-    ctx.fillStyle = '#131328';
+    ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.textAlign = 'center';
     ctx.fillText('↑/↓ select · ←/→ adjust · ENTER toggle · ESC back', w / 2, by + boxH + 24);
@@ -446,7 +466,7 @@ export class MenuSystem {
       y += lineHeight;
     }
 
-    ctx.fillStyle = '#131328';
+    ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.fillText(`Page ${this.tutPage + 1}/${TUTORIAL_PAGES.length} · ←/→ page · ENTER next · ESC back`, w / 2, by + boxH - 22);
 
@@ -512,7 +532,7 @@ export class MenuSystem {
       if (line) ctx.fillText(line.trim(), cardX + cardW / 2, ly);
     }
 
-    ctx.fillStyle = '#131328';
+    ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.textAlign = 'center';
     ctx.fillText('←/→ choose · ENTER confirm · ESC back', w / 2, by + boxH + 24);
@@ -532,9 +552,11 @@ export class MenuSystem {
     ctx.font = '9px Courier New';
     ctx.fillText('MenuSystem ported from _archive/glitch-peace-v5', w / 2, h / 2 + 50);
 
-    ctx.fillStyle = '#131328';
+    ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.fillText('ENTER to return', w / 2, h / 2 + 75);
     ctx.textAlign = 'left';
   }
 }
+
+

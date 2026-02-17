@@ -3,7 +3,7 @@
 // BASE LAYER v1.0
 // ═══════════════════════════════════════════════════════════
 
-import { TILE_TYPES, DIFFICULTY } from '../core/constants.js';
+import { T, DIFFICULTY } from '../core/constants.js';
 import { random, randomChoice, distance } from '../core/utils.js';
 
 export function generateGrid(gameState) {
@@ -12,15 +12,15 @@ export function generateGrid(gameState) {
   
   // Initialize empty grid
   gameState.grid = Array(sz).fill(null).map(() => 
-    Array(sz).fill(TILE_TYPES.VOID)
+    Array(sz).fill(T.VOID)
   );
   
   // Add walls around border
   for (let i = 0; i < sz; i++) {
-    gameState.grid[0][i] = TILE_TYPES.WALL;
-    gameState.grid[sz-1][i] = TILE_TYPES.WALL;
-    gameState.grid[i][0] = TILE_TYPES.WALL;
-    gameState.grid[i][sz-1] = TILE_TYPES.WALL;
+    gameState.grid[0][i] = T.WALL;
+    gameState.grid[sz-1][i] = T.WALL;
+    gameState.grid[i][0] = T.WALL;
+    gameState.grid[i][sz-1] = T.WALL;
   }
   
   // Add internal walls
@@ -28,21 +28,21 @@ export function generateGrid(gameState) {
   for (let i = 0; i < wallCount; i++) {
     const x = random(2, sz-3);
     const y = random(2, sz-3);
-    gameState.grid[y][x] = TILE_TYPES.WALL;
+    gameState.grid[y][x] = T.WALL;
   }
   
   // Add hazard tiles
   const hazardTypes = [
-    TILE_TYPES.DESPAIR, 
-    TILE_TYPES.TERROR, 
-    TILE_TYPES.SELF_HARM
+    T.DESPAIR, 
+    T.TERROR, 
+    T.PAIN
   ];
   const hazardCount = Math.floor(sz * sz * 0.08 * diff.hazardMul);
   
   for (let i = 0; i < hazardCount; i++) {
     const x = random(1, sz-2);
     const y = random(1, sz-2);
-    if (gameState.grid[y][x] === TILE_TYPES.VOID) {
+    if (gameState.grid[y][x] === T.VOID) {
       gameState.grid[y][x] = randomChoice(hazardTypes);
     }
   }
@@ -52,7 +52,7 @@ export function generateGrid(gameState) {
   while (!placed) {
     const x = random(2, sz-3);
     const y = random(2, sz-3);
-    if (gameState.grid[y][x] === TILE_TYPES.VOID) {
+    if (gameState.grid[y][x] === T.VOID) {
       gameState.player.x = x;
       gameState.player.y = y;
       placed = true;
@@ -75,8 +75,8 @@ export function generateGrid(gameState) {
       const y = random(2, sz-3);
       const dist = distance(x, y, gameState.player.x, gameState.player.y);
       
-      if (gameState.grid[y][x] === TILE_TYPES.VOID && dist > 3) {
-        gameState.grid[y][x] = TILE_TYPES.PEACE;
+      if (gameState.grid[y][x] === T.VOID && dist > 3) {
+        gameState.grid[y][x] = T.PEACE;
         gameState.peaceNodes.push({x, y});
         placed = true;
       }

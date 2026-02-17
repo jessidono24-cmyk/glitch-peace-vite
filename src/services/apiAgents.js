@@ -19,6 +19,48 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+// --- OpenAI model detection + safe wrapper ---
+let cachedOpenAIModel = null;
+async function detectOpenAIModel() {
+  const candidates = [
+    'gpt-4-turbo',
+    'gpt-4o-mini',
+    'gpt-4o',
+    'gpt-3.5-turbo'
+  ];
+  for (const model of candidates) {
+    try {
+      // tiny probe to check availability
+      await openai.chat.completions.create({
+        model,
+        max_tokens: 1,
+        messages: [{ role: 'system', content: 'probe' }]
+      });
+      cachedOpenAIModel = model;
+      return model;
+    } catch (err) {
+      // if model not found or access denied, try next
+      const msg = err?.message || '';
+      if (msg.includes('does not exist') || msg.includes('do not have access') || (err?.status === 404)) {
+        continue;
+      }
+      // other errors (rate limits, auth) should be surfaced
+      throw err;
+    }
+  }
+  return null;
+}
+
+async function openaiChatCompletion(messages, max_tokens = 256) {
+  if (!cachedOpenAIModel) {
+    await detectOpenAIModel();
+  }
+  if (!cachedOpenAIModel) {
+    throw new Error('No available OpenAI model found for completion');
+  }
+  return openai.chat.completions.create({ model: cachedOpenAIModel, max_tokens, messages });
+}
+
 /**
  * DREAMSCAPE GENERATION
  * Uses Claude for creativity + world-building
@@ -138,28 +180,24 @@ export async function getRecoveryInsight(context = {}) {
     .map(([e, v]) => `${e}: ${Math.round(v)}`)
     .join(', ') || 'stable';
 
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4-turbo',
-    max_tokens: 256,
-    messages: [
-      {
-        role: 'system',
-        content: `You are a recovery pattern trainer inside GLITCH·PEACE, a consciousness simulation game. 
+  const response = await openaiChatCompletion([
+    {
+      role: 'system',
+      content: `You are a recovery pattern trainer inside GLITCH·PEACE, a consciousness simulation game. 
 Provide brief, compassionate, non-clinical insights about game patterns that reflect real-world pattern recognition.
 Use gaming language, not therapy language. Celebrate boundaries. Never shame.`
-      },
-      {
-        role: 'user',
-        content: `Game state: ${gameState}
+    },
+    {
+      role: 'user',
+      content: `Game state: ${gameState}
 Session time: ${sessionDuration}m
 Observed patterns: ${patternSummary}
 Current emotions: ${emotionalSummary}
 Context: ${userBackground}
 
 Give ONE actionable insight (30 words max) connecting the game pattern to player growth.`
-      }
-    ]
-  });
+    }
+  ], 256);
 
   return response.choices[0]?.message?.content || null;
 }
@@ -214,19 +252,16 @@ Keep it micro (one insight). Low cognitive load. Optional to player.`
  * GPT-4 for dynamic, context-aware enemy personalities
  */
 export async function generateEnemyPersonality(enemyType, emotionalContext) {
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4-turbo',
-    max_tokens: 256,
-    messages: [
-      {
-        role: 'system',
-        content: `You are an AI game designer creating enemy behaviors for GLITCH·PEACE.
+  const response = await openaiChatCompletion([
+    {
+      role: 'system',
+      content: `You are an AI game designer creating enemy behaviors for GLITCH·PEACE.
 Each enemy is a pattern archetype (not evil—just different).
 Return JSON with behavior rules and symbolic meaning.`
-      },
-      {
-        role: 'user',
-        content: `Enemy archetype: ${enemyType}
+    },
+    {
+      role: 'user',
+      content: `Enemy archetype: ${enemyType}
 Emotional context: ${JSON.stringify(emotionalContext)}
 
 Return JSON:
@@ -237,9 +272,8 @@ Return JSON:
   "pattern": "Description of movement pattern",
   "teaching": "What this enemy archetype teaches about patterns"
 }`
-      }
-    ]
-  });
+    }
+  ], 256);
 
   try {
     const json = JSON.parse(response.choices[0]?.message?.content || '{}');

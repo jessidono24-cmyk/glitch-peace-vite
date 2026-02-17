@@ -1,13 +1,15 @@
-// GLITCH·PEACE BASE LAYER v1.0
-// Main entry point with integrated MenuSystem
-// Note: API agents available server-side via src/services/apiAgents.js
-import { TILE_TYPES, TILE_DEFS, DIFFICULTY, GRID_SIZES, COLORS, DREAMSCAPES, DIFF_CFG } from './core/constants.js';
+// GLITCH·PEACE BASE LAYER v1.0 - Phase 2A Integration
+// Emotional + Temporal Systems fully wired to gameplay
+// MenuSystem + core consciousness engine
+import { T, TILE_DEF, DIFF_CFG, GRID_SIZES, BIOMES, SYNERGY_MESSAGES, EXIT_MESSAGES } from './core/constants.js';
 import { saveGame, loadGame, hasSaveData } from './core/storage.js';
 import { generateGrid } from './game/grid.js';
 import { createPlayer, movePlayer, takeDamage, heal } from './game/player.js';
 import { createEnemy, updateEnemies } from './game/enemy.js';
 import { createParticles, updateParticles } from './game/particles.js';
 import { MenuSystem } from './ui/menus.js';
+import { EmotionalField, getEmotionalModifiers } from './core/emotional-engine.js';
+import { TemporalSystem } from './core/temporal-system.js';
 
 // Game state
 const game = {
@@ -24,19 +26,27 @@ const game = {
   peaceTotal: 0,
   particles: [],
   currentDreamscape: 'RIFT', // RIFT | LODGE
+  
+  // PHASE 2A: Consciousness engine systems
+  emotionalField: new EmotionalField(),
+  temporalSystem: null,
+  lastEmotionUpdate: Date.now(),
+  emotionDecayRate: 0.05, // per tick
+  
   settings: {
-    gridSize: 'MEDIUM',
-    difficulty: 'STILLNESS',
+    gridSize: 'medium',
+    difficulty: 'normal',
     highContrast: false,
     reducedMotion: false,
     particles: true,
-    intensityMul: 1.0
+    intensityMul: 1.0,
+    timezone: 'AUTO'
   }
 };
 
 // Initialize UI and MenuSystem
-const canvas = document.getElementById('canvas');
-const ctx = canvas?.getContext('2d');
+let canvas = null;
+let ctx = null;
 let menuSystem = null;
 
 function initUI() {
@@ -59,9 +69,9 @@ function initUI() {
     <div class="controls-hint" style="display:none">WASD/Arrows: Move | ESC: Pause | H: Help</div>
   `;
   
-  // Re-get canvas reference after creating it
-  const newCanvas = document.getElementById('canvas');
-  const newCtx = newCanvas?.getContext('2d');
+  // Re-get canvas reference after creating it and expose globally
+  canvas = document.getElementById('canvas');
+  ctx = canvas?.getContext('2d');
   
   // Initialize MenuSystem with callbacks
   menuSystem = new MenuSystem({
@@ -105,6 +115,12 @@ function initUI() {
   menuSystem.setSaveState({ hasSave: hasSaveData(), meta: null });
 }
 
+// Attach game to window for cross-module access (menu -> temporalSystem)
+try { if (typeof window !== 'undefined') window.GlitchPeaceGame = game; } catch (e) {}
+
+// Instantiate TemporalSystem now that settings exist
+game.temporalSystem = new TemporalSystem(game.settings.timezone);
+
 function startGame() {
   game.state = 'PLAYING';
   if (game.level === 1) {
@@ -116,8 +132,8 @@ function startGame() {
 }
 
 function spawnEnemies() {
-  const diff = DIFFICULTY[game.settings.difficulty];
-  const count = Math.floor(diff.enemyCount * (1 + game.level * 0.1));
+  const cfg = DIFF_CFG[game.settings.difficulty] || { enemyCount: 0 };
+  const count = Math.floor((cfg.enemyCount || 0) * (1 + game.level * 0.1));
   game.enemies = [];
   for (let i = 0; i < count; i++) {
     const enemy = createEnemy();
@@ -126,7 +142,7 @@ function spawnEnemies() {
     while (!placed) {
       const x = Math.floor(Math.random() * game.gridSize);
       const y = Math.floor(Math.random() * game.gridSize);
-      if (game.grid[y] && game.grid[y][x] === TILE_TYPES.VOID) {
+      if (game.grid[y] && game.grid[y][x] === T.VOID) {
         enemy.x = x;
         enemy.y = y;
         placed = true;
@@ -208,7 +224,7 @@ function render(deltaMs = 16) {
     for (let y = 0; y < game.gridSize; y++) {
       for (let x = 0; x < game.gridSize; x++) {
         const tile = game.grid[y][x];
-        const def = TILE_DEFS[tile];
+        const def = TILE_DEF[tile];
         const px = x * game.tileSize;
         const py = y * game.tileSize;
         
@@ -216,36 +232,42 @@ function render(deltaMs = 16) {
         ctx.fillRect(px, py, game.tileSize, game.tileSize);
         
         // Draw border
-        ctx.strokeStyle = def.border || 'rgba(255,255,255,0.1)';
+        ctx.strokeStyle = def.bd || 'rgba(255,255,255,0.1)';
         ctx.lineWidth = 1;
         ctx.strokeRect(px, py, game.tileSize, game.tileSize);
         
         // Draw symbol
-        if (def.symbol) {
-          ctx.fillStyle = def.glow || def.border || '#fff';
+        if (def.sy) {
+          ctx.fillStyle = def.g || def.bd || '#fff';
           ctx.font = `${game.tileSize * 0.6}px Courier New`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(def.symbol, px + game.tileSize / 2, py + game.tileSize / 2);
+          ctx.fillText(def.sy, px + game.tileSize / 2, py + game.tileSize / 2);
         }
       }
     }
     
-    // Draw player
+    // Draw player (CYAN glow + WHITE core - fixed anchor)
     const px = game.player.x * game.tileSize;
     const py = game.player.y * game.tileSize;
-    ctx.fillStyle = COLORS.PLAYER;
+    ctx.fillStyle = '#00e5ff'; // Cyan glow
+    ctx.globalAlpha = 0.3;
+    ctx.fillRect(px, py, game.tileSize, game.tileSize);
+    ctx.globalAlpha = 1.0;
+    ctx.fillStyle = '#ffffff'; // White core
     ctx.font = `${game.tileSize * 0.7}px Courier New`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('@', px + game.tileSize / 2, py + game.tileSize / 2);
+    ctx.fillText('◈', px + game.tileSize / 2, py + game.tileSize / 2);
     
-    // Draw enemies (simplified)
+    // Draw enemies
     for (const enemy of game.enemies) {
       const ex = enemy.x * game.tileSize;
       const ey = enemy.y * game.tileSize;
-      ctx.fillStyle = COLORS.ENEMY;
+      ctx.fillStyle = '#ff6600'; // Enemy orange
       ctx.font = `${game.tileSize * 0.6}px Courier New`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText('■', ex + game.tileSize / 2, ey + game.tileSize / 2);
     }
     
@@ -262,6 +284,11 @@ function gameLoop(currentTime) {
   
   if (game.state === 'PLAYING') {
     handleGameInput();
+    
+    // PHASE 2A: Update consciousness engine systems
+    updateConsciousnessEngine(deltaMs);
+    
+    // Game systems
     updateEnemies(game);
     updateParticles(game);
     updateHUD();
@@ -271,7 +298,33 @@ function gameLoop(currentTime) {
   requestAnimationFrame(gameLoop);
 }
 
+// PHASE 2A: Consciousness engine update loop
+function updateConsciousnessEngine(deltaMs) {
+  // Decay emotional field over time
+  game.emotionalField.decay(game.emotionDecayRate * (deltaMs / 16));
+  
+  // Check and update synergies
+  const synergy = game.emotionalField.updateSynergy(deltaMs);
+  if (synergy && game.emotionDecayRate > 0) {
+    console.log(`🌟 ${synergy.message}`);
+    // TODO: Apply synergy effect to gameplay (Phase 2B)
+  }
+  
+  // Get current emotional and temporal modifiers
+  const emotionalMods = getEmotionalModifiers(game.emotionalField);
+  const temporalMods = game.temporalSystem.getModifiers();
+  
+  // Apply modifiers to game globals (will affect all systems)
+  game.currentEmotionalMods = emotionalMods;
+  game.currentTemporalMods = temporalMods;
+  
+  // Visual feedback: world gets darker/more distorted with high distortion
+  const distortion = game.emotionalField.calcDistortion();
+  game.worldDistortion = distortion;
+}
+
 // Init
 console.log('🌌 GLITCH·PEACE BASE LAYER v1.0');
 initUI();
-gameLoop();
+menuSystem.open('title');
+requestAnimationFrame(gameLoop);

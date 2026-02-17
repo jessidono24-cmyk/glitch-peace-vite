@@ -1,3 +1,4 @@
+// Enhanced from: _archive/glitch-peace-v5/src/core/constants.js
 // ═══════════════════════════════════════════════════════════════════════
 //  GLITCH·PEACE v5 - CONSTANTS & DEFINITIONS
 //  17 tile types + full biome system + recovery modes
@@ -26,23 +27,23 @@ export const T = {
 
 // Tile Definitions (damage, spread, push, colors, symbols)
 export const TILE_DEF = {
-  [T.VOID]:     { d: 0,  s: 0, p: 0, bg: '#06060f', bd: 'rgba(255,255,255,0.04)', g: null,      sy: '' },
-  [T.DESPAIR]:  { d: 8,  s: 1, p: 0, bg: '#0d0d55', bd: '#1a1aff', g: '#2233ff', sy: '↓' },
-  [T.TERROR]:   { d: 20, s: 0, p: 0, bg: '#500000', bd: '#cc1111', g: '#ff2222', sy: '!' },
-  [T.HARM]:     { d: 14, s: 0, p: 0, bg: '#360000', bd: '#880000', g: '#aa0000', sy: '✕' },
-  [T.PEACE]:    { d: 0,  s: 0, p: 0, bg: '#002810', bd: '#00ff88', g: '#00ffcc', sy: '◈' },
-  [T.WALL]:     { d: 0,  s: 0, p: 0, bg: '#0e0e18', bd: '#252535', g: null,      sy: '' },
-  [T.INSIGHT]:  { d: 0,  s: 0, p: 0, bg: '#001a18', bd: '#00ddbb', g: '#00ffee', sy: '◆' },
-  [T.HIDDEN]:   { d: 0,  s: 0, p: 0, bg: '#04040a', bd: 'rgba(0,200,100,0.08)', g: null, sy: '' },
-  [T.RAGE]:     { d: 18, s: 0, p: 2, bg: '#3a0010', bd: '#cc0044', g: '#ff0066', sy: '▲' },
-  [T.HOPELESS]: { d: 12, s: 1, p: 0, bg: '#002040', bd: '#0044cc', g: '#0066ff', sy: '~' },
-  [T.GLITCH]:   { d: 5,  s: 0, p: 0, bg: '#1a0a1a', bd: '#aa00ff', g: '#dd00ff', sy: '?' },
-  [T.ARCH]:     { d: 0,  s: 0, p: 0, bg: '#0a1a0a', bd: '#ffdd00', g: '#ffee44', sy: '☆' },
-  [T.TELE]:     { d: 0,  s: 0, p: 0, bg: '#001820', bd: '#00aaff', g: '#00ccff', sy: '⇒' },
-  [T.COVER]:    { d: 0,  s: 0, p: 0, bg: '#101018', bd: '#446688', g: null,      sy: '▪' },
-  [T.TRAP]:     { d: 16, s: 0, p: 1, bg: '#1a0800', bd: '#cc6600', g: '#ff8800', sy: '×' },
-  [T.MEM]:      { d: 0,  s: 0, p: 0, bg: '#06060a', bd: 'rgba(100,200,150,0.2)', g: null, sy: '·' },
-  [T.PAIN]:     { d: 6,  s: 0, p: 0, bg: '#200808', bd: '#661111', g: '#880000', sy: '·' },
+  [T.VOID]:     { d: 0,  s: 0, p: 0, bg: '#06060f', bd: 'rgba(255,255,255,0.04)', g: null,      sy: '', solid: false, emo: [] },
+  [T.DESPAIR]:  { d: 8,  s: 1, p: 0, bg: '#0d0d55', bd: '#1a1aff', g: '#2233ff', sy: '↓', solid: false, emo: ['despair','sadness'] },
+  [T.TERROR]:   { d: 20, s: 0, p: 0, bg: '#500000', bd: '#cc1111', g: '#ff2222', sy: '!', solid: false, emo: ['fear','panic'] },
+  [T.HARM]:     { d: 14, s: 0, p: 0, bg: '#360000', bd: '#880000', g: '#aa0000', sy: '✕', solid: false, emo: ['pain'] },
+  [T.PEACE]:    { d: 0,  s: 0, p: 1, bg: '#002810', bd: '#00ff88', g: '#00ffcc', sy: '◈', solid: false, emo: ['joy','hope'] },
+  [T.WALL]:     { d: 0,  s: 0, p: 0, bg: '#0e0e18', bd: '#252535', g: null, sy: '', solid: true, emo: [] },
+  [T.INSIGHT]:  { d: 0,  s: 0, p: 0, bg: '#001a18', bd: '#00ddbb', g: '#00ffee', sy: '◆', solid: false, emo: ['curiosity','awe'] },
+  [T.HIDDEN]:   { d: 0,  s: 0, p: 0, bg: '#04040a', bd: 'rgba(0,200,100,0.08)', g: null, sy: ' ', solid: false, emo: [] },
+  [T.RAGE]:     { d: 18, s: 0, p: 0, bg: '#3a0010', bd: '#cc0044', g: '#ff0066', sy: '▲', solid: false, emo: ['anger'] },
+  [T.HOPELESS]: { d: 12, s: 1, p: 0, bg: '#002040', bd: '#0044cc', g: '#0066ff', sy: '~', solid: false, emo: ['despair','loneliness'] },
+  [T.GLITCH]:   { d: 0,  s: 0, p: 0, bg: '#1a0a1a', bd: '#aa00ff', g: '#dd00ff', sy: '?', solid: false, emo: ['confusion'] },
+  [T.ARCH]:     { d: 0,  s: 0, p: 0, bg: '#0a1a0a', bd: '#ffdd00', g: '#ffee44', sy: '☆', solid: false, emo: ['awe'] },
+  [T.TELE]:     { d: 0,  s: 0, p: 0, bg: '#001820', bd: '#00aaff', g: '#00ccff', sy: '⇒', solid: false, emo: ['surprise'] },
+  [T.COVER]:    { d: 0,  s: 0, p: 0, bg: '#101018', bd: '#446688', g: null,      sy: '▪', solid: false, emo: ['safety'] },
+  [T.TRAP]:     { d: 16, s: 0, p: 0, bg: '#1a0800', bd: '#cc6600', g: '#ff8800', sy: '×', solid: false, emo: ['anxiety'] },
+  [T.MEM]:      { d: 0,  s: 0, p: 0, bg: '#06060a', bd: 'rgba(100,200,150,0.2)', g: null, sy: '·', solid: false, emo: ['nostalgia'] },
+  [T.PAIN]:     { d: 6,  s: 0, p: 0, bg: '#200808', bd: '#661111', g: '#880000', sy: '•', solid: false, emo: ['pain','hurt'] },
 };
 
 // Player Colors (FIXED - anchor identity)
@@ -231,4 +232,5 @@ export const EXIT_MESSAGES = [
   'Consciousness persists.\nBe gentle with yourself.',
 
 ];
+
 

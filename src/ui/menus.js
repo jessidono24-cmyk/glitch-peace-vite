@@ -90,15 +90,18 @@ export class MenuSystem {
     const items = this.getItems();
     if (k === 'ArrowUp' || k === 'w' || k === 'W') {
       this.sel = (this.sel - 1 + items.length) % items.length;
+      try { window.AudioManager?.play('nav'); } catch (e) {}
       return { consumed: true };
     }
     if (k === 'ArrowDown' || k === 's' || k === 'S') {
       this.sel = (this.sel + 1) % items.length;
+      try { window.AudioManager?.play('nav'); } catch (e) {}
       return { consumed: true };
     }
     if (k === 'Enter' || k === ' ') {
       const item = items[this.sel];
       if (item && !item.disabled && item.action) item.action();
+      try { window.AudioManager?.play('select'); } catch (e) {}
       return { consumed: true };
     }
     return { consumed: false };
@@ -119,15 +122,20 @@ export class MenuSystem {
 
     if (k === 'ArrowLeft' || k === 'a' || k === 'A') {
       if (row.left) row.left();
+      else if (row.toggle) row.toggle();
+      try { window.AudioManager?.play('nav'); } catch (e) {}
       return { consumed: true };
     }
     if (k === 'ArrowRight' || k === 'd' || k === 'D') {
       if (row.right) row.right();
+      else if (row.toggle) row.toggle();
+      try { window.AudioManager?.play('nav'); } catch (e) {}
       return { consumed: true };
     }
     if (k === 'Enter' || k === ' ') {
       if (row.toggle) row.toggle();
       if (row.action) row.action();
+      try { window.AudioManager?.play('select'); } catch (e) {}
       return { consumed: true };
     }
     if (k === 'Backspace') {
@@ -250,6 +258,11 @@ export class MenuSystem {
         label: 'REDUCED MOTION',
         value: cfg.reducedMotion ? 'ON' : 'OFF',
         toggle: () => (cfg.reducedMotion = !cfg.reducedMotion),
+      },
+      {
+        label: 'AUDIO',
+        value: cfg.audio ? 'ON' : 'OFF',
+        toggle: () => { cfg.audio = !cfg.audio; try { if (window && window.AudioManager) window.AudioManager.setEnabled(cfg.audio); } catch (e) {} },
       },
       {
         label: 'INTENSITY',
@@ -558,5 +571,7 @@ export class MenuSystem {
     ctx.textAlign = 'left';
   }
 }
+
+
 
 

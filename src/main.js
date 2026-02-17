@@ -10,6 +10,8 @@ import { createParticles, updateParticles } from './game/particles.js';
 import { MenuSystem } from './ui/menus.js';
 import { EmotionalField, getEmotionalModifiers } from './core/emotional-engine.js';
 import { TemporalSystem } from './core/temporal-system.js';
+import { updateHUD } from './ui/hud.js';
+import AudioManager from './systems/audio.js';
 
 // Game state
 const game = {
@@ -40,6 +42,7 @@ const game = {
     reducedMotion: false,
     particles: true,
     intensityMul: 1.0,
+    audio: false,
     timezone: 'AUTO'
   }
 };
@@ -76,6 +79,7 @@ function initUI() {
   // Initialize MenuSystem with callbacks
   menuSystem = new MenuSystem({
     CFG: game.settings,
+    getSettings: () => game.settings,
     onStartNew: () => {
       game.state = 'MENU_DREAMSCAPE';
       menuSystem.open('dreamscape');
@@ -118,6 +122,16 @@ function initUI() {
 // Attach game to window for cross-module access (menu -> temporalSystem)
 try { if (typeof window !== 'undefined') window.GlitchPeaceGame = game; } catch (e) {}
 
+// Attach audio manager and initialize with settings
+try {
+  if (typeof window !== 'undefined') {
+    window.AudioManager = AudioManager;
+    AudioManager.settings = game.settings || {};
+    AudioManager.settings.reducedMotion = game.settings.reducedMotion;
+    AudioManager.setEnabled(!!game.settings.audio);
+  }
+} catch (e) {}
+
 // Instantiate TemporalSystem now that settings exist
 game.temporalSystem = new TemporalSystem(game.settings.timezone);
 
@@ -128,7 +142,7 @@ function startGame() {
   }
   generateGrid(game);
   spawnEnemies();
-  updateHUD();
+  updateHUD(game);
 }
 
 function spawnEnemies() {
@@ -152,17 +166,7 @@ function spawnEnemies() {
   }
 }
 
-function updateHUD() {
-  const hp = document.getElementById('hp-text');
-  const hpFill = document.getElementById('hp-fill');
-  const level = document.getElementById('level');
-  const score = document.getElementById('score');
-  
-  if (hp) hp.textContent = `${game.player.hp}/${game.player.maxHp || 100}`;
-  if (hpFill) hpFill.style.width = `${(game.player.hp / (game.player.maxHp || 100)) * 100}%`;
-  if (level) level.textContent = String(game.level);
-  if (score) score.textContent = String(game.score);
-}
+// HUD rendering moved to src/ui/hud.js (updateHUD imported)
 
 // Input handling
 const keys = {};
@@ -191,12 +195,17 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
+let lastMoveTime = 0;
+const MOVE_MS = 150;
 function handleGameInput() {
+  const now = Date.now();
+  if (now - lastMoveTime < MOVE_MS) return;
   if (game.state !== 'PLAYING') return;
-  if (keys['w'] || keys['arrowup']) movePlayer(game, 0, -1);
-  if (keys['s'] || keys['arrowdown']) movePlayer(game, 0, 1);
-  if (keys['a'] || keys['arrowleft']) movePlayer(game, -1, 0);
-  if (keys['d'] || keys['arrowright']) movePlayer(game, 1, 0);
+  lastMoveTime = Date.now();
+  if (keys['w'] || keys['arrowup']) { movePlayer(game, 0, -1); lastMoveTime = now; }
+  else if (keys['s'] || keys['arrowdown']) { movePlayer(game, 0, 1); lastMoveTime = now; }
+  else if (keys['a'] || keys['arrowleft']) { movePlayer(game, -1, 0); lastMoveTime = now; }
+  else if (keys['d'] || keys['arrowright']) { movePlayer(game, 1, 0); lastMoveTime = now; }
 }
 
 // Render
@@ -270,6 +279,19 @@ function render(deltaMs = 16) {
       ctx.textBaseline = 'middle';
       ctx.fillText('■', ex + game.tileSize / 2, ey + game.tileSize / 2);
     }
+
+    // Draw particles (enhanced system)
+    if (game.particles && game.particles.length) {
+      for (const p of game.particles) {
+        const alpha = Math.max(0, Math.min(1, p.life / (p.maxLife || 20)));
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color || '#fff';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r || 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1.0;
+    }
     
     // Show HUD
     document.querySelector('#hud').style.display = 'flex';
@@ -291,7 +313,7 @@ function gameLoop(currentTime) {
     // Game systems
     updateEnemies(game);
     updateParticles(game);
-    updateHUD();
+    updateHUD(game);
   }
   
   render(Math.min(deltaMs, 32)); // Cap delta at 32ms
@@ -328,3 +350,9 @@ console.log('🌌 GLITCH·PEACE BASE LAYER v1.0');
 initUI();
 menuSystem.open('title');
 requestAnimationFrame(gameLoop);
+
+
+
+
+
+

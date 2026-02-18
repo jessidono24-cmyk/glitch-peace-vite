@@ -4,7 +4,7 @@
 - generic [ref=e4]:
   - generic [ref=e6]:
     - generic [ref=e7]: Health
-    - generic [ref=e10]: 100/100
+    - generic [ref=e10]: 92/100
   - generic [ref=e11]:
     - generic [ref=e12]:
       - generic [ref=e13]: Level

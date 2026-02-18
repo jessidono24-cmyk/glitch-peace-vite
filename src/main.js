@@ -348,7 +348,6 @@ function updateConsciousnessEngine(deltaMs) {
 // Init
 console.log('🌌 GLITCH·PEACE BASE LAYER v1.0');
 initUI();
-menuSystem.open('title');
 requestAnimationFrame(gameLoop);
 
 

@@ -1,3 +1,12 @@
+// Combo system: reset combo if too much time passes between actions
+export function updateCombo(gameState, comboTimeout = 3000) {
+  if (gameState.combo && gameState.comboTimer) {
+    if (Date.now() - gameState.comboTimer > comboTimeout) {
+      gameState.combo = 0;
+      gameState.comboTimer = null;
+    }
+  }
+}
 // ═══════════════════════════════════════════════════════════
 // PLAYER - Movement and state
 // BASE LAYER v1.0 + Phase 2A Integration
@@ -50,7 +59,8 @@ export function movePlayer(gameState, dx, dy) {
   if (stepped === T.PEACE) {
     const healAmt = 10;
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
-    gameState.score = (gameState.score || 0) + 150;
+    const mul = gameState.synergyMultiplier || 1.0;
+    gameState.score = (gameState.score || 0) + Math.round(150 * mul);
     gameState.peaceCollected = (gameState.peaceCollected || 0) + 1;
     gameState.grid[newY][newX] = T.VOID;
     if (gameState.emotionalField?.add) {
@@ -62,9 +72,30 @@ export function movePlayer(gameState, dx, dy) {
     return true;
   }
 
+  // Power-up: collect and apply
+  if (stepped === T.POWERUP) {
+    // Find which powerup is at this location
+    if (Array.isArray(gameState.powerupNodes)) {
+      const idx = gameState.powerupNodes.findIndex(p => p.x === newX && p.y === newY);
+      if (idx !== -1) {
+        const { type } = gameState.powerupNodes[idx];
+        if (typeof applyPowerup === 'function' && typeof createPowerup === 'function') {
+          const powerupObj = createPowerup(type, newX, newY);
+          applyPowerup(gameState, powerupObj);
+        }
+        gameState.grid[newY][newX] = T.VOID;
+        gameState.powerupNodes.splice(idx, 1);
+        createParticles(gameState, newX, newY, '#00aaff', 16);
+        try { window.AudioManager?.play('select'); } catch (e) {}
+        return true;
+      }
+    }
+  }
+
   // Insight
   if (stepped === T.INSIGHT) {
-    gameState.score = (gameState.score || 0) + 300;
+    const mul = gameState.synergyMultiplier || 1.0;
+    gameState.score = (gameState.score || 0) + Math.round(300 * mul);
     gameState.grid[newY][newX] = T.VOID;
     if (gameState.emotionalField?.add) gameState.emotionalField.add('curiosity', 2.0);
     createParticles(gameState, newX, newY, '#00eeff', 16);
@@ -82,6 +113,13 @@ export function movePlayer(gameState, dx, dy) {
       if (stepped === T.RAGE) gameState.emotionalField.add('anger', 1.2);
     }
     createParticles(gameState, newX, newY, 'damage', 12);
+            // Combo system: increment combo on successful peace collection
+            gameState.combo = (gameState.combo || 0) + 1;
+            gameState.comboTimer = Date.now();
+            // Optional: grant bonus for high combos
+            if (gameState.combo > 1) {
+              gameState.score += gameState.combo * 10;
+            }
     try { window.AudioManager?.play('damage'); } catch (e) {}
     return true;
   }
@@ -100,6 +138,12 @@ export function movePlayer(gameState, dx, dy) {
         break;
       }
     }
+                // Combo system: increment combo on power-up collection
+                gameState.combo = (gameState.combo || 0) + 1;
+                gameState.comboTimer = Date.now();
+                if (gameState.combo > 1) {
+                  gameState.score += gameState.combo * 10;
+                }
     return true;
   }
 
@@ -157,7 +201,8 @@ export function movePlayer(gameState, dx, dy) {
 
   // Archetype: grant small permanent insight / score bonus
   if (stepped === T.ARCH) {
-    gameState.score = (gameState.score || 0) + 500;
+    const mul = gameState.synergyMultiplier || 1.0;
+    gameState.score = (gameState.score || 0) + Math.round(500 * mul);
     gameState.grid[newY][newX] = T.VOID;
     if (gameState.emotionalField?.add) gameState.emotionalField.add('awe', 1.5);
     // grant a small token representing archetype discovery

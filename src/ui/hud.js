@@ -100,3 +100,38 @@ export function updateHUD(game) {
   realmRow.textContent = `${realm.name} · ${game.temporalSystem?.getModifiers?.()?.phaseName || ''} ${game.temporalSystem?.getModifiers?.()?.dayName || ''}`;
   realmRow.style.color = realm.col;
 }
+
+export function renderHUD(game) {
+  // Basic HUD HTML generator
+  if (!game || !game.player) return '';
+  let powerupHTML = '';
+  if (Array.isArray(game.activePowerups) && game.activePowerups.length > 0) {
+    powerupHTML = `<div class="hud-section" title="Active Power-Ups: Temporary abilities. Timer bar shows duration."><div class="hud-item"><span class="hud-label">Power-Ups</span>`;
+    for (const p of game.activePowerups) {
+      const timeLeft = Math.max(0, Math.floor((p.expiresAt - Date.now()) / 1000));
+      const total = Math.max(1, Math.floor((p.expiresAt - (p.duration ? (p.expiresAt - p.duration) : Date.now())) / 1000));
+      const percent = p.duration ? Math.max(0, Math.min(100, 100 * (p.expiresAt - Date.now()) / p.duration)) : 100;
+      powerupHTML += `<span style="display:inline-block;margin:0 6px;color:${p.color};font-size:18px;vertical-align:middle;">${p.icon} <span style='font-size:12px;'>${timeLeft}s</span><div style='height:4px;width:32px;background:#222;margin-top:2px;border-radius:2px;overflow:hidden;'><div style='height:100%;width:${percent}%;background:${p.color};opacity:0.7;'></div></div></span>`;
+    }
+    powerupHTML += `</div></div>`;
+  }
+  let comboHTML = '';
+  if (game.combo && game.combo > 1) {
+    comboHTML = `<div class="hud-section" title="Combo: Consecutive successful actions. Higher combo = more score!"><div class="hud-item"><span class="hud-label">Combo</span> <span style="color:#ffcc00;font-size:18px;">x${game.combo}</span></div></div>`;
+  }
+  return `
+    <div class="hud-section" title="Health: If this reaches 0, you lose.">
+      <div class="hud-item">
+        <span class="hud-label">Health</span>
+        <div id="hp-bar"><div id="hp-fill" style="width:${(game.player.hp / (game.player.maxHp || 100)) * 100}%"></div><div id="hp-text">${game.player.hp}/${game.player.maxHp || 100}</div></div>
+      </div>
+    </div>
+    <div class="hud-section" title="Level, Score, and Objective (Peace nodes to collect)">
+      <div class="hud-item"><span class="hud-label">Level</span><span class="hud-value" id="level">${game.level}</span></div>
+      <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="score">${game.score}</span></div>
+      <div class="hud-item"><span class="hud-label">Objective</span><span class="hud-value" id="objective">◈ ×${game.peaceTotal}</span></div>
+    </div>
+    ${powerupHTML}
+    ${comboHTML}
+  `;
+}

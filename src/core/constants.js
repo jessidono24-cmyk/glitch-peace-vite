@@ -23,6 +23,7 @@ export const T = {
   TRAP: 14,
   MEM: 15,
   PAIN: 16,
+  POWERUP: 17,
 };
 
 // Tile Definitions (damage, spread, push, colors, symbols)
@@ -44,6 +45,7 @@ export const TILE_DEF = {
   [T.TRAP]:     { d: 16, s: 0, p: 0, bg: '#1a0800', bd: '#cc6600', g: '#ff8800', sy: '×', solid: false, emo: ['anxiety'] },
   [T.MEM]:      { d: 0,  s: 0, p: 0, bg: '#06060a', bd: 'rgba(100,200,150,0.2)', g: null, sy: '·', solid: false, emo: ['nostalgia'] },
   [T.PAIN]:     { d: 6,  s: 0, p: 0, bg: '#200808', bd: '#661111', g: '#880000', sy: '•', solid: false, emo: ['pain','hurt'] },
+  [T.POWERUP]:  { d: 0,  s: 0, p: 0, bg: '#0e0e18', bd: '#252535', g: null, sy: '', solid: true, emo: [] },
 };
 
 // Player Colors (FIXED - anchor identity)
@@ -73,6 +75,7 @@ export const DIFF_CFG = {
     dmgMul: 0.5,
     hazMul: 0.6,
     enemyCount: 0,
+    hazardMul: 0.5,
   },
   normal: {
     name: 'Presence',
@@ -81,6 +84,7 @@ export const DIFF_CFG = {
     dmgMul: 1.0,
     hazMul: 1.0,
     enemyCount: 1,
+    hazardMul: 1.0,
   },
   hard: {
     name: 'Chaos',
@@ -89,6 +93,16 @@ export const DIFF_CFG = {
     dmgMul: 1.5,
     hazMul: 1.4,
     enemyCount: 2,
+    hazardMul: 1.5,
+  },
+  nightmare: {
+    name: 'Nightmare',
+    eSpeedBase: 400,
+    eSpeedMin: 100,
+    dmgMul: 2.0,
+    hazMul: 2.0,
+    enemyCount: 4,
+    hazardMul: 2.0,
   },
 };
 

@@ -44,6 +44,8 @@ export class MenuSystem {
     this.sel = 0;
     if (screen === 'tutorial') this.tutPage = 0;
     if (screen === 'dreamscape') this.dreamscapeSel = 0;
+    console.log(`[DEBUG] MenuSystem.open('${screen}') called`);
+    this._render();
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -263,6 +265,11 @@ export class MenuSystem {
         label: 'AUDIO',
         value: cfg.audio ? 'ON' : 'OFF',
         toggle: () => { cfg.audio = !cfg.audio; try { if (window && window.AudioManager) window.AudioManager.setEnabled(cfg.audio); } catch (e) {} },
+      },
+      {
+        label: 'SOUND EFFECTS',
+        value: cfg.audioAmbient ? 'ON' : 'OFF',
+        toggle: () => { cfg.audioAmbient = !cfg.audioAmbient; try { if (window && window.AudioManager) window.AudioManager.setAmbientEnabled(cfg.audioAmbient); } catch (e) {} },
       },
       {
         label: 'INTENSITY',
@@ -569,6 +576,54 @@ export class MenuSystem {
     ctx.font = '8px Courier New';
     ctx.fillText('ENTER to return', w / 2, h / 2 + 75);
     ctx.textAlign = 'left';
+  }
+
+  _render() {
+    const overlay = document.getElementById('menu-overlay');
+    if (!overlay) {
+      console.log('[DEBUG] #menu-overlay not found in DOM');
+      return;
+    }
+    // Always clear overlay before rendering to prevent stacking
+    overlay.innerHTML = '';
+    overlay.classList.remove('hidden');
+    if (this.screen === 'hidden') {
+      overlay.classList.add('hidden');
+      return;
+    }
+    let html = '';
+    if (this.screen === 'title') {
+      html = this._renderTitle();
+    } else if (this.screen === 'pause') {
+      html = this._renderPause();
+    } else if (this.screen === 'dreamscape') {
+      html = this._renderDreamscape();
+    } else if (this.screen === 'tutorial') {
+      html = this._renderTutorial();
+    } else if (this.screen === 'options') {
+      html = this._renderOptions();
+    } else if (this.screen === 'credits') {
+      html = this._renderCredits();
+    }
+    console.log(`[DEBUG] Menu HTML generated for state: ${this.screen}`, html);
+    overlay.innerHTML = html;
+    console.log('[DEBUG] Menu HTML injected into #menu-overlay');
+  }
+
+  _renderTitle() {
+    // Simple title menu HTML for overlay
+    return `
+      <div class="menu-title">GLITCH·PEACE</div>
+      <div class="menu-subtitle">A Consciousness Simulation</div>
+      <div class="menu-items">
+        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.onStartNew && window.MenuSystem.onStartNew()">NEW GAME</div>
+        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.onContinue && window.MenuSystem.onContinue()">CONTINUE</div>
+        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.open && window.MenuSystem.open('tutorial')">TUTORIAL</div>
+        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.open && window.MenuSystem.open('options')">OPTIONS</div>
+        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.open && window.MenuSystem.open('credits')">CREDITS</div>
+        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.onQuitToTitle && window.MenuSystem.onQuitToTitle({to:'title'})">EXIT</div>
+      </div>
+    `;
   }
 }
 

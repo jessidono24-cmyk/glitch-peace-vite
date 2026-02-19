@@ -1010,3 +1010,48 @@ This aligns with Kristin Neff's self-compassion framework and the clinical evide
 
 **Status**: Research foundation complete and documented ✅  
 **New in v1.2**: Section 19 — Phase 9 Intelligence Enhancement (Logic Puzzles, Emotion Recognition, Empathy Training, Strategic Thinking, Achievement Design)
+
+---
+
+## Section 20: Phase 10 — Completion Systems & Accessibility
+
+### 20.1 Leaderboard Design (Self-Determination Theory)
+The leaderboard stores only personal bests, not public rankings. This aligns with:
+- **Deci & Ryan (1985)** — self-determination theory: intrinsic motivation is undermined by external comparison, enhanced by personal mastery records
+- **Ryan & Deci (2000)** — *Self-Determination Theory and the Facilitation of Intrinsic Motivation*. American Psychologist, 55(1), 68–78
+- Design choice: "Personal best #N" framing (not "you beat player X") respects autonomy and avoids social comparison harm
+
+### 20.2 Session Analytics (Bandura Self-Efficacy + Behavior Change)
+Cross-session lifetime stats provide evidence of growth over time:
+- **Bandura (1977)** — self-efficacy grows through accumulated mastery experiences; seeing "82 sessions, 14 hours" provides behavioral evidence of engagement
+- **Fogg, B.J. (2009)** — *A Behavior Model for Persuasive Design*. Behavior change requires motivation + ability + trigger; analytics serve as the "trigger" that shows capability has developed
+
+### 20.3 High Contrast & WCAG Accessibility
+WCAG AA requires 4.5:1 contrast ratio for normal text and meaningful UI elements on non-text backgrounds. Our HC_TILE map targets minimum 4.5:1 for all 14 tile types on black (#000000):
+- **W3C WCAG 2.1 Criterion 1.4.3** (Contrast — Minimum): Normal text ≥4.5:1
+- **Caldwell et al. (2008)** — Web Content Accessibility Guidelines (WCAG) 2.0. W3C Recommendation
+- GLITCH·PEACE serves neurodivergent players who may have visual processing differences; high-contrast mode is provided as a first-class feature, not an afterthought
+
+### 20.4 Gamepad Vibration (Haptic Feedback & Embodiment)
+Vibration/rumble is wired on damage, level completion, and archetype activation:
+- **Gallace & Spence (2014)** — *In Touch with the Future*. Oxford University Press — tactile feedback integrates information across sensory channels, improving reaction time and emotional salience
+- **Immersion Corp (2002)** — TouchSense technology; haptic feedback increases engagement and presence scores in gaming contexts
+- Design: damage rumble (short, weak-strong) vs. celebration rumble (long, moderate) creates distinct haptic language for consequence vs. achievement
+
+### 20.5 The Mirror Dreamscape (Jungian Shadow Work)
+The Mirror world provides a gentle container for shadow integration:
+- **Jung, C.G. (1951)** — *Aion: Researches into the Phenomenology of the Self* (CW 9ii). The shadow is the first layer of the unconscious encountered in individuation; it contains repressed, unlived aspects of the personality
+- **Zweig, C. & Abrams, J. (1991)** — *Meeting the Shadow: The Hidden Power of the Dark Side of Human Nature*. Tarcher/Perigee
+- Design: COVER/MEM tiles dominate (safe ground + memory integration); the Witness archetype converts shadow tiles (DESPAIR/HOPELESS) to safe ground for 8 moves — mechanically enacting "holding the shadow with awareness" rather than destroying it
+
+### 20.6 Daily Challenge Seeding (Flow Theory Application)
+The deterministic daily seed ensures all players face the same challenge on the same day:
+- **Csikszentmihalyi, M. (1990)** — Flow: The Psychology of Optimal Experience. Daily challenges with shared difficulty create community without competition (the seed produces same tile layout but everyone plays solo)
+- **McGonigal, J. (2011)** — Reality Is Broken. SuperBetter Labs — coordinated daily challenges increase voluntary return rate and social cohesion without multiplayer infrastructure
+
+---
+
+**Document Version**: 1.3
+**Last Updated**: February 19, 2026
+**Status**: Phase 10 complete — all research documented ✅
+**New in v1.3**: Section 20 — Phase 10 Completion Systems (Leaderboard, Analytics, High Contrast, Haptics, Mirror Dreamscape, Daily Challenge)

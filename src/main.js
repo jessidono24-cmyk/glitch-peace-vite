@@ -172,6 +172,10 @@ function initUI() {
       }
     },
     onQuitToTitle: ({ to }) => {
+      // Record session analytics when leaving the game
+      if (game.state === 'PLAYING' || game.state === 'PAUSED') {
+        try { recordSession(game); } catch (_) {}
+      }
       if (to === 'playing') {
         game.state = 'PLAYING';
         menuSystem.open('title');
@@ -288,6 +292,7 @@ function startGame() {
   if (game.level === 1) {
     game.player = createPlayer();
     game._sessionStartMs = Date.now(); // track session start for Stats Dashboard
+    game._leaderboardRank = null;      // clear stale rank from previous run
   }
   
   // PHASE 1: Create and initialize game mode

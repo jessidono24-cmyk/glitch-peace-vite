@@ -1730,8 +1730,8 @@ export class GridGameMode extends GameMode {
     ctx.fillText(`Score: ${(gameState.score || 0).toLocaleString()}  ·  Level ${gameState.level || 1}`, w / 2, h * 0.51);
     ctx.fillText(`Peace nodes collected: ${gameState.peaceCollected || 0}`, w / 2, h * 0.57);
 
-    // Leaderboard rank (show if score made top-10)
-    if (gameState._leaderboardRank && gameState._leaderboardRank <= 10) {
+    // Leaderboard rank (show only for valid 1-based ranks 1–10)
+    if (gameState._leaderboardRank >= 1 && gameState._leaderboardRank <= 10) {
       ctx.fillStyle = gameState._leaderboardRank <= 3 ? '#ffcc44' : '#778899';
       ctx.font = `${Math.floor(w / 32)}px monospace`;
       ctx.fillText(`Personal best #${gameState._leaderboardRank} for this run`, w / 2, h * 0.63);

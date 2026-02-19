@@ -257,4 +257,3 @@ function _sectionLabel(ctx, text, x, y) {
   ctx.font      = 'bold 9px Courier New';
   ctx.fillText(text, x, y);
 }
-  const now     = Date.now();

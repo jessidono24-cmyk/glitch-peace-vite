@@ -49,9 +49,9 @@ export function recordSession(gameState) {
   data.totalSessions += 1;
   data.lastSeen = Date.now();
 
-  // Session duration in minutes
+  // Session duration in minutes — rounded to 2 decimal places to avoid floating-point drift
   const sessionMs = gameState._sessionStartMs ? (Date.now() - gameState._sessionStartMs) : 0;
-  data.totalMinutes += sessionMs / 60000;
+  data.totalMinutes = Math.round((data.totalMinutes + sessionMs / 60000) * 100) / 100;
 
   // Peace nodes and levels
   data.totalPeace += (gameState.peaceCollected || 0);

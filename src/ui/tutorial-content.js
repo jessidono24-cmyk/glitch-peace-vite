@@ -337,7 +337,75 @@ export const TUTORIAL_PAGES = [
       "",
       "  Current Mode: active game mode, play variation, and dreamscape.",
       "",
+      "  Lifetime Analytics: cross-session totals — sessions played,",
+      "    total minutes, total ◈ collected, peak score and level.",
+      "",
       "The dashboard never pauses the game — it overlays transparently."
+    ]
+  },
+  {
+    title: "🪞 The Mirror Dreamscape",
+    body: [
+      "The Mirror is the 12th dreamscape — a world of self-reflection.",
+      "Selected from the Dreamscape menu like any other world.",
+      "",
+      "Tile types: heavy with COVER ▪ (safe ground) and MEM · (memory)",
+      "  Fewer HARM and TERROR tiles — this is a gentle confrontation.",
+      "  GLITCH ? tiles still appear; shadows of the unexamined self.",
+      "",
+      "Archetype: THE WITNESS (◎, J key)",
+      "  Activates a Clarity Field — converts all DESPAIR and HOPELESS",
+      "  tiles within radius 4 to safe COVER ground for 8 moves.",
+      "  The shadow does not disappear; it is witnessed and held.",
+      "",
+      "Sound: the Mirror chimes a soft 528Hz overtone bell on each level.",
+      "",
+      "Research basis: Jungian shadow integration (Jung, 1951 — Aion §14).",
+      "  'One does not become enlightened by imagining figures of light,",
+      "   but by making the darkness conscious.' — C.G. Jung"
+    ]
+  },
+  {
+    title: "🎮 Gamepad Controls",
+    body: [
+      "GLITCH·PEACE supports any browser-connected gamepad.",
+      "Connect your controller before launching and it will be detected.",
+      "",
+      "Movement:",
+      "  Left Stick (any direction) OR D-Pad → move",
+      "",
+      "Actions:",
+      "  A button        → Confirm / Collect",
+      "  B button        → Back / Escape / Pause",
+      "  X button        → Space (Glitch Pulse when charged)",
+      "  Y button        → J key (Activate Archetype)",
+      "  LB (L1)         → Shift (Matrix A/B toggle)",
+      "  Start           → Pause",
+      "",
+      "Vibration/Rumble (when supported by browser):",
+      "  Short rumble on damage taken",
+      "  Celebratory pulse on level complete",
+      "  Strong burst on archetype activation",
+      "",
+      "Note: Gamepad input is polled each frame alongside keyboard.",
+      "  Both inputs work simultaneously — use whichever feels natural."
+    ]
+  },
+  {
+    title: "🏆 High Scores",
+    body: [
+      "Your personal bests are saved locally after every game over.",
+      "Press ESC from the title screen → HIGH SCORES to view your top 10.",
+      "",
+      "Scores are ranked globally across all modes and dreamscapes.",
+      "  Gold (#1-3) · Blue (#4-7) · Dim (#8-10)",
+      "",
+      "Each run records: score, level reached, play mode, and dreamscape.",
+      "No data leaves your device — all scores stored in localStorage.",
+      "",
+      "Research: Self-determination theory (Deci & Ryan, 1985; Ryan & Deci, 2000) —",
+      "  Tracking personal progress supports intrinsic motivation.",
+      "  We show YOUR journey, not a comparison to strangers."
     ]
   }
 ];

@@ -2,9 +2,11 @@
 //  LEADERBOARD - Local high score persistence (Phase 10)
 //  Stores top 10 runs per dreamscape/mode combination.
 //  All data lives in localStorage — privacy-respecting, offline-first.
-//  Research: Self-determination theory (Deci & Ryan 1985) — intrinsic
-//  motivation is supported by mastery feedback (progress visibility) not
-//  external comparison pressure; leaderboard shows personal bests only.
+//  Research: Self-determination theory (Deci & Ryan 1985; Ryan & Deci 2000) —
+//  intrinsic motivation is supported by mastery feedback (personal progress
+//  visibility) rather than external social comparison pressure. The
+//  leaderboard shows personal bests only — never a comparison to other
+//  players — aligning with SDT's autonomy and competence needs.
 // ═══════════════════════════════════════════════════════════════════════
 
 const LEADERBOARD_KEY = 'glitch-peace-leaderboard';

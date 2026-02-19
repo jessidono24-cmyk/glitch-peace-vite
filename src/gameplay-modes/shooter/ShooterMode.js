@@ -109,9 +109,9 @@ export default class ShooterMode extends GameMode {
       this.fireWeapon();
     }
     
-    // Handle weapon switching (1-4 keys)
+    // Handle weapon switching (1-4 keys) — use e.key digit characters
     for (let i = 0; i < 4; i++) {
-      if (input.isKeyPressed(`Digit${i + 1}`)) {
+      if (input.isKeyPressed(String(i + 1))) {
         this.player.currentWeapon = i;
       }
     }
@@ -160,14 +160,14 @@ export default class ShooterMode extends GameMode {
    * Update player movement and rotation
    */
   updatePlayer(input, dt) {
-    // Movement (WASD)
+    // Movement (WASD) — use e.key values (lowercase + Arrow*)
     let dx = 0;
     let dy = 0;
     
-    if (input.isKeyDown('KeyW') || input.isKeyDown('ArrowUp')) dy -= 1;
-    if (input.isKeyDown('KeyS') || input.isKeyDown('ArrowDown')) dy += 1;
-    if (input.isKeyDown('KeyA') || input.isKeyDown('ArrowLeft')) dx -= 1;
-    if (input.isKeyDown('KeyD') || input.isKeyDown('ArrowRight')) dx += 1;
+    if (input.isKeyDown('w') || input.isKeyDown('W') || input.isKeyDown('ArrowUp')) dy -= 1;
+    if (input.isKeyDown('s') || input.isKeyDown('S') || input.isKeyDown('ArrowDown')) dy += 1;
+    if (input.isKeyDown('a') || input.isKeyDown('A') || input.isKeyDown('ArrowLeft')) dx -= 1;
+    if (input.isKeyDown('d') || input.isKeyDown('D') || input.isKeyDown('ArrowRight')) dx += 1;
     
     // Normalize diagonal movement
     if (dx !== 0 && dy !== 0) {
@@ -188,7 +188,7 @@ export default class ShooterMode extends GameMode {
     this.player.y = Math.max(margin, Math.min(this.canvas.height - margin, this.player.y));
     
     // Rotation towards mouse
-    const mouse = input.getMousePosition();
+    const mouse = input.getMousePos();
     if (mouse) {
       const dx = mouse.x - this.player.x;
       const dy = mouse.y - this.player.y;

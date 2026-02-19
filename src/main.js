@@ -134,7 +134,14 @@ function initUI() {
       startGame();
     },
     onSelectDreamscape: (dreamscapeId) => {
+      // Fresh start — reset run state
       game.currentDreamscape = dreamscapeId;
+      game.level = 1;
+      game.score = 0;
+      game.player = createPlayer();
+      game.peaceCollected = 0;
+      game.peaceTotal = 0;
+      currentMode = null; // force new mode creation
       startGame();
     }
   });
@@ -257,6 +264,17 @@ document.addEventListener('keydown', e => {
     }
   }
   
+  // Game Over input — ESC returns to title
+  if (game.state === 'GAME_OVER') {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+      game.state = 'MENU';
+      currentMode = null;
+      menuSystem.open('title');
+      e.preventDefault();
+      return;
+    }
+  }
+  
   // Game input
   if (game.state === 'PLAYING') {
     if (e.key === 'Escape') {
@@ -314,6 +332,8 @@ function render(deltaMs = 16) {
       menuSystem.draw(ctx, canvas.width, canvas.height, deltaMs);
     }
     document.querySelector('#hud').style.display = 'none';
+    const hint = document.querySelector('.controls-hint');
+    if (hint) hint.style.display = 'none';
     return;
   }
   
@@ -326,8 +346,37 @@ function render(deltaMs = 16) {
       renderLegacy();
     }
     
-    // Show HUD
+    // Show HUD and controls hint
     document.querySelector('#hud').style.display = 'flex';
+    const hint = document.querySelector('.controls-hint');
+    if (hint) {
+      hint.style.display = 'block';
+      hint.textContent = currentMode?.type === 'shooter'
+        ? 'WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Grid Mode · ESC: Pause'
+        : 'WASD/Arrows: Move · Collect ◈ · ESC: Pause · M: Shooter Mode';
+    }
+  }
+
+  if (game.state === 'GAME_OVER') {
+    // Draw game-over overlay
+    ctx.fillStyle = 'rgba(0,0,0,0.82)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ff4455';
+    ctx.font = 'bold 42px Courier New';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#ff4455';
+    ctx.shadowBlur = 20;
+    ctx.fillText('PATTERN INCOMPLETE', canvas.width / 2, canvas.height / 2 - 30);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#b8b8d0';
+    ctx.font = '18px Courier New';
+    ctx.fillText(`Score: ${game.score}  ·  Level: ${game.level}`, canvas.width / 2, canvas.height / 2 + 20);
+    ctx.fillStyle = '#667099';
+    ctx.font = '13px Courier New';
+    ctx.fillText('ESC to return to menu', canvas.width / 2, canvas.height / 2 + 55);
+    ctx.textAlign = 'left';
+    document.querySelector('#hud').style.display = 'none';
   }
 }
 
@@ -414,7 +463,15 @@ function gameLoop(currentTime) {
     
     // PHASE 1: Use mode update if available
     if (currentMode && currentMode.update) {
+      game.input = inputManager; // Expose inputManager for modes that use it (e.g. ShooterMode)
       currentMode.update(game, deltaMs);
+      // Sync mode-specific stats to game so HUD stays accurate
+      if (currentMode.type === 'shooter' && currentMode.player) {
+        game.player.hp = Math.max(0, Math.round(currentMode.player.health));
+        game.player.maxHp = currentMode.player.maxHealth;
+        game.score = currentMode.score;
+        game.level = currentMode.waveNumber;
+      }
     } else {
       // Fallback to legacy game systems
       updateEnemies(game);

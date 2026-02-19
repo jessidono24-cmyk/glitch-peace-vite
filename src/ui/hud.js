@@ -1,6 +1,6 @@
 // Enhanced from: _archive/gp-v5-YOUR-BUILD/src/main.js (HUD)
 export function updateHUD(game) {
-  if (!game) return;
+  if (!game || !game.player) return;
   // ensure hud exists
   const hudEl = document.getElementById('hud');
   if (!hudEl) return;
@@ -19,7 +19,7 @@ export function updateHUD(game) {
   if (hpFill) hpFill.style.width = `${(game.player.hp / (game.player.maxHp || 100)) * 100}%`;
   if (level) level.textContent = String(game.level || 1);
   if (score) score.textContent = String(game.score || 0);
-  if (objective) objective.textContent = `◈ ×${game.peaceTotal || 0}`;
+  if (objective) objective.textContent = `◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}`;
 
   // Emotional Field indicator (compact)
   const ef = game.emotionalField;
@@ -97,7 +97,9 @@ export function updateHUD(game) {
       })()
     : { name: 'MIND', col: '#88ffaa' };
 
-  realmRow.textContent = `${realm.name} · ${game.temporalSystem?.getModifiers?.()?.phaseName || ''} ${game.temporalSystem?.getModifiers?.()?.dayName || ''}`;
+  const temporalMods = game.temporalSystem?.getModifiers?.();
+  const dreamscape = game.currentDreamscape ? ` · ${game.currentDreamscape}` : '';
+  realmRow.textContent = `${realm.name}${dreamscape} · ${temporalMods?.phaseName || ''} ${temporalMods?.dayName || ''}`;
   realmRow.style.color = realm.col;
 }
 

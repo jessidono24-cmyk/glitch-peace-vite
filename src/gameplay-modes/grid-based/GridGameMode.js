@@ -28,6 +28,7 @@ export class GridGameMode extends GameMode {
     this.tileSize = 0;
     this.lastMoveTime = 0;
     this.moveDelay = 150; // ms between moves
+    this._levelFlashMs = 0; // countdown ms for "LEVEL COMPLETE" overlay
   }
 
   /**
@@ -80,7 +81,8 @@ export class GridGameMode extends GameMode {
     const enemyCount = this.getEnemyCount(gameState);
     gameState.enemies = [];
     for (let i = 0; i < enemyCount; i++) {
-      const enemy = createEnemy(gameState, 'chase');
+      // Place enemy at a random void tile away from the player
+      const enemy = this._spawnEnemyOnGrid(gameState);
       if (enemy) {
         gameState.enemies.push(enemy);
       }
@@ -101,23 +103,42 @@ export class GridGameMode extends GameMode {
   }
 
   /**
+   * Spawn an enemy at a random valid grid position (away from the player)
+   */
+  _spawnEnemyOnGrid(gameState) {
+    const sz = gameState.gridSize;
+    for (let attempt = 0; attempt < 150; attempt++) {
+      const x = 1 + Math.floor(Math.random() * (sz - 2));
+      const y = 1 + Math.floor(Math.random() * (sz - 2));
+      const dist = Math.abs(x - gameState.player.x) + Math.abs(y - gameState.player.y);
+      if (gameState.grid[y]?.[x] === T.VOID && dist > 5) {
+        return createEnemy(x, y, gameState.level);
+      }
+    }
+    return null;
+  }
+
+  /**
    * Update game logic
    */
   update(gameState, deltaTime) {
-    const now = Date.now();
-
-    // Update enemies (use gameState.enemies directly - legacy location)
-    if (gameState.enemies && gameState.enemies.length > 0) {
-      updateEnemies(gameState, gameState.enemies, deltaTime);
+    // Tick level-complete overlay timer
+    if (this._levelFlashMs > 0) {
+      this._levelFlashMs -= deltaTime;
     }
 
-    // Update particles (use gameState.particles directly - legacy location)
+    // Update enemies (use gameState directly — enemy.js updateEnemies(gameState))
+    if (gameState.enemies && gameState.enemies.length > 0) {
+      updateEnemies(gameState);
+    }
+
+    // Update particles (particles.js updateParticles(gameState))
     if (gameState.particles && gameState.particles.length > 0) {
-      updateParticles(gameState.particles, deltaTime);
+      updateParticles(gameState);
     }
 
     // Check win condition (use gameState directly)
-    if (gameState.peaceCollected >= gameState.peaceTotal) {
+    if (gameState.peaceTotal > 0 && gameState.peaceCollected >= gameState.peaceTotal) {
       this.onLevelComplete(gameState);
     }
 
@@ -261,6 +282,31 @@ export class GridGameMode extends GameMode {
         }
       });
     }
+
+    // Level-complete overlay flash
+    if (this._levelFlashMs > 0) {
+      const completed = this._completedLevel || (gameState.level - 1);
+      const bonus = 500 * completed;
+      const alpha = Math.min(0.72, this._levelFlashMs / 800);
+      const theme = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      ctx.globalAlpha = 1.0;
+      ctx.fillStyle = theme.accent;
+      ctx.font = `bold ${Math.floor(ctx.canvas.width / 12)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = theme.accent;
+      ctx.shadowBlur = 24;
+      ctx.fillText(`LEVEL ${completed} COMPLETE`, ctx.canvas.width / 2, ctx.canvas.height / 2 - 20);
+      ctx.shadowBlur = 0;
+      ctx.font = `${Math.floor(ctx.canvas.width / 22)}px monospace`;
+      ctx.fillStyle = '#b8b8d0';
+      ctx.fillText(`+${bonus} pts · Level ${gameState.level} begins`, ctx.canvas.width / 2, ctx.canvas.height / 2 + 24);
+      ctx.restore();
+    }
   }
 
   /**
@@ -278,15 +324,12 @@ export class GridGameMode extends GameMode {
     const dir = input.getDirectionalInput();
     
     if (dir.x !== 0 || dir.y !== 0) {
-      // Attempt to move player
+      // Attempt to move player — player.js:movePlayer handles all tile interactions
+      // including peace node collection, particles, audio, and peaceCollected increment
       const moved = movePlayer(gameState, dir.x, dir.y);
       
       if (moved) {
         this.lastMoveTime = now;
-        
-        // Check for peace node collection
-        this.checkPeaceNodeCollection(gameState);
-        
         // Trigger move sound if audio available
         try { window.AudioManager?.play('move'); } catch (e) { console.warn('[GridGameMode] Audio error:', e); }
       }
@@ -294,43 +337,12 @@ export class GridGameMode extends GameMode {
   }
 
   /**
-   * Check if player collected a peace node
-   */
-  checkPeaceNodeCollection(gameState) {
-    const player = gameState.player;
-    const peaceNodes = gameState.peaceNodes;
-    
-    if (!peaceNodes) return;
-    
-    peaceNodes.forEach((node, index) => {
-      if (!node.collected && node.x === player.x && node.y === player.y) {
-        node.collected = true;
-        gameState.peaceCollected++;
-        
-        // Award points
-        gameState.score += 100;
-        
-        // Trigger emotional response (check if method exists)
-        if (gameState.emotionalField && typeof gameState.emotionalField.trigger === 'function') {
-          gameState.emotionalField.trigger('joy', 0.6);
-        }
-        
-        // Create particles
-        if (gameState.particles) {
-          const particles = createParticles(node.x, node.y, 8);
-          gameState.particles.push(...particles);
-        }
-        
-        console.log(`[GridGameMode] Peace node collected (${gameState.peaceCollected}/${gameState.peaceTotal})`);
-      }
-    });
-  }
-
-  /**
    * Handle level completion
    */
   onLevelComplete(gameState) {
     console.log(`[GridGameMode] Level ${gameState.level} complete!`);
+    this._levelFlashMs = 1800; // show completion overlay for 1.8s
+    this._completedLevel = gameState.level; // capture before increment
     
     // Award bonus points
     gameState.score += 500 * gameState.level;
@@ -338,9 +350,10 @@ export class GridGameMode extends GameMode {
     // Advance level
     gameState.level++;
     
-    // Trigger positive emotion (check if method exists)
-    if (gameState.emotionalField && typeof gameState.emotionalField.trigger === 'function') {
-      gameState.emotionalField.trigger('joy', 0.8); // Use 'joy' instead of 'triumph'
+    // Trigger positive emotion
+    if (gameState.emotionalField && typeof gameState.emotionalField.add === 'function') {
+      gameState.emotionalField.add('joy', 2.0);
+      gameState.emotionalField.add('hope', 1.0);
     }
     
     // Generate new level
@@ -351,12 +364,13 @@ export class GridGameMode extends GameMode {
    * Handle game over
    */
   onGameOver(gameState) {
+    if (gameState.state === 'GAME_OVER') return; // already handled
     console.log('[GridGameMode] Game Over');
-    gameState.gameState = 'GAME_OVER';
+    gameState.state = 'GAME_OVER';
     
-    // Trigger emotion (check if method exists)
-    if (gameState.emotionalField && typeof gameState.emotionalField.trigger === 'function') {
-      gameState.emotionalField.trigger('despair', 0.5);
+    // Trigger emotion
+    if (gameState.emotionalField && typeof gameState.emotionalField.add === 'function') {
+      gameState.emotionalField.add('despair', 1.5);
     }
   }
 

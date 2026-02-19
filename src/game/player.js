@@ -61,7 +61,11 @@ export function movePlayer(gameState, dx, dy) {
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
     const mul = gameState.synergyMultiplier || 1.0;
     gameState.score = (gameState.score || 0) + Math.round(150 * mul);
-    gameState.peaceCollected = (gameState.peaceCollected || 0) + 1;
+    // Guard: don't exceed peaceTotal to prevent over-collection
+    const newCollected = (gameState.peaceCollected || 0) + 1;
+    gameState.peaceCollected = gameState.peaceTotal > 0
+      ? Math.min(newCollected, gameState.peaceTotal)
+      : newCollected;
     gameState.grid[newY][newX] = T.VOID;
     if (gameState.emotionalField?.add) {
       gameState.emotionalField.add('joy', 1.2);

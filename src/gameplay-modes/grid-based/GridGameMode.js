@@ -272,8 +272,10 @@ export class GridGameMode extends GameMode {
     }
 
     // Apply SPEED powerup or SPEEDRUN mode boost to movement delay
+    // Also apply RITUAL slowMotion modifier
+    const slowMul = gameState.mechanics?.slowMotion || 1.0;
     const speedBoost = hasPowerup(gameState, 'movement_boost') ? 2.0 : (gameState.moveSpeedBoost || 1.0);
-    this.moveDelay = Math.max(50, Math.round(150 / speedBoost));
+    this.moveDelay = Math.max(50, Math.round(150 / speedBoost / slowMul));
 
     // Update enemies
     if (gameState.enemies && gameState.enemies.length > 0) {
@@ -627,6 +629,38 @@ export class GridGameMode extends GameMode {
         delete gameState._bossAlert;
       }
     }
+
+    // Breathing pause prompt (RITUAL mode, shown between levels)
+    if (gameState._breathingPrompt) {
+      const { text, subtext, shownAtMs, durationMs, color } = gameState._breathingPrompt;
+      const age = Date.now() - shownAtMs;
+      if (age < durationMs) {
+        const fade = Math.min(1, age / 400) * (age > durationMs - 600 ? (durationMs - age) / 600 : 1);
+        const w = ctx.canvas.width;
+        const h = ctx.canvas.height;
+        // Animated breathing circle
+        const breathPhase = (age % 4000) / 4000;
+        const r = 30 + 20 * Math.sin(breathPhase * Math.PI * 2);
+        ctx.save();
+        ctx.globalAlpha = fade * 0.18;
+        ctx.fillStyle = '#aaccff';
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = color;
+        ctx.font = `${Math.floor(w / 14)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, w / 2, h / 2 - 12);
+        ctx.fillStyle = '#8899bb';
+        ctx.font = `${Math.floor(w / 32)}px monospace`;
+        ctx.fillText(subtext, w / 2, h / 2 + 20);
+        ctx.restore();
+      } else {
+        delete gameState._breathingPrompt;
+      }
+    }
   }
 
   /**
@@ -756,6 +790,17 @@ export class GridGameMode extends GameMode {
     if (gameState.emotionalField && typeof gameState.emotionalField.add === 'function') {
       gameState.emotionalField.add('joy', 2.0);
       gameState.emotionalField.add('hope', 1.0);
+    }
+
+    // RITUAL mode: show a brief breathing pause prompt between levels
+    if (gameState.mechanics?.breathingPauses) {
+      gameState._breathingPrompt = {
+        text: 'Breathe',
+        subtext: 'Inhale · Pause · Release',
+        shownAtMs: Date.now(),
+        durationMs: 3500,
+        color: '#aaccff',
+      };
     }
     
     // Generate new level

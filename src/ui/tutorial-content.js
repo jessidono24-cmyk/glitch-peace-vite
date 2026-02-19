@@ -104,7 +104,10 @@ export const TUTORIAL_PAGES = [
       "  The Tower: walls, architecture, protection theme",
       "  The Wilderness: nature healing, more peace and memory tiles",
       "  The Abyss: cosmic void, more glitch and despair",
-      "  The Crystal: geometric, many insight/arch tiles, high clarity"
+      "  The Crystal: geometric, many insight/arch tiles, high clarity",
+      "  Childhood Neighborhood: memory-rich, nostalgic, fewer hazards, more cover",
+      "  Aztec Chase Labyrinth: dense walls, ancient traps, a labyrinth to navigate",
+      "  Orb Escape Event: portal-heavy, phase-shifting, teleport and glitch dominate"
     ]
   },
   {

@@ -73,6 +73,10 @@ const DREAMSCAPE_ARCHETYPE = {
   WILDERNESS: 'child',
   ABYSS: 'orb',
   CRYSTAL: 'captor',
+  // Canonical dreamscapes
+  NEIGHBORHOOD: 'child',      // Child Guide: familiar territory, memory reveals
+  AZTEC: 'dragon',            // Dragon: leap through labyrinth walls
+  ORB_ESCAPE: 'orb',          // Orb: phase-walk through dimensional portals
 };
 
 export function getArchetypeForDreamscape(dreamscapeId) {

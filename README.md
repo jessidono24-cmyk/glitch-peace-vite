@@ -63,8 +63,8 @@ GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than e
 **13 Play Mode Variations:**
 Classic · Zen Garden · Speedrun · Puzzle · Survival Horror · Roguelike · Pattern Training · Boss Rush · Pacifist · Reverse · Campaign · Ritual · Daily Challenge
 
-**8 Dreamscapes (each unique tiles + visual theme):**
-The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness · The Abyss · The Crystal
+**11 Dreamscapes (each unique tiles + visual theme):**
+The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness · The Abyss · The Crystal · Childhood Neighborhood · Aztec Chase Labyrinth · Orb Escape Event
 
 **Enemy AI — 9 Behavior Types:**
 `chase` · `wander` · `patrol` · `orbit` · `adaptive` · `predictive` · `rush` · `scatter` · hallucination phantoms (level 3+)
@@ -164,24 +164,24 @@ npm run build
 ```
 Phase 1: Foundation          [████████████████████] 100% ✅  (4,300 lines)
 Phase 2: Recovery Tools      [████████████████████] 100% ✅  (+2,500 lines)
-Phase 2.5: Dream Yoga        [████████████████████] 100% ✅  (+3,200 lines — NEW)
+Phase 2.5: Dream Yoga        [████████████████████] 100% ✅  (+3,200 lines)
 Phase 3: Learning Modules    [████████████████████] 100% ✅  (+1,800 lines)
 Phase 4: Cosmology           [████████████████████] 100% ✅  (+1,200 lines)
 Phase 5: Boss System         [████████████████████] 100% ✅  (+400 lines)
-Phase 6: Dreamscape Expand   [████████████░░░░░░░░]  65% 🚧  (5/8 canonical dreamscapes)
+Phase 6: Dreamscape Expand   [████████████████████] 100% ✅  (11/11 canonical dreamscapes)
 Phase 7: Upgrade Shop        [████████████████████] 100% ✅  (+700 lines)
-Phase 8: Polish & Testing    [██░░░░░░░░░░░░░░░░░░]  10% 📋  (smoke tests only)
+Phase 8: Polish & Testing    [███░░░░░░░░░░░░░░░░░]  15% 📋  (smoke tests + tip system)
 Phase Language Learning      [████████████████████] 100% ✅  (16 langs + progressive overload)
-Phase Archetypes             [████████████████████] 100% ✅  (5 archetypes, J key)
+Phase Archetypes             [████████████████████] 100% ✅  (5 archetypes, J key, 11 dreamscapes)
 Phase Matrix A/B             [████████████████████] 100% ✅  (SHIFT toggle, energy)
 Phase Enemy AI               [████████████████████] 100% ✅  (9 behaviors + hallucinations)
 Phase Sigil Database         [████████████████████] 100% ✅  (31 sigils, 6 traditions)
+Phase RPG Mode Scaffold      [████████░░░░░░░░░░░░]  40% 🚧  (stats, quests, dialogue, HUD)
 ────────────────────────────────────────────────────────────
-Overall:  ~11,000 / 23,500 lines  ≈  47% of full vision complete
+Overall:  ~11,100 / 23,500 lines  ≈  48% of full vision complete
 
 Remaining high-priority:
-  - 3 more canonical dreamscapes (Childhood Neighborhood, Aztec Chase, Orb Escape)
-  - RPG Mode (dialogue, quests, character stats)
+  - RPG Mode full grid rendering + stat combat (Phase M5)
   - Constellation Mode (meditative connect-the-stars puzzles)
   - Multiplayer infrastructure
   - 80%+ test coverage
@@ -194,9 +194,9 @@ Remaining high-priority:
 ## 📋 What's Left (Roadmap)
 
 ### Immediate Next Steps
-- [ ] **3 remaining canonical dreamscapes** from glitch-peace: Childhood Neighborhood, Aztec Chase Labyrinth, Orb Escape Event
-- [ ] **Constellation Mode** — connect-the-stars meditative puzzles (Phase M6 from glitch-peace roadmap)
-- [ ] **RPG Mode** — dialogue trees, character stats, quest system (Phase M5)
+- [x] **11 canonical dreamscapes** — Childhood Neighborhood, Aztec Chase Labyrinth, Orb Escape Event ✅
+- [ ] **RPG Mode full grid rendering** — wire grid renderer into RPGMode, stat combat (Phase M5)
+- [ ] **Constellation Mode** — connect-the-stars meditative puzzles (Phase M6)
 - [ ] **Full test suite** — 80%+ coverage for core systems (Phase 8)
 - [ ] **Performance audit** — memory leak checks, particle pooling, canvas optimization
 
@@ -308,7 +308,7 @@ glitch-peace-vite/
 │   │   ├── campaign.js              # 30-level narrative arc (3 acts)
 │   │   ├── cosmologies.js           # 12 cosmologies + getCosmoModifiers()
 │   │   ├── dream-yoga.js            # Lucidity meter, dream sign DB, body scan, pause rewards
-│   │   ├── dreamscapes.js           # 8 dreamscapes with tile biases + visual themes
+│   │   ├── dreamscapes.js           # 11 dreamscapes with tile biases + visual themes
 │   │   ├── languages.js             # 16 languages, progressive overload, vocab bank
 │   │   ├── learning-modules.js      # 5 challenge types on INSIGHT tiles
 │   │   ├── play-modes.js            # 13 play modes with full mechanical differentiation
@@ -430,8 +430,8 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 
 ### Areas Most Needed
 
-- 🎮 **New gameplay modes** — Constellation (connect-the-stars meditation), RPG, Rhythm
-- 🌍 **Dreamscape designs** — Childhood Neighborhood, Aztec Chase Labyrinth, Orb Escape Event
+- 🎮 **New gameplay modes** — Constellation (connect-the-stars meditation), Rhythm
+- 🌍 **Dreamscape content** — Additional tile art, ambient music tracks, lore text for new dreamscapes
 - 🧠 **Learning content** — More vocabulary per language (currently 12 concepts × 16 languages)
 - 📊 **Test coverage** — Core system unit tests (currently ~10%)
 - 🎮 **Gamepad support** — Gamepad API for controller play (needed for Steam)
@@ -454,12 +454,12 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 | Version | 2.1.0 |
 | Lines of Code | ~11,000 |
 | Target LOC | 23,500+ |
-| Blueprint Completion | ~47% |
+| Blueprint Completion | ~48% |
 | Source Modules | 42 |
 | Gameplay Modes (running) | 2 (Grid + Shooter) |
 | Gameplay Modes (designed) | 31+ |
 | Languages | 16 |
-| Dreamscapes | 8 |
+| Dreamscapes | 11 |
 | Cosmologies | 12 |
 | Play Mode Variations | 13 |
 | Enemy AI Behaviors | 9 |

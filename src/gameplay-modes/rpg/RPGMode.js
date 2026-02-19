@@ -178,33 +178,87 @@ export default class RPGMode extends GameMode {
       return;
     }
 
-    // Normal grid movement (delegate to player system)
-    // TODO: RPGMode will add stat-based outcome modifiers here
+    // Normal grid movement — apply stat-based outcome modifiers
+    // Clarity stat extends how far ahead traps are "sensed" (stored on gameState for grid renderer)
+    gameState._rpgClarityRange = 1 + Math.floor(this.stats.clarity / 2);
+    // Resilience stat reduces hazard damage (applied as a multiplier stored for takeDamage)
+    gameState._rpgResilienceMul = Math.max(0.2, 1 - (this.stats.resilience - 1) * 0.1);
+    // Wisdom stat grants bonus insight tokens on learning challenges
+    gameState._rpgWisdomBonus = Math.floor(this.stats.wisdom / 3);
   }
 
   render(gameState, ctx) {
     const theme = getDreamscapeTheme(gameState.currentDreamscape || 'LODGE');
+    const w = this.canvas.width;
+    const h = this.canvas.height;
 
     // Background
     ctx.fillStyle = theme.bg || '#0d0d18';
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.fillRect(0, 0, w, h);
     if (theme.ambient) {
       ctx.fillStyle = theme.ambient;
-      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+      ctx.fillRect(0, 0, w, h);
     }
 
-    // TODO: Render grid tiles + player + enemies (reuse GridGameMode renderer)
-    // For now: placeholder
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.fillStyle = '#00ff88';
-    ctx.font = 'bold 18px Courier New';
+    // Dark overlay for RPG atmosphere
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.fillRect(0, 0, w, h);
+
+    // ── Stats panel (top-left) ──────────────────────────────────────────
+    const stats = this.stats;
+    const statLabels = [
+      ['STR', stats.strength,  '#ff6666'],
+      ['WIS', stats.wisdom,    '#ffdd88'],
+      ['EMP', stats.empathy,   '#88ffcc'],
+      ['RES', stats.resilience,'#aaffaa'],
+      ['CLR', stats.clarity,   '#88ccff'],
+    ];
+    ctx.font = '10px Courier New';
+    ctx.textAlign = 'left';
+    statLabels.forEach(([label, val, col], i) => {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(10, 10 + i * 18, 80, 16);
+      ctx.fillStyle = col;
+      ctx.fillText(`${label} ${val}`, 14, 22 + i * 18);
+    });
+
+    // ── Mode banner ────────────────────────────────────────────────────
+    ctx.fillStyle = theme.accent || '#00ff88';
+    ctx.font = 'bold 16px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillText('RPG MODE — Coming Soon', this.canvas.width / 2, this.canvas.height / 2 - 30);
-    ctx.fillStyle = '#667099';
-    ctx.font = '13px Courier New';
-    ctx.fillText('Narrative · Dialogue · Quests · Character Stats', this.canvas.width / 2, this.canvas.height / 2 + 10);
-    ctx.fillText('Press M to return to Grid mode', this.canvas.width / 2, this.canvas.height / 2 + 40);
+    ctx.shadowColor = theme.accent || '#00ff88';
+    ctx.shadowBlur = 8;
+    ctx.fillText('⚔  RPG ADVENTURE  ⚔', w / 2, 28);
+    ctx.shadowBlur = 0;
+
+    // ── Level / XP info ────────────────────────────────────────────────
+    const lvl  = gameState.level || 1;
+    const xp   = (gameState.score || 0);
+    ctx.fillStyle = '#aabbcc';
+    ctx.font = '12px Courier New';
+    ctx.fillText(`Level ${lvl}  ·  XP: ${xp}`, w / 2, 50);
+
+    // ── Active quest summary ───────────────────────────────────────────
+    const activeQuests = this._quests.filter(q => !q.completed);
+    if (activeQuests.length) {
+      ctx.fillStyle = '#667099';
+      ctx.font = '11px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText(`▸ ${activeQuests[0].title}`, w / 2, h / 2 - 60);
+      ctx.fillStyle = '#445566';
+      ctx.font = '10px Courier New';
+      ctx.fillText(activeQuests[0].description, w / 2, h / 2 - 44);
+    }
+
+    // ── Mode description ───────────────────────────────────────────────
+    ctx.fillStyle = '#334455';
+    ctx.font = '11px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('Narrative · Dialogue · Quests · Character Stats', w / 2, h / 2 + 10);
+    ctx.fillStyle = '#222233';
+    ctx.fillText('(Full RPG grid rendering activates in Phase M5)', w / 2, h / 2 + 30);
+    ctx.fillStyle = '#445566';
+    ctx.fillText('Press M to return to Grid mode', w / 2, h / 2 + 52);
     ctx.textAlign = 'left';
 
     // Render dialogue overlay if active
@@ -212,7 +266,7 @@ export default class RPGMode extends GameMode {
       this._renderDialogue(ctx);
     }
 
-    // Render quest log (top-right corner stub)
+    // Render quest log (top-right corner)
     this._renderQuestLog(ctx);
   }
 

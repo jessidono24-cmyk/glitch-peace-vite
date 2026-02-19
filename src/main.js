@@ -270,6 +270,11 @@ function startGame() {
     spawnEnemies();
   }
   updateHUD(game);
+
+  // Show a brief first-play tip on level 1 so new players know where to start.
+  if (game.level === 1) {
+    _showGameTip('Collect ◈ Peace tiles to advance · Press H anytime for Help', 5000);
+  }
 }
 
 function spawnEnemies() {
@@ -290,6 +295,23 @@ function spawnEnemies() {
       }
     }
     game.enemies.push(enemy);
+  }
+}
+
+/** Timer handle for the game tip auto-dismiss (module-level to avoid DOM property mutation). */
+let _tipTimer = null;
+
+/** Show a brief tip message in the #message element, auto-fades after durationMs. */
+function _showGameTip(text, durationMs = 4000) {
+  try {
+    const el = document.getElementById('message');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.add('show');
+    clearTimeout(_tipTimer);
+    _tipTimer = setTimeout(() => el.classList.remove('show'), durationMs);
+  } catch (e) {
+    console.warn('[_showGameTip] Could not display tip:', e);
   }
 }
 

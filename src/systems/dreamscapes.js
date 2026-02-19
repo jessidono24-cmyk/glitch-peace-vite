@@ -87,6 +87,37 @@ export const DREAMSCAPE_THEMES = {
     accent: '#00ccee',
     tileBias: { [T.INSIGHT]: 8, [T.ARCH]: 4, [T.MEM]: 4, [T.WALL]: 4 },
   },
+  // ── Canonical dreamscapes from glitch-peace lore ─────────────────────
+  NEIGHBORHOOD: {
+    id: 'NEIGHBORHOOD',
+    label: 'Childhood Neighborhood',
+    flavor: 'Familiar streets, faded\nmemories, hidden doors.',
+    bg: '#04030a',
+    ambient: 'rgba(255,200,80,0.03)',
+    accent: '#ffcc55',
+    // Lots of memory tiles (nostalgia), cover tiles (comfort), fewer hazards
+    tileBias: { [T.MEM]: 10, [T.COVER]: 6, [T.PEACE]: 4, [T.TERROR]: -4, [T.RAGE]: -2 },
+  },
+  AZTEC: {
+    id: 'AZTEC',
+    label: 'Aztec Chase Labyrinth',
+    flavor: 'Stone corridors,\nancient pursuit.',
+    bg: '#060200',
+    ambient: 'rgba(200,80,0,0.05)',
+    accent: '#ff6600',
+    // Dense walls forming maze-like corridors; enemies more numerous; insight tiles (hidden knowledge)
+    tileBias: { [T.WALL]: 12, [T.INSIGHT]: 6, [T.HARM]: 4, [T.TRAP]: 4, [T.PEACE]: -2 },
+  },
+  ORB_ESCAPE: {
+    id: 'ORB_ESCAPE',
+    label: 'Orb Escape Event',
+    flavor: 'Phase between worlds.\nThe orb remembers the way.',
+    bg: '#000108',
+    ambient: 'rgba(160,100,255,0.06)',
+    accent: '#aa66ff',
+    // Teleport tiles and glitch portals dominate; many hidden tiles; peace sparse
+    tileBias: { [T.TELE]: 8, [T.GLITCH]: 6, [T.HIDDEN]: 8, [T.ARCH]: 4, [T.PEACE]: -3 },
+  },
 };
 
 /** Returns the theme for a given dreamscape ID, falling back to RIFT. */

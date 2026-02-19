@@ -76,6 +76,7 @@ export const DIFF_CFG = {
     hazMul: 0.6,
     enemyCount: 0,
     hazardMul: 0.5,
+    peaceMul: 1.3,
   },
   normal: {
     name: 'Presence',
@@ -85,6 +86,7 @@ export const DIFF_CFG = {
     hazMul: 1.0,
     enemyCount: 1,
     hazardMul: 1.0,
+    peaceMul: 1.0,
   },
   hard: {
     name: 'Chaos',
@@ -94,6 +96,7 @@ export const DIFF_CFG = {
     hazMul: 1.4,
     enemyCount: 2,
     hazardMul: 1.5,
+    peaceMul: 0.8,
   },
   nightmare: {
     name: 'Nightmare',
@@ -103,6 +106,7 @@ export const DIFF_CFG = {
     hazMul: 2.0,
     enemyCount: 4,
     hazardMul: 2.0,
+    peaceMul: 0.6,
   },
 };
 

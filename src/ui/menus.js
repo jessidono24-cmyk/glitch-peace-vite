@@ -45,7 +45,7 @@ export class MenuSystem {
     if (screen === 'tutorial') this.tutPage = 0;
     if (screen === 'dreamscape') this.dreamscapeSel = 0;
     console.log(`[DEBUG] MenuSystem.open('${screen}') called`);
-    this._render();
+    // Note: Canvas-based rendering happens in draw() method, not _render()
   }
 
   // ────────────────────────────────────────────────────────────────────

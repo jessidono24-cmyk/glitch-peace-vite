@@ -8,7 +8,7 @@ import { random, randomChoice, distance, fibonacci } from '../core/utils.js';
 
 export function generateGrid(gameState) {
   const sz = gameState.gridSize;
-  const diff = DIFFICULTY[gameState.settings.difficulty];
+  const diff = DIFF_CFG[gameState.settings.difficulty] || DIFF_CFG.normal;
   
   // Initialize empty grid
   gameState.grid = Array(sz).fill(null).map(() => 

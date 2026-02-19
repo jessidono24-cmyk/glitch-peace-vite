@@ -54,6 +54,13 @@ import {
   handleShopInput,
   renderUpgradeShop,
 } from '../../systems/upgrade-shop.js';
+import {
+  activateArchetype,
+  saveArchetypeHistory,
+  updateArchetypes,
+  renderArchetypeOverlay,
+  getArchetypeForDreamscape,
+} from '../../systems/archetypes.js';
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -132,6 +139,18 @@ export class GridGameMode extends GameMode {
     if (gameState.mechanics?.timeLimit && typeof gameState.mechanics.timeLimit === 'number') {
       gameState.timeRemainingMs = gameState.mechanics.timeLimit * 1000;
     }
+
+    // Archetype: pick based on selected dreamscape
+    gameState._archetypeId = getArchetypeForDreamscape(gameState.currentDreamscape || 'RIFT');
+    gameState._archetypeLastUsedMs = 0; // ready immediately
+
+    // Matrix A/B: start in Matrix B (Coherence, green)
+    if (gameState.matrixActive === undefined) gameState.matrixActive = 'B';
+    // Energy bar for matrix (0–100)
+    if (gameState.energy === undefined) gameState.energy = 60;
+
+    // Glitch Pulse charge (0–100, filled by peace collection in player.js)
+    if (gameState.glitchPulseCharge === undefined) gameState.glitchPulseCharge = 0;
 
     // Generate initial grid
     this.generateLevel(gameState);
@@ -370,6 +389,24 @@ export class GridGameMode extends GameMode {
     const speedBoost = hasPowerup(gameState, 'movement_boost') ? 2.0 : (gameState.moveSpeedBoost || 1.0);
     this.moveDelay = Math.max(50, Math.round(150 / speedBoost / slowMul));
 
+    // Update archetype system (reveal-hidden timer, etc.)
+    updateArchetypes(gameState, deltaTime);
+
+    // Matrix A/B: energy drain (Matrix A) or regen (Matrix B)
+    if (gameState.matrixActive === 'A') {
+      gameState.energy = Math.max(0, (gameState.energy || 0) - 0.8 * (deltaTime / 16));
+    } else {
+      gameState.energy = Math.min(100, (gameState.energy || 0) + 0.3 * (deltaTime / 16));
+    }
+
+    // DESPAIR / HOPELESS tile spread (every ~4s)
+    if (!this._spreadTimer) this._spreadTimer = 0;
+    this._spreadTimer += deltaTime;
+    if (this._spreadTimer >= 4000 && gameState.grid) {
+      this._spreadTimer = 0;
+      this._tickTileSpread(gameState);
+    }
+
     // Update enemies
     if (gameState.enemies && gameState.enemies.length > 0) {
       updateEnemies(gameState); // enemy.js: single-arg signature updateEnemies(gameState)
@@ -446,8 +483,8 @@ export class GridGameMode extends GameMode {
           }
           break;
         }
-        // SHIELD powerup: absorb hit without damage
-        if (hasPowerup(gameState, 'absorb_damage')) {
+        // SHIELD powerup OR archetype shield: absorb hit without damage
+        if (hasPowerup(gameState, 'absorb_damage') || gameState._archetypeShield?.moves > 0) {
           this._lastEnemyDamageMs = now;
           createParticles(gameState, px, py, '#00aaff', 6);
         } else {
@@ -736,6 +773,105 @@ export class GridGameMode extends GameMode {
     // Upgrade shop (if open)
     renderUpgradeShop(gameState, ctx);
 
+    // Archetype overlay (cooldown bar + activation message)
+    renderArchetypeOverlay(gameState, ctx);
+
+    // Hallucinations (chaos phantoms rendered as purple flicker tiles)
+    if (gameState._hallucinations?.length) {
+      const now = Date.now();
+      for (const h of gameState._hallucinations) {
+        const flicker = Math.sin(now / 80 + h.x * 1.3 + h.y * 0.9) > 0;
+        if (flicker) {
+          ctx.save();
+          ctx.globalAlpha = 0.55;
+          ctx.fillStyle = '#8800cc';
+          ctx.fillRect(h.x * tileSize, h.y * tileSize, tileSize, tileSize);
+          ctx.globalAlpha = 0.9;
+          ctx.fillStyle = '#dd00ff';
+          ctx.font = `${tileSize * 0.55}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('?', h.x * tileSize + tileSize / 2, h.y * tileSize + tileSize / 2);
+          ctx.restore();
+        }
+      }
+    }
+
+    // Matrix A/B notification message
+    if (gameState._matrixMsg && Date.now() < gameState._matrixMsg.expiresMs) {
+      const fade = Math.min(1, (gameState._matrixMsg.expiresMs - Date.now()) / 600);
+      ctx.save();
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = gameState._matrixMsg.color;
+      ctx.font = `bold ${Math.floor(ctx.canvas.width / 24)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = gameState._matrixMsg.color;
+      ctx.shadowBlur = 10;
+      ctx.fillText(gameState._matrixMsg.text, ctx.canvas.width / 2, ctx.canvas.height * 0.88);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // Glitch Pulse charge bar (bottom-right) + message
+    const gpc = gameState.glitchPulseCharge || 0;
+    const gpbw = 80, gpbh = 8;
+    const gpbx = ctx.canvas.width - gpbw - 8;
+    const gpby = ctx.canvas.height - 48;
+    ctx.save();
+    ctx.fillStyle = '#110011';
+    ctx.fillRect(gpbx, gpby, gpbw, gpbh);
+    ctx.fillStyle = gpc >= 100 ? '#aa00ff' : '#551177';
+    ctx.fillRect(gpbx, gpby, Math.round(gpbw * gpc / 100), gpbh);
+    ctx.strokeStyle = '#332244';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(gpbx, gpby, gpbw, gpbh);
+    ctx.fillStyle = gpc >= 100 ? '#dd00ff' : '#667';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`R Pulse${gpc >= 100 ? ' ✓' : ` ${gpc}%`}`, gpbx + gpbw, gpby - 2);
+    ctx.restore();
+
+    if (gameState._glitchPulseMsg && Date.now() < gameState._glitchPulseMsg.expiresMs) {
+      const fade = Math.min(1, (gameState._glitchPulseMsg.expiresMs - Date.now()) / 500);
+      ctx.save();
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = '#aa00ff';
+      ctx.font = `bold ${Math.floor(ctx.canvas.width / 22)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#aa00ff';
+      ctx.shadowBlur = 14;
+      ctx.fillText(gameState._glitchPulseMsg.text, ctx.canvas.width / 2, ctx.canvas.height * 0.82);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // Matrix A energy bar (top-right, below HUD)
+    {
+      const energy = gameState.energy || 0;
+      const embw = 60, embh = 5;
+      const embx = ctx.canvas.width - embw - 8;
+      const emby = 6;
+      ctx.save();
+      ctx.fillStyle = '#110022';
+      ctx.fillRect(embx, emby, embw, embh);
+      const matCol = gameState.matrixActive === 'A' ? '#ff3344' : '#00ff88';
+      ctx.fillStyle = matCol;
+      ctx.fillRect(embx, emby, Math.round(embw * energy / 100), embh);
+      ctx.strokeStyle = '#334';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(embx, emby, embw, embh);
+      ctx.fillStyle = matCol;
+      ctx.font = '8px monospace';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      const matLabel = gameState.matrixActive === 'A' ? 'A ERASURE' : 'B COHERENCE';
+      ctx.fillText(`⇄ ${matLabel}`, embx + embw, emby - 1);
+      ctx.restore();
+    }
+
     // Breathing pause prompt (RITUAL mode, shown between levels)
     if (gameState._breathingPrompt) {
       const { text, subtext, shownAtMs, durationMs, color } = gameState._breathingPrompt;
@@ -801,6 +937,54 @@ export class GridGameMode extends GameMode {
    */
   handleInput(gameState, input) {
     const now = Date.now();
+
+    // SHIFT: toggle Matrix A ↔ B
+    if (input.isKeyPressed('Shift')) {
+      gameState.matrixActive = gameState.matrixActive === 'A' ? 'B' : 'A';
+      gameState._matrixMsg = {
+        text: gameState.matrixActive === 'A' ? '◈ MATRIX A — ERASURE' : '◈ MATRIX B — COHERENCE',
+        color: gameState.matrixActive === 'A' ? '#ff3344' : '#00ff88',
+        expiresMs: now + 1800,
+      };
+    }
+
+    // J key: activate archetype power
+    if (input.isKeyPressed('j') || input.isKeyPressed('J')) {
+      activateArchetype(gameState);
+    }
+
+    // R key: fire Glitch Pulse (clears hazards radius 3, stuns enemies radius 4)
+    if (input.isKeyPressed('r') || input.isKeyPressed('R')) {
+      if ((gameState.glitchPulseCharge || 0) >= 100) {
+        gameState.glitchPulseCharge = 0;
+        const sz = gameState.gridSize;
+        const px = gameState.player?.x ?? 0;
+        const py = gameState.player?.y ?? 0;
+        let cleared = 0;
+        for (let y = 0; y < sz; y++) {
+          for (let x = 0; x < sz; x++) {
+            if (Math.abs(y - py) + Math.abs(x - px) <= 3 && TILE_DEF[gameState.grid[y]?.[x]]?.d > 0) {
+              gameState.grid[y][x] = T.VOID;
+              cleared++;
+            }
+          }
+        }
+        for (const e of (gameState.enemies || [])) {
+          if (Math.abs(e.y - py) + Math.abs(e.x - px) <= 4) {
+            e.stunTimer = 1800;
+            e.stunTurns = 4;
+          }
+        }
+        if (gameState.emotionalField?.add) gameState.emotionalField.add('joy', 0.8);
+        gameState._glitchPulseMsg = {
+          text: `GLITCH PULSE! ${cleared} CLEARED`,
+          color: '#aa00ff',
+          expiresMs: now + 2000,
+        };
+        createParticles(gameState, px, py, '#aa00ff', 18);
+        try { window.AudioManager?.play('power'); } catch(e) {}
+      }
+    }
 
     // U key: toggle upgrade shop (if player has insight tokens)
     if (input.isKeyPressed('u') || input.isKeyPressed('U')) {
@@ -886,6 +1070,9 @@ export class GridGameMode extends GameMode {
         if (gameState.history.length > 20) gameState.history.shift(); // cap at 20
       }
 
+      // Save archetype rewind history before moving
+      saveArchetypeHistory(gameState);
+
       // Attempt to move player — player.js:movePlayer handles all tile interactions
       // including peace node collection, particles, audio, and peaceCollected increment
       const moved = movePlayer(gameState, dir.x, dir.y);
@@ -894,6 +1081,26 @@ export class GridGameMode extends GameMode {
         this.lastMoveTime = now;
         // Record echo position (pattern trail)
         recordEchoPosition(gameState);
+        // Phase walk: decrement move counter
+        if (gameState._phaseWalkMoves > 0) {
+          gameState._phaseWalkMoves--;
+          if (gameState._phaseWalkMoves === 0) {
+            gameState._archetypeMsg = { text: 'PHASE WALK ENDED', color: '#aaddff', expiresMs: now + 1200 };
+          }
+        }
+        // Shield: decrement move counter
+        if (gameState._archetypeShield?.moves > 0) {
+          gameState._archetypeShield.moves--;
+          if (gameState._archetypeShield.moves === 0) {
+            delete gameState._archetypeShield;
+            gameState._archetypeMsg = { text: 'SHIELD FADED', color: '#446688', expiresMs: now + 1000 };
+          }
+        }
+        // Glitch Pulse: charge +15 per peace node collected (tracked via peaceCollected change)
+        if (gameState._lastPeaceCollected !== gameState.peaceCollected) {
+          gameState.glitchPulseCharge = Math.min(100, (gameState.glitchPulseCharge || 0) + 15);
+          gameState._lastPeaceCollected = gameState.peaceCollected;
+        }
         // PUZZLE mode: decrement move counter
         if (gameState.movesRemaining !== undefined) {
           gameState.movesRemaining = Math.max(0, gameState.movesRemaining - 1);
@@ -949,6 +1156,34 @@ export class GridGameMode extends GameMode {
     
     // Generate new level
     this.generateLevel(gameState);
+  }
+
+  /**
+   * DESPAIR / HOPELESS tiles slowly spread to adjacent void cells.
+   * Based on the glitch-peace tile-spread mechanic — creates a growing sense
+   * of environmental pressure as negative emotional tiles multiply.
+   */
+  _tickTileSpread(gameState) {
+    const sz = gameState.gridSize;
+    const candidates = [];
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        const v = gameState.grid[y]?.[x];
+        if ((v === T.DESPAIR || v === T.HOPELESS) && Math.random() < 0.18) {
+          for (const [dy, dx] of [[1,0],[-1,0],[0,1],[0,-1]]) {
+            const ny = y + dy, nx = x + dx;
+            if (ny >= 0 && ny < sz && nx >= 0 && nx < sz &&
+                gameState.grid[ny]?.[nx] === T.VOID) {
+              candidates.push({ y: ny, x: nx, type: v });
+            }
+          }
+        }
+      }
+    }
+    // Limit to 2 new tiles per tick to stay gradual
+    for (const c of candidates.slice(0, 2)) {
+      gameState.grid[c.y][c.x] = c.type;
+    }
   }
 
   /**

@@ -395,7 +395,7 @@ function render(deltaMs = 16) {
       hint.style.display = 'block';
       hint.textContent = currentMode?.type === 'shooter'
         ? 'WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Grid Mode · ESC: Pause'
-        : 'WASD/Arrows: Move · Collect ◈ · ESC: Pause · M: Shooter Mode';
+        : 'WASD/Arrows: Move · J: Archetype · R: Glitch Pulse · SHIFT: Matrix A/B · U: Shop · ESC: Pause';
     }
   }
 

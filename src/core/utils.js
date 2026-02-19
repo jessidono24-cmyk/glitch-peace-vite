@@ -17,10 +17,12 @@ export const rnd = n => Math.floor(Math.random() * n);
 export const pick = arr => arr[rnd(arr.length)];
 
 /**
- * Simple seeded pseudo-random number generator (mulberry32).
+ * Simple seeded pseudo-random number generator (mulberry32 algorithm).
+ * Reference: https://github.com/bryc/code/blob/master/jshash/PRNGs.md#mulberry32
  * Returns a function that generates values in [0, 1).
  */
 export function createSeededRandom(seed) {
+  // 0x6D2B79F5 is the mulberry32 hash constant (part of the specification)
   let s = seed >>> 0;
   return function() {
     s |= 0; s = s + 0x6D2B79F5 | 0;

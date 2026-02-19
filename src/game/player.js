@@ -77,7 +77,7 @@ export function movePlayer(gameState, dx, dy) {
     const healAmt = 10;
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
     // Build combo on peace collection: multiplier grows with streak (up to 4×)
-    // Formula: 1 + min(3, (combo-1) × 0.2) → reaches 4× at combo×16
+    // Formula: 1 + min(3, (combo-1) × 0.2) — caps at 4× at combo=16 and beyond
     gameState.combo = (gameState.combo || 0) + 1;
     gameState.comboTimer = Date.now();
     const comboMul = 1 + Math.min(3, (gameState.combo - 1) * 0.2);
@@ -258,8 +258,9 @@ export function movePlayer(gameState, dx, dy) {
         }
       }
     }
-    // Award memory score bonus immediately
-    gameState.score = (gameState.score || 0) + MEMORY_SCORE_BONUS;
+    // Award memory score bonus with score multipliers (same as other tiles)
+    const memMul = (gameState.synergyMultiplier || 1.0) * (gameState.scoreMul || 1.0);
+    gameState.score = (gameState.score || 0) + Math.round(MEMORY_SCORE_BONUS * memMul);
     gameState.memoryFlash = { x: newX, y: newY, radius, expiresMs: Date.now() + 800 };
     createParticles(gameState, newX, newY, '#66ccff', 14);
     try { window.AudioManager?.play('peace'); } catch (e) {}

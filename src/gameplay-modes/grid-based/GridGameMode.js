@@ -118,6 +118,11 @@ export class GridGameMode extends GameMode {
       }
     }
 
+    // Boss encounter: every 5th level when bossEnabled
+    if (gameState.mechanics?.bossEnabled && gameState.level % 5 === 0) {
+      this._spawnBoss(gameState);
+    }
+
     console.log(`[GridGameMode] Generated level ${gameState.level}`);
   }
 
@@ -152,6 +157,42 @@ export class GridGameMode extends GameMode {
       }
     }
     return null;
+  }
+
+  /**
+   * Spawn a boss enemy — larger, faster, more HP, distinctive color.
+   * Called every 5th level when bossEnabled is true.
+   */
+  _spawnBoss(gameState) {
+    const sz = gameState.gridSize;
+    for (let attempt = 0; attempt < 200; attempt++) {
+      const x = 1 + Math.floor(Math.random() * (sz - 2));
+      const y = 1 + Math.floor(Math.random() * (sz - 2));
+      const dist = Math.abs(x - gameState.player.x) + Math.abs(y - gameState.player.y);
+      if (gameState.grid[y]?.[x] === T.VOID && dist > 7) {
+        const boss = createEnemy(x, y, gameState.level);
+        boss.isBoss = true;
+        boss.hp = 50 + gameState.level * 10;
+        boss.maxHp = boss.hp;
+        boss.speed = Math.max(200, boss.speed * 0.65); // faster than normal
+        boss.dmg = 25; // higher collision damage
+        boss.color = '#ff00aa';
+        boss.symbol = '◆';
+        boss.size = 1; // occupies 1 tile but rendered larger
+        gameState.enemies.push(boss);
+
+        // Announce boss
+        gameState._bossAlert = {
+          text: `LEVEL ${gameState.level} · BOSS ENCOUNTER`,
+          subtext: 'Pattern entity manifesting',
+          shownAtMs: Date.now(),
+          durationMs: 2500,
+          color: '#ff44aa',
+        };
+        if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', 0.8);
+        return;
+      }
+    }
   }
 
   /**
@@ -273,11 +314,11 @@ export class GridGameMode extends GameMode {
           this._lastEnemyDamageMs = now;
           createParticles(gameState, px, py, '#00aaff', 6);
         } else {
-          const dmg = 10;
+          const dmg = enemy.dmg || 10; // boss deals more damage
           gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
           this._lastEnemyDamageMs = now;
-          if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', 0.5);
-          createParticles(gameState, px, py, 'damage', 8);
+          if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', enemy.isBoss ? 1.0 : 0.5);
+          createParticles(gameState, px, py, enemy.isBoss ? '#ff44aa' : 'damage', enemy.isBoss ? 16 : 8);
           try { window.AudioManager?.play('damage'); } catch (e) {}
         }
         break;
@@ -365,18 +406,41 @@ export class GridGameMode extends GameMode {
     if (enemies) {
       enemies.forEach(enemy => {
         if (enemy.active !== false) {
-          ctx.fillStyle = enemy.color || '#ff6600';
-          ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize, tileSize, tileSize);
-          
-          ctx.fillStyle = '#fff';
-          ctx.font = `${tileSize * 0.6}px monospace`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(
-            enemy.symbol || '■',
-            enemy.x * tileSize + tileSize / 2,
-            enemy.y * tileSize + tileSize / 2
-          );
+          if (enemy.isBoss) {
+            // Boss: pulsing magenta glow, bigger symbol, HP bar
+            const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 250);
+            ctx.save();
+            ctx.globalAlpha = 0.55 + 0.25 * pulse;
+            ctx.fillStyle = '#ff00aa';
+            ctx.fillRect(enemy.x * tileSize - 2, enemy.y * tileSize - 2, tileSize + 4, tileSize + 4);
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${tileSize * 0.75}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#ff44aa';
+            ctx.shadowBlur = 12;
+            ctx.fillText('◆', enemy.x * tileSize + tileSize / 2, enemy.y * tileSize + tileSize / 2);
+            ctx.shadowBlur = 0;
+            // HP bar below boss
+            if (enemy.hp !== undefined && enemy.maxHp) {
+              const bw = tileSize;
+              const frac = enemy.hp / enemy.maxHp;
+              ctx.fillStyle = '#330011';
+              ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize + tileSize, bw, 4);
+              ctx.fillStyle = frac > 0.5 ? '#ff44aa' : (frac > 0.25 ? '#ffaa00' : '#ff3344');
+              ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize + tileSize, Math.round(bw * frac), 4);
+            }
+            ctx.restore();
+          } else {
+            ctx.fillStyle = enemy.color || '#ff6600';
+            ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize, tileSize, tileSize);
+            ctx.fillStyle = '#fff';
+            ctx.font = `${tileSize * 0.6}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(enemy.symbol || '■', enemy.x * tileSize + tileSize / 2, enemy.y * tileSize + tileSize / 2);
+          }
         }
       });
     }
@@ -470,6 +534,36 @@ export class GridGameMode extends GameMode {
       ctx.fillStyle = '#b8b8d0';
       ctx.fillText(`+${bonus} pts · Level ${gameState.level} begins`, ctx.canvas.width / 2, ctx.canvas.height / 2 + 24);
       ctx.restore();
+    }
+
+    // Boss alert banner
+    if (gameState._bossAlert) {
+      const { text, subtext, shownAtMs, durationMs, color } = gameState._bossAlert;
+      const age = Date.now() - shownAtMs;
+      if (age < durationMs) {
+        const alpha = Math.min(1, age / 300) * (age > durationMs - 500 ? (durationMs - age) / 500 : 1);
+        const w = ctx.canvas.width;
+        const h = ctx.canvas.height;
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.9;
+        ctx.fillStyle = 'rgba(20,0,10,0.9)';
+        ctx.fillRect(0, h * 0.38, w, h * 0.26);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = color;
+        ctx.font = `bold ${Math.floor(w / 15)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 20;
+        ctx.fillText(text, w / 2, h * 0.47);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#cc88aa';
+        ctx.font = `${Math.floor(w / 30)}px monospace`;
+        ctx.fillText(subtext, w / 2, h * 0.56);
+        ctx.restore();
+      } else {
+        delete gameState._bossAlert;
+      }
     }
   }
 

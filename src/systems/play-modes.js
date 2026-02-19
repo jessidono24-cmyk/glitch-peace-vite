@@ -363,6 +363,33 @@ export const PLAY_MODES = {
       oneAttempt: true,
     }
   },
+
+  // ────────────────────────────────────────────────────────────────────
+  // 15. CAMPAIGN - 30-level narrative arc in 3 acts
+  // ────────────────────────────────────────────────────────────────────
+  CAMPAIGN: {
+    id: 'campaign',
+    name: "Campaign",
+    desc: "30-level story: Awakening · Descent · Integration",
+    config: {
+      peaceMul: 1.0,
+      hazardMul: 1.0,
+      insightMul: 1.5,
+      scoreMul: 1.2,
+      enemySpeed: 1.0,
+      gridSize: 'medium',
+      timeLimit: null,
+    },
+    mechanics: {
+      enemyBehavior: 'chase',
+      tileRespawn: false,
+      powerupsEnabled: true,
+      bossEnabled: true,
+      compassionateRelapse: true,
+      patternEcho: true,
+      realityChecks: false, // enabled per-level by campaign data
+    }
+  },
 };
 
 // Helper to get mode config

@@ -43,6 +43,11 @@ import {
   checkRealityCheck,
   renderRecoveryOverlays,
 } from '../../systems/recovery-tools.js';
+import {
+  getCampaignLevel,
+  applyCampaignLevel,
+  renderCampaignNarrative,
+} from '../../systems/campaign.js';
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -149,6 +154,16 @@ export class GridGameMode extends GameMode {
     }
 
     console.log(`[GridGameMode] Generated level ${gameState.level}`);
+
+    // Apply campaign level data if in CAMPAIGN play mode
+    if (gameState.playMode === 'CAMPAIGN' || gameState.playMode === 'campaign') {
+      const campaignLevel = getCampaignLevel(gameState.level);
+      if (campaignLevel) {
+        applyCampaignLevel(gameState, campaignLevel);
+        // Re-apply dreamscape bias for campaign-selected dreamscape
+        applyDreamscapeBias(gameState, gameState.currentDreamscape || 'RIFT');
+      }
+    }
   }
 
   /**
@@ -682,6 +697,9 @@ export class GridGameMode extends GameMode {
 
     // Dream yoga overlays (lucidity meter, body scan, lucid event)
     renderDreamYogaOverlays(gameState, ctx);
+
+    // Campaign narrative (Act title + story text between levels)
+    renderCampaignNarrative(gameState, ctx);
 
     // Breathing pause prompt (RITUAL mode, shown between levels)
     if (gameState._breathingPrompt) {

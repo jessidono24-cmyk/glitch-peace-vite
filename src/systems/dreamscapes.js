@@ -60,6 +60,33 @@ export const DREAMSCAPE_THEMES = {
     accent: '#ddddff',
     tileBias: { [T.ARCH]: 4, [T.WALL]: 8, [T.COVER]: 4 },
   },
+  WILDERNESS: {
+    id: 'WILDERNESS',
+    label: 'The Wilderness',
+    flavor: 'Nature heals.\nThe forest remembers.',
+    bg: '#020802',
+    ambient: 'rgba(0,200,50,0.04)',
+    accent: '#44ff88',
+    tileBias: { [T.PEACE]: 8, [T.MEM]: 6, [T.COVER]: 4, [T.TERROR]: -4 },
+  },
+  ABYSS: {
+    id: 'ABYSS',
+    label: 'The Abyss',
+    flavor: 'Empty cosmic silence.\nAll patterns dissolve.',
+    bg: '#000002',
+    ambient: null,
+    accent: '#2233aa',
+    tileBias: { [T.VOID]: 0, [T.GLITCH]: 8, [T.DESPAIR]: 4, [T.PEACE]: -3 },
+  },
+  CRYSTAL: {
+    id: 'CRYSTAL',
+    label: 'The Crystal',
+    flavor: 'Geometric perfection.\nEvery pattern has order.',
+    bg: '#000608',
+    ambient: 'rgba(100,220,255,0.04)',
+    accent: '#00ccee',
+    tileBias: { [T.INSIGHT]: 8, [T.ARCH]: 4, [T.MEM]: 4, [T.WALL]: 4 },
+  },
 };
 
 /** Returns the theme for a given dreamscape ID, falling back to RIFT. */

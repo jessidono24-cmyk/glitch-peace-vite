@@ -7,6 +7,12 @@
  * InputManager provides a mode-agnostic input handling system.
  * Modes can query input state without directly handling events.
  */
+
+// ─── Named Constants ──────────────────────────────────────────────────────────
+
+// Deadzone for gamepad analog sticks; exposed as a constant for easy tuning.
+const GAMEPAD_DEADZONE = 0.42;
+
 export class InputManager {
   constructor() {
     this.keys = new Set();
@@ -16,7 +22,12 @@ export class InputManager {
     this.mouseButtons = new Set();
     this.mousePressed = new Set();
     this.mouseReleased = new Set();
-    
+
+    // Gamepad: tracks keys held via gamepad so they can be cleared each frame
+    this._gpHeldKeys = new Set();
+    // Track previous gamepad button states to detect press edges
+    this._gpPrevButtons = [];
+
     this.setupListeners();
   }
 
@@ -197,6 +208,108 @@ export class InputManager {
       confirm: this.isKeyPressed('Enter') || this.isKeyPressed(' '),
       cancel: this.isKeyPressed('Escape'),
     };
+  }
+
+  /**
+   * Poll the Gamepad API and inject directional + action keys for the current
+   * frame. Call once per frame before processing input.
+   *
+   * Mapping (first connected gamepad):
+   *   Left stick / D-pad  → ArrowLeft/Right/Up/Down
+   *   A (button 0)        → Enter
+   *   B (button 1)        → Escape
+   *   X (button 2)        → Space (action / pulse)
+   *   Y (button 3)        → j     (archetype)
+   *   LB (button 4)       → Shift
+   *   Start (button 9)    → Escape
+   */
+  pollGamepad() {
+    if (typeof navigator === 'undefined' || !navigator.getGamepads) return;
+
+    // Clear keys that were held via gamepad last frame
+    for (const k of this._gpHeldKeys) {
+      this.keys.delete(k);
+    }
+    this._gpHeldKeys.clear();
+
+    const gamepads = navigator.getGamepads();
+    for (const gp of gamepads) {
+      if (!gp || !gp.connected) continue;
+
+      const DEADZONE = GAMEPAD_DEADZONE;
+      const ax = gp.axes[0] || 0;  // horizontal
+      const ay = gp.axes[1] || 0;  // vertical
+
+      // Directional mappings: [condition, key]
+      const dirMap = [
+        [ax < -DEADZONE || gp.buttons[14]?.pressed,  'ArrowLeft'],
+        [ax >  DEADZONE || gp.buttons[15]?.pressed,  'ArrowRight'],
+        [ay < -DEADZONE || gp.buttons[12]?.pressed,  'ArrowUp'],
+        [ay >  DEADZONE || gp.buttons[13]?.pressed,  'ArrowDown'],
+      ];
+      for (const [active, key] of dirMap) {
+        if (active) {
+          if (!this.keys.has(key)) this.keysPressed.add(key);
+          this.keys.add(key);
+          this._gpHeldKeys.add(key);
+        }
+      }
+
+      // Button press edges (only fire keysPressed on transition low→high)
+      const buttonMap = [
+        [0, 'Enter'],    // A
+        [1, 'Escape'],   // B
+        [2, ' '],        // X
+        [3, 'j'],        // Y → archetype
+        [4, 'Shift'],    // LB → matrix toggle
+        [9, 'Escape'],   // Start
+      ];
+      const prev = this._gpPrevButtons;
+      for (const [idx, key] of buttonMap) {
+        const nowPressed = (gp.buttons[idx]?.value ?? 0) > 0.5;
+        const wasPressed = !!prev[idx];
+        if (nowPressed && !wasPressed) {
+          this.keysPressed.add(key);
+          this.keys.add(key);
+          this._gpHeldKeys.add(key);
+        } else if (!nowPressed && wasPressed) {
+          this.keys.delete(key);
+        }
+        prev[idx] = nowPressed;
+      }
+
+      break; // Use only the first connected gamepad
+    }
+  }
+
+  /**
+   * Trigger gamepad vibration/rumble if the Gamepad Vibration API is available.
+   * Silently no-ops when the API is absent (desktop without gamepad, browser without
+   * vibration support) — never throws.
+   *
+   * @param {number} weakMagnitude  - 0.0–1.0 (high-frequency motor)
+   * @param {number} strongMagnitude - 0.0–1.0 (low-frequency motor)
+   * @param {number} durationMs     - vibration duration in milliseconds
+   */
+  vibrateGamepad(weakMagnitude = 0.3, strongMagnitude = 0.6, durationMs = 120) {
+    if (typeof navigator === 'undefined' || !navigator.getGamepads) return;
+    try {
+      const gamepads = navigator.getGamepads();
+      for (const gp of gamepads) {
+        if (!gp || !gp.connected) continue;
+        if (typeof gp.vibrationActuator?.playEffect === 'function') {
+          gp.vibrationActuator.playEffect('dual-rumble', {
+            startDelay: 0,
+            duration: durationMs,
+            weakMagnitude: Math.min(1.0, Math.max(0.0, weakMagnitude)),
+            strongMagnitude: Math.min(1.0, Math.max(0.0, strongMagnitude)),
+          });
+        }
+        break; // Use only the first connected gamepad
+      }
+    } catch (_) {
+      // Vibration API unavailable — silently ignore
+    }
   }
 }
 

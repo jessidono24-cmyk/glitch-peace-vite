@@ -76,6 +76,10 @@ export function movePlayer(gameState, dx, dy) {
     }
     const healAmt = 10;
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
+    // Play heal sound when HP was below max before the collect
+    if (gameState.player.hp - healAmt < gameState.player.maxHp) {
+      try { window.AudioManager?.play('heal'); } catch(e) {}
+    }
     // Build combo on peace collection: multiplier grows with streak (up to 4×)
     // Formula: 1 + min(3, (combo-1) × 0.2) — caps at 4× at combo=16 and beyond
     gameState.combo = (gameState.combo || 0) + 1;
@@ -94,7 +98,12 @@ export function movePlayer(gameState, dx, dy) {
       gameState.emotionalField.add('hope', 0.6);
     }
     createParticles(gameState, newX, newY, 'healing', 18);
-    try { window.AudioManager?.play('peace'); } catch (e) {}
+    // Play combo sound on streaks of 3+, peace otherwise
+    if (gameState.combo >= 3) {
+      try { window.AudioManager?.play('combo'); } catch (e) {}
+    } else {
+      try { window.AudioManager?.play('peace'); } catch (e) {}
+    }
     return true;
   }
 

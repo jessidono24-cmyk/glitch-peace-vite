@@ -15,14 +15,39 @@ import { EmotionalField, getEmotionalModifiers } from './core/emotional-engine.j
 import { TemporalSystem } from './core/temporal-system.js';
 import { updateHUD } from './ui/hud.js';
 import AudioManager from './systems/audio.js';
+import { renderStatsDashboard } from './ui/stats-dashboard.js';
+import { logicPuzzles }        from './intelligence/logic-puzzles.js';
+import { emotionRecognition }  from './intelligence/emotion-recognition.js';
+import { empathyTraining }     from './intelligence/empathy-training.js';
+import { strategicThinking }   from './intelligence/strategic-thinking.js';
+import { addScore, getTopScores } from './systems/leaderboard.js';
+import { recordSession, getAnalyticsSummary } from './systems/session-analytics.js';
+
+// Expose intelligence singletons for stats dashboard (avoids circular imports)
+try {
+  if (typeof window !== 'undefined') {
+    window.__glitchPeaceIntelligence = {
+      get iq()       { return logicPuzzles.iqScore; },
+      get eq()       { return emotionRecognition.eqScore; },
+      get empathy()  { return empathyTraining.empathyScore; },
+      get strategy() { return strategicThinking.strategicScore; },
+    };
+  }
+} catch (_) {}
 
 // PHASE 1: New modular architecture imports
 import GameStateManager from './core/game-engine/GameStateManager.js';
 import InputManager from './core/game-engine/InputManager.js';
 import { modeRegistry } from './gameplay-modes/ModeRegistry.js';
-import './gameplay-modes/grid-based/index.js'; // Auto-registers GridGameMode
-import './gameplay-modes/shooter/index.js';    // Auto-registers ShooterMode (Phase 2)
-import './gameplay-modes/rpg/index.js';         // Auto-registers RPGMode skeleton (Phase M5)
+import './gameplay-modes/grid-based/index.js';    // Auto-registers GridGameMode
+import './gameplay-modes/shooter/index.js';        // Auto-registers ShooterMode (Phase 2)
+import './gameplay-modes/rpg/index.js';            // Auto-registers RPGMode skeleton (Phase M5)
+import './gameplay-modes/ornithology/index.js';    // Auto-registers OrnithologyMode
+import './gameplay-modes/mycology/index.js';       // Auto-registers MycologyMode
+import './gameplay-modes/architecture/index.js';   // Auto-registers ArchitectureMode
+import './gameplay-modes/constellation/index.js';  // Auto-registers ConstellationMode
+import './gameplay-modes/alchemy/index.js';        // Auto-registers AlchemyMode
+import './gameplay-modes/rhythm/index.js';         // Auto-registers RhythmMode
 
 // PHASE 1: Initialize new architecture
 let gameStateManager = null;
@@ -96,6 +121,23 @@ function initUI() {
   // Re-get canvas reference after creating it and expose globally
   canvas = document.getElementById('canvas');
   ctx = canvas?.getContext('2d');
+
+  // Accessibility: make canvas keyboard-focusable and describe it for screen readers
+  if (canvas) {
+    canvas.setAttribute('tabindex', '0');
+    canvas.setAttribute('role', 'application');
+    canvas.setAttribute('aria-label', 'GLITCH·PEACE game canvas. Use arrow keys or WASD to move. Press H for help.');
+  }
+
+  // Responsive canvas: fit viewport while keeping square aspect ratio
+  function _resizeCanvas() {
+    if (!canvas) return;
+    const size = Math.min(window.innerWidth, window.innerHeight, 620);
+    canvas.style.width  = `${size}px`;
+    canvas.style.height = `${size}px`;
+  }
+  _resizeCanvas();
+  window.addEventListener('resize', _resizeCanvas);
   
   // PHASE 1: Initialize new architecture components
   gameStateManager = new GameStateManager({
@@ -130,6 +172,10 @@ function initUI() {
       }
     },
     onQuitToTitle: ({ to }) => {
+      // Record session analytics when leaving the game
+      if (game.state === 'PLAYING' || game.state === 'PAUSED') {
+        try { recordSession(game); } catch (_) {}
+      }
       if (to === 'playing') {
         game.state = 'PLAYING';
         menuSystem.open('title');
@@ -213,9 +259,15 @@ game.temporalSystem = new TemporalSystem(game.settings.timezone);
 
 // PHASE 2: Mode switching function
 function switchGameMode() {
-  const availableModes = ['grid-classic', 'shooter', 'rpg'];
+  const availableModes = ['grid-classic', 'shooter', 'rpg', 'ornithology', 'mycology', 'architecture', 'constellation', 'alchemy', 'rhythm'];
+  const typeToId = {
+    'grid': 'grid-classic', 'shooter': 'shooter', 'rpg': 'rpg',
+    'ornithology': 'ornithology', 'mycology': 'mycology',
+    'architecture': 'architecture', 'constellation': 'constellation',
+    'alchemy': 'alchemy', 'rhythm': 'rhythm',
+  };
   const currentModeId = currentMode
-    ? (currentMode.type === 'shooter' ? 'shooter' : currentMode.type === 'rpg' ? 'rpg' : 'grid-classic')
+    ? (typeToId[currentMode.type] || 'grid-classic')
     : 'grid-classic';
   const currentIndex = availableModes.indexOf(currentModeId);
   const nextIndex = (currentIndex + 1) % availableModes.length;
@@ -239,6 +291,8 @@ function startGame() {
   game.state = 'PLAYING';
   if (game.level === 1) {
     game.player = createPlayer();
+    game._sessionStartMs = Date.now(); // track session start for Stats Dashboard
+    game._leaderboardRank = null;      // clear stale rank from previous run
   }
   
   // PHASE 1: Create and initialize game mode
@@ -270,6 +324,11 @@ function startGame() {
     spawnEnemies();
   }
   updateHUD(game);
+
+  // Show a brief first-play tip on level 1 so new players know where to start.
+  if (game.level === 1) {
+    _showGameTip('Collect ◈ Peace tiles to advance · Press H anytime for Help', 5000);
+  }
 }
 
 function spawnEnemies() {
@@ -290,6 +349,23 @@ function spawnEnemies() {
       }
     }
     game.enemies.push(enemy);
+  }
+}
+
+/** Timer handle for the game tip auto-dismiss (module-level to avoid DOM property mutation). */
+let _tipTimer = null;
+
+/** Show a brief tip message in the #message element, auto-fades after durationMs. */
+function _showGameTip(text, durationMs = 4000) {
+  try {
+    const el = document.getElementById('message');
+    if (!el) return;
+    el.textContent = text;
+    el.classList.add('show');
+    clearTimeout(_tipTimer);
+    _tipTimer = setTimeout(() => el.classList.remove('show'), durationMs);
+  } catch (e) {
+    console.warn('[_showGameTip] Could not display tip:', e);
   }
 }
 
@@ -319,6 +395,15 @@ document.addEventListener('keydown', e => {
       return;
     }
   }
+
+  // Stats dashboard: ESC or D closes it
+  if (game._showStats) {
+    if (e.key === 'Escape' || e.key === 'd' || e.key === 'D') {
+      game._showStats = false;
+      e.preventDefault();
+      return;
+    }
+  }
   
   // Game input
   if (game.state === 'PLAYING') {
@@ -335,6 +420,13 @@ document.addEventListener('keydown', e => {
       game.state = 'PAUSED';
       menuSystem._tutorialReturnScreen = 'pause'; // ESC from tutorial → pause menu
       menuSystem.open('tutorial');
+      e.preventDefault();
+      return;
+    }
+
+    // D key: toggle live stats dashboard overlay
+    if (e.key === 'd' || e.key === 'D') {
+      game._showStats = !game._showStats;
       e.preventDefault();
       return;
     }
@@ -356,7 +448,10 @@ const MOVE_MS = 150;
 function handleGameInput() {
   const now = Date.now();
   if (game.state !== 'PLAYING') return;
-  
+
+  // Poll gamepad each frame so controller input maps to keyboard actions
+  if (inputManager) inputManager.pollGamepad();
+
   // Use new InputManager if available and mode supports it
   if (inputManager && currentMode && currentMode.handleInput) {
     currentMode.handleInput(game, inputManager);
@@ -406,11 +501,22 @@ function render(deltaMs = 16) {
     const hint = document.querySelector('.controls-hint');
     if (hint) {
       hint.style.display = 'block';
-      hint.textContent = currentMode?.type === 'shooter'
-        ? 'WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Grid Mode · ESC: Pause'
-        : currentMode?.type === 'rpg'
-          ? '↑/↓: Dialogue · ENTER: Confirm · M: Grid Mode · ESC: Pause'
-          : 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · ESC: Pause';
+      const hints = {
+        'shooter':       'WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Switch Mode · ESC: Pause',
+        'rpg':           'WASD/Arrows: Move · Walk to ◈ Peace nodes · ↑/↓+ENTER: Dialogue · U: Shop · D: Stats · M: Switch Mode · ESC: Pause',
+        'ornithology':   'WASD/Arrows: Move to observe birds · 1-4: Answer challenges · M: Switch Mode · ESC: Pause',
+        'mycology':      'WASD/Arrows: Forage mushrooms · 1-4: Identify toxic species · M: Switch Mode · ESC: Pause',
+        'architecture':  'WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · M: Switch Mode · ESC: Pause',
+        'constellation': 'WASD/Arrows: Navigate to stars · Activate in sequence · M: Switch Mode · ESC: Pause',
+        'alchemy':       'WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute · M: Switch Mode · ESC: Pause',
+        'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
+      };
+      hint.textContent = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · D: Stats · ESC: Pause';
+    }
+
+    // Stats dashboard overlay — rendered on top of game, below game-over
+    if (game._showStats) {
+      renderStatsDashboard(game, ctx, canvas.width, canvas.height);
     }
   }
 
@@ -560,6 +666,9 @@ function updateConsciousnessEngine(deltaMs) {
     if (synergy.effect.shieldBonus && game.player) {
       game.player.hp = Math.min(game.player.maxHp, (game.player.hp || 0) + synergy.effect.shieldBonus);
     }
+    // Show synergy banner so player knows what fired
+    const label = synergy.message || (synergy.id ? synergy.id.replace(/_/g, ' ').toUpperCase() : '') || '';
+    game._synergyBanner = { text: label, shownAtMs: Date.now(), durationMs: 2800, id: synergy.id };
   }
 
   // Decay synergy multiplier after duration expires

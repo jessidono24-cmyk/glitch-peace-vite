@@ -8,7 +8,7 @@ import { generateGrid } from './grid-logic.js';
 import { createPlayer, movePlayer, takeDamage, heal } from './grid-player.js';
 import { createEnemy, updateEnemies } from './grid-enemy.js';
 import { createParticles, updateParticles } from './grid-particles.js';
-import { T, TILE_DEF, PLAYER, DIFF_CFG } from '../../core/constants.js';
+import { T, TILE_DEF, PLAYER, DIFF_CFG, SYNERGY_MESSAGES } from '../../core/constants.js';
 import { applyMode } from '../../systems/play-modes.js';
 import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscapes.js';
 import { updatePowerups, hasPowerup } from '../../systems/powerups.js';
@@ -61,6 +61,17 @@ import {
   renderArchetypeOverlay,
   getArchetypeForDreamscape,
 } from '../../systems/archetypes.js';
+import { logicPuzzles }        from '../../intelligence/logic-puzzles.js';
+import { emotionRecognition }  from '../../intelligence/emotion-recognition.js';
+import { empathyTraining }     from '../../intelligence/empathy-training.js';
+import { strategicThinking }   from '../../intelligence/strategic-thinking.js';
+import { achievementSystem }   from '../../systems/achievements.js';
+import { addScore }            from '../../systems/leaderboard.js';
+import { recordSession }       from '../../systems/session-analytics.js';
+
+// ── GLITCH tile animation constants ─────────────────────────────────────────
+const GLITCH_FLICKER_PERIOD_MS = 180;  // how fast the GLITCH tile color cycles
+const GLITCH_COLOR_COUNT = 6;          // number of distinct GLITCH colors
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -78,7 +89,11 @@ export class GridGameMode extends GameMode {
     this.tileSize = 0;
     this.lastMoveTime = 0;
     this.moveDelay = 150; // ms between moves
-    this._levelFlashMs = 0; // countdown ms for "LEVEL COMPLETE" overlay
+    this._levelFlashMs = 0;       // countdown ms for "LEVEL COMPLETE" overlay
+    this._LEVEL_FLASH_TOTAL = 3000; // total overlay duration ms
+    this._completedLevel = 0;      // level number captured before increment
+    this._levelStartScore = 0;     // score at start of level (for delta display)
+    this._levelScoreEarned = 0;    // score delta shown in transition screen
     this._ENEMY_HIT_COOLDOWN = 600; // ms between enemy collision hits
   }
 
@@ -160,12 +175,20 @@ export class GridGameMode extends GameMode {
    * Generate a new level
    */
   generateLevel(gameState) {
+    // Track score at level start (used by transition screen to compute earned delta)
+    this._levelStartScore = gameState.score || 0;
+
     // generateGrid modifies gameState directly (doesn't return result)
     generateGrid(gameState);
 
     // Apply dreamscape-specific tile bias
     const dreamscapeId = gameState.currentDreamscape || 'RIFT';
     applyDreamscapeBias(gameState, dreamscapeId);
+
+    // Play dreamscape-specific ambient tone when entering The Mirror
+    if (dreamscapeId === 'MIRROR') {
+      try { window.AudioManager?.play('mirror_chime'); } catch(_) {}
+    }
     
     // Grid data is already in gameState.grid, gameState.peaceNodes, etc.
     // No need to copy to modeState - we'll use gameState directly
@@ -392,6 +415,31 @@ export class GridGameMode extends GameMode {
     // Update archetype system (reveal-hidden timer, etc.)
     updateArchetypes(gameState, deltaTime);
 
+    // ── Phase 9: Intelligence systems tick every frame ─────────────────────
+    logicPuzzles.tick();
+    emotionRecognition.tick();
+    empathyTraining.tick();
+    // Observe dominant emotion for EQ labeling
+    const domEmo = gameState.emotionalField?.getDominant?.();
+    if (domEmo) {
+      const domVal = gameState.emotionalField?.emotions?.[domEmo] || 0;
+      emotionRecognition.observe(domEmo, domVal, gameState.matrixActive);
+    }
+    // Track max combo for achievements
+    const curCombo = gameState.combo || 0;
+    if (curCombo > (gameState._maxComboThisSession || 0)) {
+      gameState._maxComboThisSession = curCombo;
+    }
+    // Track dreamscapes visited for achievements
+    if (gameState.currentDreamscape) {
+      if (!gameState._dreamscapesVisited) gameState._dreamscapesVisited = new Set();
+      gameState._dreamscapesVisited.add(gameState.currentDreamscape);
+    }
+    // Expose empathy behaviors witnessed count for achievements
+    gameState._empathyBehaviorsWitnessed = empathyTraining.behaviorsWitnessed;
+    // Check achievements
+    achievementSystem.check(gameState);
+
     // Matrix A/B: energy drain (Matrix A) or regen (Matrix B)
     if (gameState.matrixActive === 'A') {
       gameState.energy = Math.max(0, (gameState.energy || 0) - 0.8 * (deltaTime / 16));
@@ -472,6 +520,10 @@ export class GridGameMode extends GameMode {
 
     for (const enemy of gameState.enemies) {
       if (enemy.x === px && enemy.y === py) {
+        // Empathy training: register this encounter (surface emotional context for new behaviors)
+        const behavior = enemy.behavior || (enemy.isBoss ? 'boss' : 'chase');
+        empathyTraining.onEnemyEncounter(behavior);
+
         // PACIFIST / noCombat mode: no damage, but score bonus for "stealth" (being close)
         if (gameState.mechanics?.noCombat) {
           // Stealth score: reward being adjacent without dying
@@ -495,6 +547,12 @@ export class GridGameMode extends GameMode {
           if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', enemy.isBoss ? 1.0 : 0.5);
           createParticles(gameState, px, py, enemy.isBoss ? '#ff44aa' : 'damage', enemy.isBoss ? 16 : 8);
           try { window.AudioManager?.play('damage'); } catch (e) {}
+          // Gamepad rumble on hit — tactile feedback
+          try { gameState.input?.vibrateGamepad(0.6, 0.3, enemy.isBoss ? 300 : 150); } catch (_) {}
+          // Strategic thinking: record damage and which matrix was active
+          strategicThinking.onDamage(gameState.matrixActive || 'B');
+          // Reset no-damage tracking for pacifist achievement
+          gameState._noDamageThisLevel = false;
         }
         break;
       }
@@ -509,6 +567,12 @@ export class GridGameMode extends GameMode {
     const grid = gameState.grid;
     const tileSize = this.tileSize;
 
+    // ── GAME_OVER: render compassionate overlay without returning to menu ──
+    if (gameState.state === 'GAME_OVER') {
+      this._renderGameOver(gameState, ctx);
+      return;
+    }
+
     if (!grid || !Array.isArray(grid)) {
       console.warn('[GridGameMode] No grid data to render');
       return;
@@ -519,30 +583,94 @@ export class GridGameMode extends GameMode {
     ctx.fillStyle = theme.bg;
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    // Dreamscape ambient tint behind tiles
-    if (theme.ambient) {
+    // High Contrast mode: override background with black for WCAG AA compliance
+    const highContrast = gameState.settings?.highContrast;
+    if (highContrast) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+
+    // Dreamscape ambient tint behind tiles (skip in high contrast)
+    if (theme.ambient && !highContrast) {
       ctx.fillStyle = theme.ambient;
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
 
-    // Render grid tiles
+    // High Contrast tile color overrides — WCAG AA (4.5:1 on black background)
+    // Maps each tile type to a strongly contrasting fill and symbol color.
+    const HC_TILE = highContrast ? {
+      bg: '#000000', bd: '#555555',
+      [T.PEACE]:    { bg: '#001a00', bd: '#00ff44', sy: '#00ff44' },
+      [T.INSIGHT]:  { bg: '#001818', bd: '#00ffee', sy: '#00ffee' },
+      [T.ARCH]:     { bg: '#1a1400', bd: '#ffee00', sy: '#ffee00' },
+      [T.DESPAIR]:  { bg: '#000033', bd: '#4488ff', sy: '#4488ff' },
+      [T.TERROR]:   { bg: '#220000', bd: '#ff3333', sy: '#ff3333' },
+      [T.HARM]:     { bg: '#1a0000', bd: '#ff6666', sy: '#ff6666' },
+      [T.RAGE]:     { bg: '#1a0010', bd: '#ff44bb', sy: '#ff44bb' },
+      [T.HOPELESS]: { bg: '#001020', bd: '#3399ff', sy: '#3399ff' },
+      [T.GLITCH]:   { bg: '#0d0022', bd: '#cc88ff', sy: '#cc88ff' },
+      [T.TRAP]:     { bg: '#1a0a00', bd: '#ffaa33', sy: '#ffaa33' },
+      [T.TELE]:     { bg: '#001422', bd: '#33aaff', sy: '#33aaff' },
+      [T.COVER]:    { bg: '#0a0a14', bd: '#aaaacc', sy: '#aaaacc' },
+      [T.MEM]:      { bg: '#000a08', bd: '#66ccaa', sy: '#66ccaa' },
+      [T.WALL]:     { bg: '#141414', bd: '#888888', sy: null },
+    } : null;
+
+    // Render grid tiles (with per-tile animations for GLITCH and INSIGHT)
+    const nowTile = Date.now();
     for (let y = 0; y < grid.length; y++) {
       for (let x = 0; x < grid[y].length; x++) {
         const tile = grid[y][x];
         const tileDef = TILE_DEF[tile] || {};
+        const hcDef   = HC_TILE?.[tile];
         
         // Draw tile
-        ctx.fillStyle = tileDef.bg || '#1a1a2e';
+        ctx.fillStyle = hcDef ? hcDef.bg : (tileDef.bg || '#1a1a2e');
         ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
         // Draw border
-        ctx.strokeStyle = tileDef.bd || 'rgba(255,255,255,0.1)';
+        ctx.strokeStyle = hcDef ? hcDef.bd : (tileDef.bd || 'rgba(255,255,255,0.1)');
         ctx.lineWidth = 1;
         ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
-        // Draw symbol
+        // ── GLITCH tile: random color flicker every GLITCH_FLICKER_PERIOD_MS ─
+        if (tile === T.GLITCH) {
+          const flicker = (Math.floor(nowTile / GLITCH_FLICKER_PERIOD_MS + x * 7 + y * 13) % GLITCH_COLOR_COUNT);
+          const glitchColors = ['#dd00ff','#ff00aa','#00ffdd','#ffdd00','#ff4455','#aa00ff'];
+          ctx.save();
+          ctx.globalAlpha = 0.55 + 0.45 * ((flicker % 2) === 0 ? 1 : 0.4);
+          ctx.fillStyle = glitchColors[flicker];
+          ctx.shadowColor = glitchColors[flicker];
+          ctx.shadowBlur = 6;
+          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('?', x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
+        // ── INSIGHT tile: slow shimmer glow ──────────────────────────────
+        if (tile === T.INSIGHT) {
+          const shimmer = 0.55 + 0.45 * Math.sin(nowTile / 900 + x * 1.1 + y * 0.7);
+          ctx.save();
+          ctx.globalAlpha = shimmer;
+          ctx.shadowColor = '#00ffee';
+          ctx.shadowBlur = 6 + shimmer * 8;
+          ctx.fillStyle = '#00ffee';
+          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('◆', x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
+        // Draw symbol (default)
         if (tileDef.sy) {
-          ctx.fillStyle = tileDef.g || tileDef.bd || '#fff';
+          ctx.fillStyle = hcDef?.sy || tileDef.g || tileDef.bd || '#fff';
           ctx.font = `${tileSize * 0.6}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -555,23 +683,33 @@ export class GridGameMode extends GameMode {
       }
     }
 
-    // Render peace nodes (use gameState.peaceNodes)
+    // Render peace nodes with animated pulse glow
     const peaceNodes = gameState.peaceNodes;
     if (peaceNodes) {
-      peaceNodes.forEach(node => {
+      const nowPeace = Date.now();
+      peaceNodes.forEach((node, idx) => {
         if (!node.collected) {
-          ctx.fillStyle = TILE_DEF[T.PEACE].bg;
+          const pulse = 0.55 + 0.45 * Math.sin(nowPeace / 700 + idx * 0.8);
+          const px = node.x * tileSize + tileSize / 2;
+          const py = node.y * tileSize + tileSize / 2;
+          ctx.save();
+          // Glow halo
+          ctx.globalAlpha = pulse * 0.35;
+          ctx.fillStyle = '#00ff88';
+          ctx.shadowColor = '#00ff88';
+          ctx.shadowBlur = 10;
           ctx.fillRect(node.x * tileSize, node.y * tileSize, tileSize, tileSize);
-          
-          ctx.fillStyle = TILE_DEF[T.PEACE].g || '#fff';
+          // Symbol
+          ctx.globalAlpha = 0.7 + pulse * 0.3;
+          ctx.shadowColor = '#00ff88';
+          ctx.shadowBlur = 8 + pulse * 6;
+          ctx.fillStyle = TILE_DEF[T.PEACE].g || '#00ff88';
           ctx.font = `${tileSize * 0.6}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(
-            TILE_DEF[T.PEACE].sy,
-            node.x * tileSize + tileSize / 2,
-            node.y * tileSize + tileSize / 2
-          );
+          ctx.fillText(TILE_DEF[T.PEACE].sy, px, py);
+          ctx.shadowBlur = 0;
+          ctx.restore();
         }
       });
     }
@@ -706,28 +844,75 @@ export class GridGameMode extends GameMode {
       }
     }
 
-    // Level-complete overlay flash
+    // ── Level-complete transition overlay ────────────────────────────────
     if (this._levelFlashMs > 0) {
+      const total = this._LEVEL_FLASH_TOTAL;
+      const remaining = this._levelFlashMs;
+      const age = total - remaining;
+      const w = ctx.canvas.width;
+      const h = ctx.canvas.height;
+
+      // Smooth fade-in (0→400ms) + solid hold + fade-out (last 600ms)
+      const fadeIn  = Math.min(1, age / 400);
+      const fadeOut = remaining < 600 ? remaining / 600 : 1;
+      const alpha   = fadeIn * fadeOut;
+
       const completed = this._completedLevel || (gameState.level - 1);
-      const bonus = 500 * completed;
-      const alpha = Math.min(0.72, this._levelFlashMs / 800);
-      const theme = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+      const earned    = this._levelScoreEarned || (500 * completed);
+      const theme     = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+      const accent    = theme.accent || '#00ff88';
+
       ctx.save();
+
+      // Nearly-opaque background so text is fully legible
+      ctx.globalAlpha = alpha * 0.93;
+      ctx.fillStyle   = theme.bg || '#040408';
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle accent scanlines at ±35% height
+      ctx.globalAlpha = alpha * 0.25;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth   = 1;
+      [[h * 0.38, w * 0.08, w * 0.92], [h * 0.64, w * 0.08, w * 0.92]].forEach(([y, x0, x1]) => {
+        ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      });
+
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = theme.bg;
-      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      ctx.globalAlpha = 1.0;
-      ctx.fillStyle = theme.accent;
-      ctx.font = `bold ${Math.floor(ctx.canvas.width / 12)}px monospace`;
-      ctx.textAlign = 'center';
+      ctx.textAlign   = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = theme.accent;
-      ctx.shadowBlur = 24;
-      ctx.fillText(`LEVEL ${completed} COMPLETE`, ctx.canvas.width / 2, ctx.canvas.height / 2 - 20);
-      ctx.shadowBlur = 0;
-      ctx.font = `${Math.floor(ctx.canvas.width / 22)}px monospace`;
-      ctx.fillStyle = '#b8b8d0';
-      ctx.fillText(`+${bonus} pts · Level ${gameState.level} begins`, ctx.canvas.width / 2, ctx.canvas.height / 2 + 24);
+
+      // ── Header: level complete ───────────────────────────────────────
+      ctx.shadowColor = accent;
+      ctx.shadowBlur  = 22;
+      ctx.fillStyle   = accent;
+      ctx.font        = `bold ${Math.floor(w / 13)}px monospace`;
+      ctx.fillText(`LEVEL  ${completed}  COMPLETE`, w / 2, h * 0.30);
+      ctx.shadowBlur  = 0;
+
+      // ── Score earned ────────────────────────────────────────────────
+      ctx.fillStyle = '#ffdd88';
+      ctx.font      = `${Math.floor(w / 24)}px monospace`;
+      ctx.fillText(`+${earned.toLocaleString()} pts earned`, w / 2, h * 0.43);
+
+      // ── Total score ─────────────────────────────────────────────────
+      ctx.fillStyle = '#778899';
+      ctx.font      = `${Math.floor(w / 30)}px monospace`;
+      ctx.fillText(`Total: ${(gameState.score || 0).toLocaleString()}`, w / 2, h * 0.50);
+
+      // ── Next level line ──────────────────────────────────────────────
+      ctx.fillStyle = '#99aacc';
+      ctx.font      = `${Math.floor(w / 26)}px monospace`;
+      ctx.fillText(`Level ${gameState.level} loading...`, w / 2, h * 0.59);
+
+      // ── Skip prompt (appears after hard-block expires at 1.5s) ───────
+      if (age > 1500) {
+        ctx.globalAlpha = alpha * Math.min(1, (age - 1500) / 300);
+        ctx.fillStyle   = '#445566';
+        ctx.font        = `${Math.floor(w / 38)}px monospace`;
+        ctx.fillText('Move or Space to continue', w / 2, h * 0.72);
+        ctx.globalAlpha = alpha;
+      }
+
       ctx.restore();
     }
 
@@ -903,6 +1088,201 @@ export class GridGameMode extends GameMode {
         delete gameState._breathingPrompt;
       }
     }
+
+    // ── Combo multiplier indicator (bottom-left) ─────────────────────────
+    const combo = gameState.combo || 0;
+    if (combo >= 2) {
+      const comboMul = (1 + Math.min(3, (combo - 1) * 0.2)).toFixed(1);
+      const w = ctx.canvas.width;
+      const h = ctx.canvas.height;
+      // Cosine pulse on fresh combo hits: scale briefly exceeds 1.0 then settles
+      const COMBO_PULSE_DURATION_MS = 220;  // pulse lasts 220ms after each collect
+      const COMBO_PULSE_AMPLITUDE   = 0.18; // scale goes up to 1.18× at peak
+      const timeSinceLastCombo = gameState.comboTimer ? Date.now() - gameState.comboTimer : 9999;
+      const pulse = timeSinceLastCombo < COMBO_PULSE_DURATION_MS
+        ? 1 + COMBO_PULSE_AMPLITUDE * Math.cos(timeSinceLastCombo / COMBO_PULSE_DURATION_MS * Math.PI / 2)
+        : 1.0;
+      ctx.save();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      const fontSize = Math.floor(w / 22 * pulse);
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.shadowColor = '#ffdd44';
+      ctx.shadowBlur = 8 * pulse;
+      ctx.fillStyle = combo >= 10 ? '#ff9900' : '#ffdd44';
+      ctx.fillText(`×${comboMul} COMBO ${combo}`, 10, h - 10);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // ── Synergy banner (center, timed) ──────────────────────────────────
+    if (gameState._synergyBanner) {
+      const { text, shownAtMs, durationMs } = gameState._synergyBanner;
+      const age = Date.now() - shownAtMs;
+      if (age < durationMs) {
+        const fade = Math.min(1, age / 250) * (age > durationMs - 500 ? (durationMs - age) / 500 : 1);
+        const w = ctx.canvas.width;
+        ctx.save();
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = '#ffdd88';
+        ctx.font = `bold ${Math.floor(w / 26)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#ffaa00';
+        ctx.shadowBlur = 12;
+        ctx.fillText(`✦ ${text} ✦`, w / 2, ctx.canvas.height * 0.78);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else {
+        delete gameState._synergyBanner;
+      }
+    }
+
+    // ── Quest completed banner (used by RPGMode, shown on grid too) ──────
+    if (gameState._questCompleted) {
+      const now = Date.now();
+      if (!gameState._questCompletedAt) gameState._questCompletedAt = now;
+      const age = now - gameState._questCompletedAt;
+      const dur = 3000;
+      if (age < dur) {
+        const fade = Math.min(1, age / 300) * (age > dur - 600 ? (dur - age) / 600 : 1);
+        const w = ctx.canvas.width;
+        ctx.save();
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = '#aaffcc';
+        ctx.font = `bold ${Math.floor(w / 26)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#00ffcc';
+        ctx.shadowBlur = 10;
+        ctx.fillText(`◇ QUEST: ${gameState._questCompleted}`, w / 2, ctx.canvas.height * 0.85);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else {
+        delete gameState._questCompleted;
+        delete gameState._questCompletedAt;
+      }
+    }
+
+    // ── Phase 9: Intelligence overlays ─────────────────────────────────────
+
+    // Logic Puzzle: sequence challenge (shown after each dreamscape completion)
+    const challenge = logicPuzzles.activeChallenge;
+    if (challenge) {
+      const a    = logicPuzzles.challengeAlpha;
+      const cw   = ctx.canvas.width;
+      const ch   = ctx.canvas.height;
+      const PW   = Math.min(380, Math.floor(cw * 0.72));
+      const PH   = 110;
+      const cpx  = Math.floor((cw - PW) / 2);
+      const cpy  = Math.floor(ch * 0.18);
+      ctx.save();
+      ctx.globalAlpha = a * 0.96;
+      ctx.fillStyle   = 'rgba(4,6,20,0.96)';
+      ctx.fillRect(cpx, cpy, PW, PH);
+      ctx.strokeStyle = '#00ffee';
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(cpx, cpy, PW, PH);
+      ctx.globalAlpha = a;
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle   = '#00ffee';
+      ctx.font        = `bold ${Math.floor(cw / 32)}px monospace`;
+      ctx.shadowColor = '#00ffee';
+      ctx.shadowBlur  = 8;
+      ctx.fillText(`◆ ${challenge.name}`, cw / 2, cpy + 20);
+      ctx.shadowBlur  = 0;
+      // Sequence display
+      ctx.fillStyle = '#ccddff';
+      ctx.font      = `${Math.floor(cw / 28)}px monospace`;
+      ctx.fillText(`${challenge.seq.join('  ·  ')}  ·  ?`, cw / 2, cpy + 50);
+      // Next answer
+      ctx.fillStyle = '#ffdd44';
+      ctx.font      = `bold ${Math.floor(cw / 30)}px monospace`;
+      ctx.fillText(`Next: ${challenge.next}`, cw / 2, cpy + 75);
+      // Fact below
+      ctx.fillStyle = '#667788';
+      ctx.font      = `${Math.floor(cw / 44)}px monospace`;
+      // Truncate fact to canvas width
+      const maxChars = Math.floor(PW / 6.5);
+      const fact = challenge.fact.length > maxChars ? challenge.fact.slice(0, maxChars - 1) + '…' : challenge.fact;
+      ctx.fillText(fact, cw / 2, cpy + 96);
+      ctx.restore();
+    }
+
+    // Emotion Recognition: dominant emotion label flash (right-side HUD)
+    const emotionFlash = emotionRecognition.flashLabel;
+    if (emotionFlash) {
+      const ea  = emotionRecognition.flashAlpha;
+      const ew  = ctx.canvas.width;
+      const eh  = ctx.canvas.height;
+      const EW  = Math.min(180, Math.floor(ew * 0.32));
+      const efx = ew - EW - 8;
+      const efy = Math.floor(eh * 0.52);
+      ctx.save();
+      ctx.globalAlpha = ea * 0.92;
+      ctx.fillStyle   = 'rgba(4,6,20,0.88)';
+      ctx.fillRect(efx, efy, EW, 52);
+      ctx.strokeStyle = emotionFlash.color;
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(efx, efy, EW, 52);
+      ctx.globalAlpha = ea;
+      ctx.textAlign   = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle   = emotionFlash.color;
+      ctx.font        = `bold ${Math.floor(ew / 34)}px monospace`;
+      ctx.fillText(emotionFlash.label, efx + 8, efy + 8);
+      ctx.fillStyle = '#778899';
+      ctx.font      = `${Math.floor(ew / 52)}px monospace`;
+      // Word-wrap tip to EW width
+      const tipMax = Math.floor((EW - 16) / 5.5);
+      const tip = emotionFlash.tip.length > tipMax ? emotionFlash.tip.slice(0, tipMax) + '…' : emotionFlash.tip;
+      ctx.fillText(tip, efx + 8, efy + 28);
+      ctx.restore();
+    }
+
+    // Empathy Training: compassion phrase (bottom-center) when enemy stunned
+    const compassPhrase = empathyTraining.compassPhrase;
+    if (compassPhrase) {
+      const cpAlpha = Math.min(1, compassPhrase.timer / 20);
+      const ew = ctx.canvas.width;
+      ctx.save();
+      ctx.globalAlpha = cpAlpha * 0.88;
+      ctx.fillStyle   = '#aaddff';
+      ctx.font        = `${Math.floor(ew / 36)}px monospace`;
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(compassPhrase.text, ew / 2, ctx.canvas.height - 16);
+      ctx.restore();
+    }
+
+    // Empathy emotion flash (top-left context label when first encountering new behavior)
+    const empathyFlash = empathyTraining.flashEmotion;
+    if (empathyFlash) {
+      const epa = empathyTraining.flashAlpha;
+      const ew  = ctx.canvas.width;
+      ctx.save();
+      ctx.globalAlpha = epa * 0.9;
+      ctx.fillStyle   = empathyFlash.color;
+      ctx.font        = `${Math.floor(ew / 38)}px monospace`;
+      ctx.textAlign   = 'left';
+      ctx.textBaseline = 'top';
+      ctx.shadowColor = empathyFlash.color;
+      ctx.shadowBlur  = 6;
+      ctx.fillText(`⟳ ${empathyFlash.label}`, 8, ctx.canvas.height * 0.6);
+      ctx.shadowBlur  = 0;
+      ctx.fillStyle   = '#778899';
+      ctx.font        = `${Math.floor(ew / 52)}px monospace`;
+      const insightMax = Math.floor((ctx.canvas.width * 0.35) / 5.5);
+      const ins = empathyFlash.insight.length > insightMax
+        ? empathyFlash.insight.slice(0, insightMax) + '…'
+        : empathyFlash.insight;
+      ctx.fillText(ins, 8, ctx.canvas.height * 0.6 + 16);
+      ctx.restore();
+    }
+
+    // Achievement badge (top-right)
+    achievementSystem.renderBadge(ctx, ctx.canvas.width, ctx.canvas.height);
   }
 
   /**
@@ -938,6 +1318,44 @@ export class GridGameMode extends GameMode {
   handleInput(gameState, input) {
     const now = Date.now();
 
+    // ── GAME_OVER: ENTER restarts the level; ESC is handled by main.js ───
+    if (gameState.state === 'GAME_OVER') {
+      const age = gameState._gameOverAt ? now - gameState._gameOverAt : 9999;
+      if (age > 1200 && (input.isKeyPressed('Enter') || input.isKeyPressed(' '))) {
+        // Soft restart: reset level to 1, fresh player, clear game-over flag
+        gameState.state = 'PLAYING';
+        gameState.level = 1;
+        gameState.score = 0;
+        gameState.combo = 0;
+        gameState.comboTimer = null;
+        gameState.player = createPlayer();
+        gameState.glitchPulseCharge = 0;
+        gameState.energy = 60;
+        gameState.insightTokens = 0;
+        gameState.peaceCollected = 0;
+        gameState.peaceTotal = 0;
+        this._gameOverMsg = null;
+        delete gameState._gameOverAt;
+        this.generateLevel(gameState);
+      }
+      return;
+    }
+
+    // ── Level transition: block input until overlay has been readable ──────
+    if (this._levelFlashMs > 0) {
+      const age = this._LEVEL_FLASH_TOTAL - this._levelFlashMs;
+      // Hard block for first 1.5s so the player always reads the screen.
+      if (age < 1500) return;
+      // After 1.5s: any directional move or SPACE/ENTER dismisses the overlay.
+      const dir = input.getDirectionalInput?.();
+      if ((dir && (dir.x !== 0 || dir.y !== 0))
+          || input.isKeyPressed?.(' ')
+          || input.isKeyPressed?.('Enter')) {
+        this._levelFlashMs = 0;
+      }
+      return;
+    }
+
     // SHIFT: toggle Matrix A ↔ B
     if (input.isKeyPressed('Shift')) {
       gameState.matrixActive = gameState.matrixActive === 'A' ? 'B' : 'A';
@@ -946,6 +1364,7 @@ export class GridGameMode extends GameMode {
         color: gameState.matrixActive === 'A' ? '#ff3344' : '#00ff88',
         expiresMs: now + 1800,
       };
+      logicPuzzles.onMatrixSwitch();
     }
 
     // J key: activate archetype power
@@ -1081,6 +1500,12 @@ export class GridGameMode extends GameMode {
         this.lastMoveTime = now;
         // Record echo position (pattern trail)
         recordEchoPosition(gameState);
+        // Phase 9: track mindful vs. reactive move
+        const usedPreview = (gameState._consequencePreview?.length > 0);
+        const impulseActive = !!gameState._impulseBuffer;
+        logicPuzzles.onMove(usedPreview, impulseActive);
+        if (usedPreview || impulseActive) strategicThinking.onMindfulMove();
+        else strategicThinking.onImpulsiveMove();
         // Phase walk: decrement move counter
         if (gameState._phaseWalkMoves > 0) {
           gameState._phaseWalkMoves--;
@@ -1095,6 +1520,20 @@ export class GridGameMode extends GameMode {
             delete gameState._archetypeShield;
             gameState._archetypeMsg = { text: 'SHIELD FADED', color: '#446688', expiresMs: now + 1000 };
           }
+        }
+        // Witness: decrement clarity tile counters on each move
+        if (gameState._clarityTiles?.length) {
+          gameState._clarityTiles = gameState._clarityTiles.filter(ct => {
+            ct.movesLeft--;
+            if (ct.movesLeft <= 0) {
+              // Restore original shadow tile only if still COVER
+              if (gameState.grid[ct.y]?.[ct.x] === T.COVER) {
+                gameState.grid[ct.y][ct.x] = ct.original;
+              }
+              return false;
+            }
+            return true;
+          });
         }
         // Glitch Pulse: charge +15 per peace node collected (tracked via peaceCollected change)
         if (gameState._lastPeaceCollected !== gameState.peaceCollected) {
@@ -1120,11 +1559,29 @@ export class GridGameMode extends GameMode {
    */
   onLevelComplete(gameState) {
     console.log(`[GridGameMode] Level ${gameState.level} complete!`);
-    this._levelFlashMs = 1800; // show completion overlay for 1.8s
     this._completedLevel = gameState.level; // capture before increment
-    
+
+    // Capture score earned during this level (before bonus)
+    const preBonusScore = gameState.score || 0;
+    const levelBonus = 500 * gameState.level;
+
     // Award bonus points
-    gameState.score += 500 * gameState.level;
+    gameState.score = preBonusScore + levelBonus;
+
+    // Store total score earned this level (gameplay delta + completion bonus)
+    // Use ?? instead of || so a legitimate _levelStartScore of 0 (level 1) is handled correctly
+    this._levelScoreEarned = (preBonusScore - (this._levelStartScore ?? 0)) + levelBonus;
+
+    // Start the readable transition overlay (3s total — blocks input for first 1.5s)
+    this._levelFlashMs = this._LEVEL_FLASH_TOTAL;
+    try { window.AudioManager?.play('level_complete'); } catch(e) {}
+    // Gamepad rumble on level complete — celebratory pulse
+    try { gameState.input?.vibrateGamepad(0.2, 0.7, 200); } catch(_) {}
+    
+    // Phase 9: signal dreamscape completion to logic puzzles (surfaces sequence challenge)
+    logicPuzzles.onDreamscapeComplete();
+    // Reset no-damage tracking for pacifist achievement
+    gameState._noDamageThisLevel = true;
     
     // Reset per-level state
     resetRelapseCompassion(gameState);
@@ -1154,7 +1611,7 @@ export class GridGameMode extends GameMode {
       openUpgradeShop(gameState);
     }
     
-    // Generate new level
+    // Generate new level grid (ready underneath the transition overlay)
     this.generateLevel(gameState);
   }
 
@@ -1193,11 +1650,107 @@ export class GridGameMode extends GameMode {
     if (gameState.state === 'GAME_OVER') return; // already handled
     console.log('[GridGameMode] Game Over');
     gameState.state = 'GAME_OVER';
+    gameState._gameOverAt = Date.now();
+
+    // Persist score to local leaderboard
+    const rank = addScore(gameState);
+    gameState._leaderboardRank = rank; // show in overlay if top-10
+
+    // Record session analytics
+    recordSession(gameState);
     
     // Trigger emotion
     if (gameState.emotionalField && typeof gameState.emotionalField.add === 'function') {
       gameState.emotionalField.add('despair', 1.5);
     }
+  }
+
+  /**
+   * Compassionate game-over overlay (rendered in place of the grid).
+   * Non-punishment framing; shows what was accomplished, offers a gentle way forward.
+   * Research basis: relapse compassion design (Sovereign Codex) + polyvagal safety cues.
+   */
+  _renderGameOver(gameState, ctx) {
+    // Pick a compassionate ending message (deterministic based on score mod)
+    const messages = [
+      'Every pattern teaches. You learned.',
+      'The pattern paused. It has not ended.',
+      'Returning is not failure — it is courage.',
+      'You played. That matters.',
+      'The grid remembers your path.',
+      'Rest. The pattern will be here.',
+    ];
+    // Score is divided by this to index into the messages array;
+    // 100 gives variety across a typical score range without cycling too fast.
+    const GAME_OVER_MESSAGE_SCORE_DIVISOR = 100;
+    if (!this._gameOverMsg) {
+      this._gameOverMsg = messages[Math.floor((gameState.score || 0) / GAME_OVER_MESSAGE_SCORE_DIVISOR) % messages.length];
+    }
+    const theme = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    const age = gameState._gameOverAt ? Date.now() - gameState._gameOverAt : 9999;
+
+    // Fade-in (600ms)
+    const fadeIn = Math.min(1, age / 600);
+
+    ctx.save();
+    ctx.globalAlpha = fadeIn * 0.92;
+    ctx.fillStyle = theme.bg || '#040408';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = fadeIn;
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Dim accent lines
+    ctx.globalAlpha = fadeIn * 0.18;
+    ctx.strokeStyle = '#882244';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(w * 0.1, h * 0.35); ctx.lineTo(w * 0.9, h * 0.35); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w * 0.1, h * 0.68); ctx.lineTo(w * 0.9, h * 0.68); ctx.stroke();
+    ctx.globalAlpha = fadeIn;
+
+    // Header
+    ctx.fillStyle = '#ff4466';
+    ctx.font = `bold ${Math.floor(w / 13)}px monospace`;
+    ctx.shadowColor = '#ff2244';
+    ctx.shadowBlur = 18;
+    ctx.fillText('PATTERN INCOMPLETE', w / 2, h * 0.25);
+    ctx.shadowBlur = 0;
+
+    // Compassionate message
+    ctx.fillStyle = '#aabbcc';
+    ctx.font = `${Math.floor(w / 26)}px monospace`;
+    ctx.fillText(this._gameOverMsg, w / 2, h * 0.40);
+
+    // Stats
+    ctx.fillStyle = '#667799';
+    ctx.font = `${Math.floor(w / 30)}px monospace`;
+    ctx.fillText(`Score: ${(gameState.score || 0).toLocaleString()}  ·  Level ${gameState.level || 1}`, w / 2, h * 0.51);
+    ctx.fillText(`Peace nodes collected: ${gameState.peaceCollected || 0}`, w / 2, h * 0.57);
+
+    // Leaderboard rank (show only for valid 1-based ranks 1–10)
+    if (gameState._leaderboardRank >= 1 && gameState._leaderboardRank <= 10) {
+      ctx.fillStyle = gameState._leaderboardRank <= 3 ? '#ffcc44' : '#778899';
+      ctx.font = `${Math.floor(w / 32)}px monospace`;
+      ctx.fillText(`Personal best #${gameState._leaderboardRank} for this run`, w / 2, h * 0.63);
+    }
+
+    // Action prompts (appear after 1.2s)
+    if (age > 1200) {
+      const promptFade = Math.min(1, (age - 1200) / 400);
+      ctx.globalAlpha = fadeIn * promptFade;
+      ctx.fillStyle = '#99aacc';
+      ctx.font = `${Math.floor(w / 28)}px monospace`;
+      ctx.fillText('ENTER  · try again', w / 2, h * 0.70);
+      ctx.fillStyle = '#556677';
+      ctx.font = `${Math.floor(w / 36)}px monospace`;
+      ctx.fillText('ESC  · return to menu', w / 2, h * 0.78);
+      ctx.globalAlpha = fadeIn;
+    }
+
+    ctx.restore();
   }
 
   /**

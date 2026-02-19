@@ -403,10 +403,27 @@ export function getModeConfig(modeName) {
 }
 
 // Apply mode settings to game
+/**
+ * Get today's Daily Challenge seed — a deterministic integer derived from the
+ * ISO date string (YYYY-MM-DD). Same seed for all players on the same calendar day.
+ * Uses a simple djb2-style hash so no external dependency is needed.
+ * @returns {number} Seed in range [0, 2^31)
+ */
+export function getDailyChallengeSeed() {
+  const dateStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
+  let hash = 5381;
+  for (let i = 0; i < dateStr.length; i++) {
+    // djb2: hash * 33 XOR charCode
+    hash = ((hash << 5) + hash) ^ dateStr.charCodeAt(i);
+    hash = hash & 0x7fffffff; // keep positive 31-bit integer
+  }
+  return hash;
+}
+
 export function applyMode(game, mode) {
   const cfg = getModeConfig(mode);
   if (!cfg) return game;
-  
+
   // Apply config multipliers
   game.peaceMul = typeof cfg.config.peaceMul === 'string' ? 1.0 : cfg.config.peaceMul;
   game.hazardMul = typeof cfg.config.hazardMul === 'string' ? 1.0 : cfg.config.hazardMul;
@@ -416,6 +433,19 @@ export function applyMode(game, mode) {
   // Apply mechanics
   if (!game.mechanics) game.mechanics = {};
   Object.assign(game.mechanics, cfg.mechanics);
+
+  // Daily Challenge: apply deterministic seed so tile layout is reproducible for the day
+  if (cfg.mechanics?.seed === 'daily') {
+    game._dailySeed = getDailyChallengeSeed();
+    // Use seed to deterministically pick multipliers for 'random' fields
+    const rng = (offset = 0) => {
+      const s = (game._dailySeed + offset) & 0x7fffffff;
+      return (s % 100) / 100; // 0.0–0.99
+    };
+    if (typeof cfg.config.peaceMul  === 'string') game.peaceMul   = 0.5 + rng(1);
+    if (typeof cfg.config.hazardMul === 'string') game.hazardMul  = 0.5 + rng(2);
+    if (typeof cfg.config.insightMul === 'string') game.insightMul = 0.5 + rng(3);
+  }
   
   // Apply special rules
   if (cfg.mechanics.permadeath) {

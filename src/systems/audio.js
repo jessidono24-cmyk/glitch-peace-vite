@@ -112,6 +112,76 @@ export class AudioEngine {
         const t = i / sr;
         data[i] = Math.sin(2 * Math.PI * (300 + 600 * t) * t) * Math.exp(-t * 2.0);
       }
+    } else if (name === 'heal') {
+      // Gentle upward glissando — soft, reassuring healing sound
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        const f = 330 + 220 * t / 0.4; // 330→550Hz over 400ms
+        data[i] = 0.45 * Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 2.5)
+                + 0.20 * Math.sin(2 * Math.PI * f * 1.5 * t) * Math.exp(-t * 3.0);
+      }
+    } else if (name === 'level_complete') {
+      // Major chord arpeggio sweep (C-E-G-C') — victory feeling
+      const notes = [261.6, 329.6, 392.0, 523.3];
+      len = Math.floor(sr * 0.8);
+      buf = this.ctx.createBuffer(1, len, sr);
+      data = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        const noteIdx = Math.min(notes.length - 1, Math.floor(t / 0.18));
+        data[i] = 0.5 * Math.sin(2 * Math.PI * notes[noteIdx] * t) * Math.exp(-((t % 0.18) * 6));
+      }
+    } else if (name === 'combo') {
+      // Rising pitch cascade — 3 quick ascending tones
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        const f = 660 + 440 * t;
+        data[i] = Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 5.5);
+      }
+    } else if (name === 'power' || name === 'archetype') {
+      // Low resonant power-up surge
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        data[i] = 0.5 * Math.sin(2 * Math.PI * (180 + 120 * t) * t) * Math.exp(-t * 1.5)
+                + 0.25 * Math.sin(2 * Math.PI * (360 + 240 * t) * t) * Math.exp(-t * 2.0);
+      }
+    } else if (name === 'boss') {
+      // Deep growl — two detuned low sines + noise burst
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        data[i] = 0.4 * Math.sin(2 * Math.PI * 90 * t) * Math.exp(-t * 1.2)
+                + 0.3 * Math.sin(2 * Math.PI * 93 * t) * Math.exp(-t * 1.0)
+                + 0.15 * (Math.random() * 2 - 1) * Math.exp(-t * 3.0);
+      }
+    } else if (name === 'insight') {
+      // Gentle crystalline bell — higher register, slow decay
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        data[i] = 0.55 * Math.sin(2 * Math.PI * 880 * t) * Math.exp(-t * 3.5)
+                + 0.25 * Math.sin(2 * Math.PI * 1320 * t) * Math.exp(-t * 4.0)
+                + 0.15 * Math.sin(2 * Math.PI * 1760 * t) * Math.exp(-t * 5.0);
+      }
+    } else if (name === 'bird') {
+      // Quick upward whistle — two-note bird call
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        const f = t < 0.15 ? (1200 + 800 * t / 0.15) : (2000 - 400 * (t - 0.15) / 0.15);
+        data[i] = Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 4.5);
+      }
+    } else if (name === 'spore') {
+      // Soft puff sound — filtered noise with gentle envelope
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        data[i] = (Math.random() * 2 - 1) * 0.4 * Math.exp(-t * 8.0)
+                + 0.2 * Math.sin(2 * Math.PI * 220 * t) * Math.exp(-t * 5.0);
+      }
+    } else if (name === 'build') {
+      // Short satisfying click + tone — construction feedback
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        data[i] = 0.5 * Math.sin(2 * Math.PI * 440 * t) * Math.exp(-t * 18.0)
+                + 0.2 * (Math.random() * 2 - 1) * Math.exp(-t * 25.0);
+      }
     } else if (name === 'ambient') {
       // loopable low drone (we create shorter loop-friendly buffer)
       const loopLen = Math.floor(sr * 1.0);
@@ -120,6 +190,39 @@ export class AudioEngine {
       for (let i = 0; i < loopLen; i++) {
         const t = i / sr;
         data[i] = 0.08 * Math.sin(2 * Math.PI * 110 * t) + 0.03 * Math.sin(2 * Math.PI * 220 * t);
+      }
+    } else if (name === 'alchemy_discover') {
+      // Transmutation success — ascending triple chord glimmer with shimmer tail
+      len = Math.floor(sr * 0.6);
+      buf = this.ctx.createBuffer(1, len, sr);
+      data = buf.getChannelData(0);
+      const alchNotes = [440, 550, 660, 880];
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        const ni = Math.min(alchNotes.length - 1, Math.floor(t / 0.12));
+        data[i] = 0.45 * Math.sin(2 * Math.PI * alchNotes[ni] * t) * Math.exp(-((t % 0.12) * 7))
+                + 0.15 * Math.sin(2 * Math.PI * alchNotes[ni] * 2.001 * t) * Math.exp(-t * 3.0);
+      }
+    } else if (name === 'rhythm_beat') {
+      // Crisp snare-like transient — short noise burst with tonal body
+      len = Math.floor(sr * 0.18);
+      buf = this.ctx.createBuffer(1, len, sr);
+      data = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        data[i] = (Math.random() * 2 - 1) * 0.6 * Math.exp(-t * 30.0)
+                + 0.3 * Math.sin(2 * Math.PI * 200 * t) * Math.exp(-t * 20.0);
+      }
+    } else if (name === 'mirror_chime') {
+      // The Mirror dreamscape — soft overtone bell, two-harmonic resonance
+      len = Math.floor(sr * 0.7);
+      buf = this.ctx.createBuffer(1, len, sr);
+      data = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        data[i] = 0.40 * Math.sin(2 * Math.PI * 528 * t) * Math.exp(-t * 2.5)   // "love frequency" 528Hz
+                + 0.25 * Math.sin(2 * Math.PI * 792 * t) * Math.exp(-t * 3.0)
+                + 0.12 * Math.sin(2 * Math.PI * 1056 * t) * Math.exp(-t * 4.5);
       }
     } else {
       // default short blip
@@ -179,6 +282,43 @@ export class AudioEngine {
         break;
       case 'teleport':
         this._playBuffer('teleport', 0.06, false);
+        break;
+      case 'heal':
+        this._playBuffer('heal', 0.07, false);
+        break;
+      case 'level_complete':
+        this._playBuffer('level_complete', 0.10, false);
+        break;
+      case 'combo':
+        this._playBuffer('combo', 0.06, false);
+        break;
+      case 'power':
+      case 'archetype':
+        this._playBuffer('archetype', 0.08, false);
+        break;
+      case 'boss':
+        this._playBuffer('boss', 0.10, false);
+        break;
+      case 'insight':
+        this._playBuffer('insight', 0.07, false);
+        break;
+      case 'bird':
+        this._playBuffer('bird', 0.07, false);
+        break;
+      case 'spore':
+        this._playBuffer('spore', 0.06, false);
+        break;
+      case 'build':
+        this._playBuffer('build', 0.05, false);
+        break;
+      case 'alchemy_discover':
+        this._playBuffer('alchemy_discover', 0.09, false);
+        break;
+      case 'rhythm_beat':
+        this._playBuffer('rhythm_beat', 0.07, false);
+        break;
+      case 'mirror_chime':
+        this._playBuffer('mirror_chime', 0.08, false);
         break;
       case 'ambient':
         // ambient handled by startAmbient/stopAmbient, but allow a ping

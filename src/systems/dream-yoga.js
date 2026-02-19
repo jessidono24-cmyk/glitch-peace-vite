@@ -82,9 +82,10 @@ export function gainLucidity(gameState, source) {
 
   gameState._lucidity = Math.min(LUCIDITY_MAX, (gameState._lucidity || 0) + amt);
 
-  // Record in session for dream journal
+  // Record in session for dream journal (capped at 100 entries to contain growth)
   if (!gameState._lucidityHistory) gameState._lucidityHistory = [];
   gameState._lucidityHistory.push({ t: Date.now(), amt, total: gameState._lucidity });
+  if (gameState._lucidityHistory.length > 100) gameState._lucidityHistory.shift();
 
   // Threshold effects
   const prev = (gameState._lucidity || 0) - amt;

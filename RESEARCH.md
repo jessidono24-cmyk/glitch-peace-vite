@@ -816,9 +816,242 @@ The comprehensive research ensures:
 
 ---
 
-**Document Version**: 1.0  
+## 18. Reward, Transition UX & Combo Psychology (Applied Feb 2026)
+
+### Why Transitions Must Be Readable: Consolidation Science
+
+**Core finding (Cognitive Load Theory, Sweller 1988):**  
+State changes during gameplay create a "cognitive gap" — a brief period where working memory is partially freed from task demands. This is the ideal moment to surface feedback (score, achievements, upcoming challenge) because the player's attentional bottleneck is at its lowest.
+
+**Transition design principle (applied to GLITCH·PEACE):**
+- Level-complete overlay extended to 3 seconds: matches typical consolidation window (~2–4s per Ericsson, 1995)
+- Hard input block for 1.5s: ensures player reads content before re-engaging (eliminates "button-mashing through reward" — a pattern that correlates with reduced intrinsic motivation per Deci & Ryan SDT, 1985)
+- Skip affordance at 1.5s: respects player agency, non-coercive
+
+**Sources:**
+- Sweller, J. (1988). Cognitive load during problem solving. *Cognitive Science*, 12(2), 257–285.
+- Ericsson, K.A. et al. (1995). Long-term working memory. *Psychological Review*, 102(2), 211–245.
+- Deci, E.L. & Ryan, R.M. (1985). *Intrinsic Motivation and Self-Determination in Human Behavior*. Springer.
+
+---
+
+### Combo Multiplier: Variable-Ratio Reward & Intrinsic Motivation
+
+**The problem with fixed rewards:**  
+Fixed-ratio reward schedules (every N actions = reward) produce predictable behavior but *lower sustained engagement* than variable schedules (Ferster & Skinner, 1957). However, *exploiting* variable-ratio schedules (slot machine design) also produces compulsive, biologically-coercive behavior.
+
+**GLITCH·PEACE's "ethical combo" design:**
+- Combo multiplier builds on *skill-driven consecutive collection* — the player must move skillfully to keep the chain
+- Multiplier is displayed clearly (bottom-left) with the current count — full transparency removes the "mystery hook" that drives compulsion
+- Combo *decays naturally* after 3 seconds of inactivity, not on punishment; missing a combo doesn't penalize — it simply resets
+- Cap at 4× (combo=16) prevents exponential score inflation and the dopaminergic "chase" that forms addictive loops
+
+**Application:** The combo display was wired in Feb 2026 to surface this feedback to the player in real-time, aligning with the game's anti-exploitation philosophy: players should feel *capable*, not *compelled*.
+
+**Sources:**
+- Ferster, C.B. & Skinner, B.F. (1957). *Schedules of Reinforcement*. Appleton-Century-Crofts.
+- Przybylski, A.K. et al. (2010). Competence-impeding electronic games. *Personality and Social Psychology Bulletin*, 36(12), 1402–1416.
+- King, D.L. et al. (2019). Unfair play? Video games as exploitative monetization schemes. *Frontiers in Psychology*, 10, 1784.
+
+---
+
+### Synergy Banner: Emotional Coherence as Gameplay Feedback
+
+**Emotional intelligence research (Salovey & Mayer, 1990)** demonstrates that *labeling* emotional experiences — giving them a name — activates the prefrontal cortex and reduces amygdala reactivity. This is the neurological basis of "affect labeling."
+
+GLITCH·PEACE's synergy system pairs two co-present emotions (e.g., Joy + Hope → "Resonance Wave") and fires a named banner. This serves dual purposes:
+1. **Game feedback**: player knows a mechanical bonus is active
+2. **Affect labeling practice**: seeing the emotional combination named trains the player to notice paired emotional states in real life
+
+**Application:** Synergy banners were wired to display (Feb 2026) when `updateSynergy()` fires, surfacing the `SYNERGY_MESSAGES` constants as in-game text.
+
+**Sources:**
+- Salovey, P. & Mayer, J.D. (1990). Emotional intelligence. *Imagination, Cognition and Personality*, 9(3), 185–211.
+- Lieberman, M.D. et al. (2007). Putting feelings into words. *Psychological Science*, 18(5), 421–428.
+
+---
+
+### Compassionate Game-Over: Relapse Design & Non-Punishment Framing
+
+**Failure states in most games** activate shame and frustration — emotional states that *reduce neuroplasticity* (McEwen, 2007) and are clinically contraindicated for people in recovery from addiction or trauma.
+
+**GLITCH·PEACE's "PATTERN INCOMPLETE" screen:**
+- Uses compassionate, non-blame language: *"Returning is not failure — it is courage"*
+- Shows what was *accomplished* (score, peace nodes collected, level reached) — not what was lost
+- Allows immediate ENTER-to-restart from within the mode (no menu penalty)
+- Soft restart resets score/level to 1 but keeps the player *in the game world* — no black screen interruption
+- Game Over is framed as a *continuation of the pattern*, not its end
+
+This aligns with Kristin Neff's self-compassion framework and the clinical evidence base for compassionate relapse design in addiction recovery (Linehan, DBT).
+
+**Sources:**
+- McEwen, B.S. (2007). Physiology and neurobiology of stress and adaptation. *Physiological Reviews*, 87(3), 873–904.
+- Neff, K. (2003). Self-compassion. *Self and Identity*, 2(2), 85–101.
+- Linehan, M.M. (1993). *Cognitive-Behavioral Treatment of Borderline Personality Disorder*. Guilford.
+
+---
+
+**Document Version**: 1.1  
 **Last Updated**: February 19, 2026  
 **Next Review**: March 1, 2026  
 **Maintainers**: Development Team
 
-**Status**: Research foundation complete and documented ✅
+**Status**: Research foundation complete and documented ✅  
+**New in v1.1**: Sections 18 — Reward/Transition UX, Combo Psychology, Synergy Feedback, Compassionate Game-Over
+
+---
+
+## 19. Phase 9: Intelligence Enhancement Systems (Applied Feb 2026)
+
+### Logic Puzzles & IQ Proxy (LogicPuzzles module)
+
+**Fluid intelligence** — the ability to reason with novel problems without relying on prior knowledge — is measurable through tasks requiring pattern completion and abstraction (Cattell, 1963). Mathematical sequences (Fibonacci, prime numbers, triangle numbers) are canonical fluid intelligence tasks used in standardized assessments (Raven's Progressive Matrices; Jaeggi et al., 2008).
+
+**GLITCH·PEACE's LogicPuzzles system:**
+- Surfaces a number-sequence challenge overlay after each dreamscape completion
+- Shows the sequence (e.g., 2 · 3 · 5 · 7 · 11 · ?) and the answer (13)
+- Provides a brief "fact" linking the mathematical pattern to the game world
+- Tracks three strategic behaviors as IQ-proxy inputs:
+  - **Consequence preview use ratio** (planning before acting)
+  - **Impulse buffer completions** (executive inhibition under pressure)
+  - **Pattern mappings** (recognizing recurring environmental patterns)
+- Produces an IQ proxy score (0–100) reflecting *in-game cognitive behavior*, not raw intelligence
+- A coaching tip rotates each time the player switches matrix modes
+
+**Research basis:**
+- Cattell, R.B. (1963). Theory of fluid and crystallized intelligence. *Journal of Educational Psychology*, 54(1), 1–22.
+- Jaeggi, S.M. et al. (2008). Improving fluid intelligence with training on working memory. *PNAS*, 105(19), 6829–6833.
+- Raven, J.C. (1938). *Progressive Matrices*. H.K. Lewis.
+- Dehaene, S. (1999). *The Number Sense*. Oxford University Press.
+
+---
+
+### Emotion Recognition & EQ (EmotionRecognition module)
+
+**Emotional granularity** — the ability to distinguish and label specific emotional states rather than experiencing undifferentiated arousal — is a strong predictor of wellbeing, resilience, and regulation quality (Barrett, 2017; Kashdan et al., 2015).
+
+**Affect labeling research** (Lieberman et al., 2007) demonstrates that *naming an emotion* in the moment reduces amygdala reactivity and emotional intensity by approximately 50% — a measurable neurological effect from a simple labeling act.
+
+**GLITCH·PEACE's EmotionRecognition system:**
+- Observes the dominant emotion in the emotional field each frame
+- When a dominant emotion exceeds a labeling threshold (20%), displays a flash label: "Fear" / "Joy" / "Awe" with a brief psychological tip
+- Tracks whether the player's matrix choice (A=Erasure, B=Coherence) aligned with the emotionally regulating response — e.g., Matrix B for fear, anxiety, shame
+- Produces an EQ score reflecting *emotional regulation quality during gameplay*
+- 10 EQ insights on the dashboard from Lieberman, Barrett, and Neff
+
+**Research basis:**
+- Barrett, L.F. (2017). *How Emotions Are Made*. Houghton Mifflin.
+- Lieberman, M.D. et al. (2007). Putting feelings into words. *Psychological Science*, 18(5), 421–428.
+- Kashdan, T.B. et al. (2015). Unpacking emotion differentiation. *Perspectives on Psychological Science*, 10(3), 283–291.
+- Neff, K. (2003). Self-compassion. *Self and Identity*, 2(2), 85–101.
+
+---
+
+### Empathy Training (EmpathyTraining module)
+
+**Perspective-taking** — actively imagining the inner state of another entity — is one of the most robust interventions for reducing dehumanization and increasing prosocial behavior (Batson et al., 1997; Eisenberg, 2000). Internal Family Systems theory (Schwartz, 1995) holds that "no bad parts" — all behaviors, even harmful ones, originally served a protective function.
+
+**GLITCH·PEACE's EmpathyTraining system:**
+- Each enemy has a behavior type (rush, patrol, orbit, adaptive, phantom…)
+- On first encounter with each behavior, and on each enemy stun, an emotion-context flash appears: "Driven by Fear" / "Following Structure" / "Not Fully Present"
+- Accompanying insight: "Fear can look exactly like aggression." / "Some behaviors are learned, not chosen."
+- On stun: a compassion phrase appears: "A pause in the chase." / "In stillness, both can breathe."
+- Produces an empathy score based on: behaviors witnessed (diversity of encounters) + compassion ratio (stun-to-encounter rate)
+- This reframes the player's relationship with adversarial entities as *recognition* rather than defeat
+
+**Research basis:**
+- Batson, C.D. et al. (1997). Empathy and the collective good. *Journal of Personality and Social Psychology*, 72(6), 1380–1391.
+- Klimecki, O.M. et al. (2014). Differential pattern of functional brain plasticity after compassion and empathy training. *Social Cognitive and Affective Neuroscience*, 9(6), 873–879.
+- Schwartz, R.C. (1995). *Internal Family Systems Model*. Guilford Press.
+- Eisenberg, N. (2000). Empathy and sympathy. In *Handbook of Emotions* (2nd ed., pp. 677–691). Guilford.
+
+---
+
+### Strategic Thinking (StrategicThinking module)
+
+**Deliberate practice** — effortful, conscious engagement with challenge above current automaticity — is the key mechanism behind expertise development (Ericsson, 1993). In the context of action games, training toward mindful decision-making (using planning tools before acting) has been shown to transfer to real-world executive function (Green & Bavelier, 2012; Diamond & Ling, 2016).
+
+**GLITCH·PEACE's StrategicThinking system:**
+- Classifies each player move as **mindful** (consequence preview active OR impulse buffer used) or **impulsive** (neither)
+- Tracks matrix discipline: damage taken in Matrix A vs. Matrix B — lower A-damage ratio indicates better matrix situational awareness
+- Tracks tool usage: freeze/stun activations, impulse buffer cancellations (choosing not to act)
+- Produces a strategic score (0–100) with an adaptive coaching tip calibrated to the player's current strategic level
+- Informs the IQ proxy score via the `logicPuzzles.onMatrixSwitch()` coupling
+
+**Research basis:**
+- Ericsson, K.A. et al. (1993). The role of deliberate practice. *Psychological Review*, 100(3), 363–406.
+- Green, C.S. & Bavelier, D. (2012). Learning, attentional control, and action video games. *Current Biology*, 22(6), R197–R206.
+- Diamond, A. & Ling, D.S. (2016). Conclusions about interventions, programs, and approaches for improving executive functions. *Developmental Cognitive Neuroscience*, 18, 34–48.
+
+---
+
+### Achievement System Design (Non-Exploitative Milestones)
+
+**Self-determination theory** (Deci & Ryan, 1985) identifies three core psychological needs: **competence**, **autonomy**, and **relatedness**. Game achievements that align with these needs (mastery milestones, player-chosen paths, connection to larger meaning) support intrinsic motivation and psychological wellbeing. Achievements that exploit variable-ratio schedules (loot boxes, grind requirements) undermine intrinsic motivation over time (Rigby & Ryan, 2011).
+
+**GLITCH·PEACE's 15 achievements:**
+- All milestone-based, not time-pressure or pay-to-unlock
+- No FOMO mechanics: achievements can be earned at any pace across any session
+- Achievements correspond to genuine consciousness milestones: first peace tile, lucidity 50%+, first archetype activation, 5 language challenges, encountering 5 enemy behaviors
+- Badge overlay renders with a compassionate, non-competitive framing (no rank, no leaderboard requirement)
+- **Bandura (1997)** — mastery experiences are the #1 source of self-efficacy; the achievement system provides exactly that
+
+**Research basis:**
+- Deci, E.L. & Ryan, R.M. (1985). *Intrinsic Motivation and Self-Determination in Human Behavior*. Plenum.
+- Rigby, C.S. & Ryan, R.M. (2011). *Glued to Games*. ABC-CLIO.
+- Bandura, A. (1997). *Self-Efficacy: The Exercise of Control*. W.H. Freeman.
+
+---
+
+**Document Version**: 1.2  
+**Last Updated**: February 19, 2026  
+**Next Review**: March 1, 2026  
+**Maintainers**: Development Team
+
+**Status**: Research foundation complete and documented ✅  
+**New in v1.2**: Section 19 — Phase 9 Intelligence Enhancement (Logic Puzzles, Emotion Recognition, Empathy Training, Strategic Thinking, Achievement Design)
+
+---
+
+## Section 20: Phase 10 — Completion Systems & Accessibility
+
+### 20.1 Leaderboard Design (Self-Determination Theory)
+The leaderboard stores only personal bests, not public rankings. This aligns with:
+- **Deci & Ryan (1985)** — self-determination theory: intrinsic motivation is undermined by external comparison, enhanced by personal mastery records
+- **Ryan & Deci (2000)** — *Self-Determination Theory and the Facilitation of Intrinsic Motivation*. American Psychologist, 55(1), 68–78
+- Design choice: "Personal best #N" framing (not "you beat player X") respects autonomy and avoids social comparison harm
+
+### 20.2 Session Analytics (Bandura Self-Efficacy + Behavior Change)
+Cross-session lifetime stats provide evidence of growth over time:
+- **Bandura (1977)** — self-efficacy grows through accumulated mastery experiences; seeing "82 sessions, 14 hours" provides behavioral evidence of engagement
+- **Fogg, B.J. (2009)** — *A Behavior Model for Persuasive Design*. Behavior change requires motivation + ability + trigger; analytics serve as the "trigger" that shows capability has developed
+
+### 20.3 High Contrast & WCAG Accessibility
+WCAG AA requires 4.5:1 contrast ratio for normal text and meaningful UI elements on non-text backgrounds. Our HC_TILE map targets minimum 4.5:1 for all 14 tile types on black (#000000):
+- **W3C WCAG 2.1 Criterion 1.4.3** (Contrast — Minimum): Normal text ≥4.5:1
+- **Caldwell et al. (2008)** — Web Content Accessibility Guidelines (WCAG) 2.0. W3C Recommendation
+- GLITCH·PEACE serves neurodivergent players who may have visual processing differences; high-contrast mode is provided as a first-class feature, not an afterthought
+
+### 20.4 Gamepad Vibration (Haptic Feedback & Embodiment)
+Vibration/rumble is wired on damage, level completion, and archetype activation:
+- **Gallace & Spence (2014)** — *In Touch with the Future*. Oxford University Press — tactile feedback integrates information across sensory channels, improving reaction time and emotional salience
+- **Immersion Corp (2002)** — TouchSense technology; haptic feedback increases engagement and presence scores in gaming contexts
+- Design: damage rumble (short, weak-strong) vs. celebration rumble (long, moderate) creates distinct haptic language for consequence vs. achievement
+
+### 20.5 The Mirror Dreamscape (Jungian Shadow Work)
+The Mirror world provides a gentle container for shadow integration:
+- **Jung, C.G. (1951)** — *Aion: Researches into the Phenomenology of the Self* (CW 9ii). The shadow is the first layer of the unconscious encountered in individuation; it contains repressed, unlived aspects of the personality
+- **Zweig, C. & Abrams, J. (1991)** — *Meeting the Shadow: The Hidden Power of the Dark Side of Human Nature*. Tarcher/Perigee
+- Design: COVER/MEM tiles dominate (safe ground + memory integration); the Witness archetype converts shadow tiles (DESPAIR/HOPELESS) to safe ground for 8 moves — mechanically enacting "holding the shadow with awareness" rather than destroying it
+
+### 20.6 Daily Challenge Seeding (Flow Theory Application)
+The deterministic daily seed ensures all players face the same challenge on the same day:
+- **Csikszentmihalyi, M. (1990)** — Flow: The Psychology of Optimal Experience. Daily challenges with shared difficulty create community without competition (the seed produces same tile layout but everyone plays solo)
+- **McGonigal, J. (2011)** — Reality Is Broken. SuperBetter Labs — coordinated daily challenges increase voluntary return rate and social cohesion without multiplayer infrastructure
+
+---
+
+**Document Version**: 1.3
+**Last Updated**: February 19, 2026
+**Status**: Phase 10 complete — all research documented ✅
+**New in v1.3**: Section 20 — Phase 10 Completion Systems (Leaderboard, Analytics, High Contrast, Haptics, Mirror Dreamscape, Daily Challenge)

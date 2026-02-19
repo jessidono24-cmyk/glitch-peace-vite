@@ -459,7 +459,22 @@ export default class ShooterMode extends GameMode {
         this.enemies.push({ x: zx, y: zy, health: 20, maxHealth: 20, size: 8, speed: 110 + waveNum * 8, type: 'zigzag', zigPhase: Math.random() * Math.PI * 2, color: '#ff44ff' });
       }
     }
-    
+
+    // BOSS WAVE — every 5th wave spawns a single powerful boss
+    if (waveNum % 5 === 0) {
+      const bossHp = 400 + waveNum * 30;
+      this.enemies.push({
+        x: this.canvas.width / 2,
+        y: -60,
+        health: bossHp, maxHealth: bossHp,
+        size: 36, speed: 18 + waveNum * 1.5,
+        type: 'boss', color: '#ff2266',
+        _phase: 0,
+      });
+      // Show boss alert via shared AudioManager if available
+      try { window.AudioManager?.play('boss'); } catch (_) {}
+    }
+
     console.log(`[ShooterMode] Wave ${waveNum} started - ${count} enemies`);
   }
   
@@ -530,7 +545,36 @@ export default class ShooterMode extends GameMode {
    */
   renderEnemies(ctx, theme = {}) {
     const enemyColor = theme.accent ? this._shiftHue(theme.accent, 180) : '#ff3333';
+    const now = Date.now();
     for (const enemy of this.enemies) {
+      // Boss: special pulsing ring render
+      if (enemy.type === 'boss') {
+        const pulse = 0.65 + 0.35 * Math.sin(now / 300);
+        ctx.globalAlpha = pulse;
+        ctx.shadowColor = '#ff0044';
+        ctx.shadowBlur  = 20;
+        ctx.strokeStyle = '#ff2266';
+        ctx.lineWidth   = 3;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.size + 8, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle   = '#660022';
+        ctx.shadowColor = '#ff2266';
+        ctx.shadowBlur  = 12;
+        ctx.beginPath();
+        ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur  = 0;
+        ctx.fillStyle   = '#ff6688';
+        ctx.font        = `bold ${Math.floor(enemy.size * 0.9)}px monospace`;
+        ctx.textAlign   = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('◆', enemy.x, enemy.y);
+        ctx.textBaseline = 'alphabetic';
+        continue;
+      }
+
       ctx.fillStyle = enemyColor;
       ctx.shadowColor = enemyColor;
       ctx.shadowBlur = 6;
@@ -538,7 +582,7 @@ export default class ShooterMode extends GameMode {
       ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
-      
+
       // Health bar
       const barWidth = 20;
       const barHeight = 3;
@@ -611,10 +655,39 @@ export default class ShooterMode extends GameMode {
       ctx.textAlign = 'center';
       ctx.shadowColor = accent;
       ctx.shadowBlur = 12;
-      ctx.fillText(`WAVE ${this.waveNumber + 1} INCOMING...`, this.canvas.width / 2, this.canvas.height - 40);
+      const nextWave = this.waveNumber + 1;
+      const bossAlert = nextWave % 5 === 0 ? '  ⚠ BOSS WAVE' : '';
+      ctx.fillText(`WAVE ${nextWave} INCOMING...${bossAlert}`, this.canvas.width / 2, this.canvas.height - 40);
       ctx.shadowBlur = 0;
       ctx.font = '16px monospace';
       ctx.textAlign = 'left';
+    }
+
+    // Boss HP bar (centered, bottom of screen) — shown whenever a boss is alive
+    const boss = this.enemies.find(e => e.type === 'boss');
+    if (boss) {
+      const w     = this.canvas.width;
+      const barW  = Math.floor(w * 0.6);
+      const barX  = Math.floor((w - barW) / 2);
+      const barY  = this.canvas.height - 28;
+      const pct   = boss.health / boss.maxHealth;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(barX - 2, barY - 18, barW + 4, 28);
+
+      ctx.fillStyle = '#440011';
+      ctx.fillRect(barX, barY - 12, barW, 14);
+      ctx.fillStyle = '#ff2266';
+      ctx.fillRect(barX, barY - 12, Math.floor(barW * pct), 14);
+
+      ctx.fillStyle = '#ff6688';
+      ctx.font      = 'bold 10px monospace';
+      ctx.textAlign = 'center';
+      ctx.shadowColor = '#ff2266';
+      ctx.shadowBlur  = 6;
+      ctx.fillText(`⚔ BOSS  ${Math.ceil(boss.health)} / ${boss.maxHealth}`, w / 2, barY - 15);
+      ctx.shadowBlur = 0;
+      ctx.textAlign  = 'left';
     }
   }
   

@@ -681,7 +681,7 @@ export class MenuSystem {
 
   _drawList(ctx, w, h) {
     const isPause = this.screen === 'pause';
-    this._drawHeader(ctx, w, h, isPause ? 'PAUSED' : 'v1.0 · base layer');
+    this._drawHeader(ctx, w, h, isPause ? 'PAUSED' : 'v2.1 · 9 modes · 18 dreamscapes · 17 play styles');
 
     const items = this.getItems();
     const boxW = 360;
@@ -1059,18 +1059,41 @@ export class MenuSystem {
     this._drawHeader(ctx, w, h, 'CREDITS');
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#b8b8d0';
-    ctx.font = '12px Courier New';
-    ctx.fillText('Made for play, pattern, and glow.', w / 2, h / 2 - 10);
-    ctx.fillText('Begin in stillness. Emerge through pattern recognition.', w / 2, h / 2 + 20);
 
-    ctx.fillStyle = '#667099';
-    ctx.font = '9px Courier New';
-    ctx.fillText('MenuSystem ported from _archive/glitch-peace-v5', w / 2, h / 2 + 50);
+    // Tagline
+    ctx.fillStyle = '#00e5ff';
+    ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
+    ctx.shadowColor = '#00e5ff';
+    ctx.shadowBlur = 10;
+    ctx.fillText('Begin in stillness. Emerge through pattern.', w / 2, h * 0.28);
+    ctx.shadowBlur = 0;
+
+    // Description rows
+    const lines = [
+      { text: 'GLITCH·PEACE is free — always. No ads, no trackers, no cost.', col: '#b8b8d0' },
+      { text: 'A consciousness engine built on neuroscience, wisdom traditions,', col: '#778899' },
+      { text: 'and compassionate game design. Suitable for all ages.', col: '#778899' },
+      { text: '', col: '' },
+      { text: '9 gameplay modes  ·  18 dreamscapes  ·  17 play styles', col: '#88ffcc' },
+      { text: '12 cosmological frameworks  ·  19-language vocabulary system', col: '#88ffcc' },
+      { text: '', col: '' },
+      { text: 'Research base: Kaplan (1989) · LaBerge (1990) · Csikszentmihalyi (1990)', col: '#445566' },
+      { text: 'Thaut (2015) · Mahasi Sayadaw (1971) · Jung (1951) · Rogers (1961)', col: '#445566' },
+      { text: '', col: '' },
+      { text: 'Source code: github.com/jessidono24-cmyk/glitch-peace-vite', col: '#334455' },
+      { text: 'License: MIT — free forever', col: '#334455' },
+    ];
+
+    ctx.font = `${Math.floor(w / 42)}px Courier New`;
+    lines.forEach((line, i) => {
+      if (!line.text) return;
+      ctx.fillStyle = line.col;
+      ctx.fillText(line.text, w / 2, h * 0.36 + i * (h * 0.045));
+    });
 
     ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.fillText('ENTER to return', w / 2, h / 2 + 75);
+    ctx.font = '9px Courier New';
+    ctx.fillText('ENTER or ESC to return', w / 2, h * 0.92);
     ctx.textAlign = 'left';
   }
 

@@ -390,6 +390,71 @@ export const PLAY_MODES = {
       realityChecks: false, // enabled per-level by campaign data
     }
   },
+
+  // ────────────────────────────────────────────────────────────────────
+  // 16. NIGHTMARE 🌑 - Unforgiving maximum difficulty
+  //  2× damage multiplier, predictive "hunt" enemies, 5× score reward.
+  //  No compassion, no recovery tools. Not for the faint of heart.
+  //  Research: optimal challenge theory (Csikszentmihalyi, 1990) —
+  //  high difficulty produces peak-flow when skill matches challenge.
+  // ────────────────────────────────────────────────────────────────────
+  NIGHTMARE: {
+    id: 'nightmare',
+    name: "🌑 Nightmare",
+    desc: "2× damage · predictive enemies · 5× score · no mercy",
+    config: {
+      peaceMul: 0.6,
+      hazardMul: 2.0,
+      insightMul: 0.8,
+      scoreMul: 5.0,
+      enemySpeed: 1.6,
+      gridSize: 'large',
+      timeLimit: null,
+    },
+    mechanics: {
+      enemyBehavior: 'hunt',   // predictive pathfinding
+      tileRespawn: false,
+      powerupsEnabled: false,
+      bossEnabled: true,
+      permadeath: true,        // one life
+      limitedVision: 5,        // fog of war
+      impulseBuffer: false,
+      consequencePreview: false,
+      compassionateRelapse: false,
+    }
+  },
+
+  // ────────────────────────────────────────────────────────────────────
+  // 17. RHYTHM_FLOW 🎵 - Move on the beat for bonus score
+  //  80 BPM metronome tick. Move ON the beat → ×2 score per node.
+  //  Miss the beat → no bonus (still safe, just fewer points).
+  //  Research: beat-synchronised movement (Thaut et al., 2015) improves
+  //  motor precision and emotional regulation.
+  // ────────────────────────────────────────────────────────────────────
+  RHYTHM_FLOW: {
+    id: 'rhythm_flow',
+    name: "🎵 Rhythm Flow",
+    desc: "Move on the beat (80 BPM) for ×2 score bonus",
+    config: {
+      peaceMul: 1.2,
+      hazardMul: 0.8,
+      insightMul: 1.5,
+      scoreMul: 2.0,
+      enemySpeed: 0.9,
+      gridSize: 'medium',
+      timeLimit: null,
+    },
+    mechanics: {
+      enemyBehavior: 'chase',
+      tileRespawn: true,
+      powerupsEnabled: true,
+      bossEnabled: false,
+      rhythmMode: true,        // enable BPM beat-sync scoring
+      rhythmBpm: 80,           // 80 BPM = 750ms beat interval
+      beatBonusMul: 2.0,       // score multiplier when moving on beat
+      patternEcho: true,
+    }
+  },
 };
 
 // Helper to get mode config

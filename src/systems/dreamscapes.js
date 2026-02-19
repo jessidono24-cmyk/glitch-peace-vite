@@ -133,6 +133,93 @@ export const DREAMSCAPE_THEMES = {
     accent: '#cc99ff',
     tileBias: { [T.COVER]: 6, [T.MEM]: 8, [T.INSIGHT]: 6, [T.HARM]: -4, [T.TERROR]: -3, [T.GLITCH]: 4 },
   },
+
+  // ── 13th Dreamscape: Mountain Dragon Realm ────────────────────────────────
+  // The fear guardian realm. A jagged mountain world where a dragon patrols.
+  // Lots of walls forming narrow canyons; TERROR and HARM tiles dominant;
+  // but also rich in INSIGHT — the dragon guards hidden wisdom.
+  MOUNTAIN_DRAGON: {
+    id: 'MOUNTAIN_DRAGON',
+    label: 'Mountain Dragon Realm',
+    flavor: 'Ancient guardian circles.\nWisdom hidden in stone.',
+    bg: '#050202',
+    ambient: 'rgba(255,50,10,0.04)',
+    accent: '#ff5500',
+    tileBias: { [T.WALL]: 14, [T.TERROR]: 6, [T.HARM]: 4, [T.INSIGHT]: 8, [T.PEACE]: -2 },
+  },
+
+  // ── 14th Dreamscape: Summit Realm ────────────────────────────────────────
+  // Multi-plane vertical world at the top of consciousness.
+  // Sparse tiles, pure energy — ARCH (archetype) tiles abundant,
+  // few enemies, but each hazard is more intense at altitude.
+  SUMMIT: {
+    id: 'SUMMIT',
+    label: 'The Summit',
+    flavor: 'Above all planes.\nPattern and silence merge.',
+    bg: '#020308',
+    ambient: 'rgba(180,220,255,0.05)',
+    accent: '#aaddff',
+    tileBias: { [T.ARCH]: 10, [T.INSIGHT]: 6, [T.VOID]: 0, [T.WALL]: -4, [T.HOPELESS]: -3, [T.PEACE]: 4 },
+  },
+
+  // ── 15th Dreamscape: Leaping Field ────────────────────────────────────────
+  // Orb mobility theme — open expanse, teleport nodes everywhere.
+  // Research: spatial navigation (O'Keefe, 1971) — open-field exploration
+  // activates place cells and builds cognitive maps for real-world navigation.
+  LEAPING_FIELD: {
+    id: 'LEAPING_FIELD',
+    label: 'The Leaping Field',
+    flavor: 'Open sky, no walls.\nEvery step a flight.',
+    bg: '#020608',
+    ambient: 'rgba(0,180,255,0.04)',
+    accent: '#00ccff',
+    tileBias: { [T.TELE]: 10, [T.PEACE]: 8, [T.GLITCH]: 4, [T.WALL]: -8, [T.TRAP]: -3 },
+  },
+
+  // ── 16th Dreamscape: The Integration ──────────────────────────────────────
+  // All dualities resolved. Harmony of all tile types — small amounts
+  // of everything, balanced. The final dreamscape of the arc.
+  // Research: psychological integration (Rogers, 1961) — the fully
+  // functioning person holds contradictions without fragmentation.
+  INTEGRATION: {
+    id: 'INTEGRATION',
+    label: 'The Integration',
+    flavor: 'All patterns held.\nNothing left unresolved.',
+    bg: '#030308',
+    ambient: 'rgba(100,255,180,0.05)',
+    accent: '#66ffcc',
+    tileBias: { [T.PEACE]: 4, [T.INSIGHT]: 4, [T.MEM]: 4, [T.ARCH]: 4, [T.DESPAIR]: -2, [T.TERROR]: -2, [T.HARM]: -2 },
+  },
+
+  // ── 17th Dreamscape: Modern Bedroom ───────────────────────────────────────
+  // The chaos-cover dream. Interior space with furniture-like walls,
+  // chaotic glitch presence. A familiar yet unsettling setting.
+  // Research: Hartmann (1995) — anxiety dream frequency linked to
+  // current life stress; working through bedroom dreams reduces stress.
+  BEDROOM: {
+    id: 'BEDROOM',
+    label: 'The Bedroom',
+    flavor: 'Familiar walls shift.\nNothing stays still.',
+    bg: '#03030a',
+    ambient: 'rgba(80,0,120,0.05)',
+    accent: '#9955ff',
+    tileBias: { [T.WALL]: 10, [T.COVER]: 8, [T.GLITCH]: 6, [T.MEM]: 6, [T.PEACE]: -2 },
+  },
+
+  // ── 18th Dreamscape: Void State ───────────────────────────────────────────
+  // Pure dissolution. Almost entirely void — a meditative emptiness
+  // with rare, precious peace nodes. Tests equanimity.
+  // Research: cessation meditation (Mahasi Sayadaw, 1971) — the void
+  // state (nirodha) is experienced as profound stillness and insight.
+  VOID_STATE: {
+    id: 'VOID_STATE',
+    label: 'Void State',
+    flavor: 'Nothing stirs.\nEverything is possible.',
+    bg: '#000001',
+    ambient: null,
+    accent: '#334466',
+    tileBias: { [T.VOID]: 0, [T.PEACE]: -4, [T.INSIGHT]: -3, [T.GLITCH]: -4, [T.ARCH]: -3, [T.WALL]: -8 },
+  },
 };
 
 /** Returns the theme for a given dreamscape ID, falling back to RIFT. */

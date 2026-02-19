@@ -164,20 +164,24 @@ export class InputManager {
 
   /**
    * Get directional input (-1, 0, or 1 for x and y)
-   * Supports WASD and Arrow keys
+   * Supports WASD and Arrow keys. Checks both currently-held keys
+   * and just-pressed keys so brief taps also register (needed for
+   * grid-based discrete movement in fast environments).
    * @returns {{x: number, y: number}}
    */
   getDirectionalInput() {
     let x = 0;
     let y = 0;
 
+    const active = (k) => this.keys.has(k) || this.keysPressed.has(k);
+
     // Horizontal
-    if (this.isAnyKeyDown(['ArrowLeft', 'a', 'A'])) x -= 1;
-    if (this.isAnyKeyDown(['ArrowRight', 'd', 'D'])) x += 1;
+    if (['ArrowLeft', 'a', 'A'].some(active)) x -= 1;
+    if (['ArrowRight', 'd', 'D'].some(active)) x += 1;
 
     // Vertical
-    if (this.isAnyKeyDown(['ArrowUp', 'w', 'W'])) y -= 1;
-    if (this.isAnyKeyDown(['ArrowDown', 's', 'S'])) y += 1;
+    if (['ArrowUp', 'w', 'W'].some(active)) y -= 1;
+    if (['ArrowDown', 's', 'S'].some(active)) y += 1;
 
     return { x, y };
   }

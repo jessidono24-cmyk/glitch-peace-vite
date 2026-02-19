@@ -71,10 +71,10 @@ export function movePlayer(gameState, dx, dy) {
     }
     const healAmt = 10;
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
-    // Build combo on peace collection
+    // Build combo on peace collection: multiplier grows with streak (up to 4×)
     gameState.combo = (gameState.combo || 0) + 1;
     gameState.comboTimer = Date.now();
-    const comboMul = 1 + Math.min(3, (gameState.combo - 1) * 0.2); // up to 1.6× at combo×10
+    const comboMul = 1 + Math.min(3, (gameState.combo - 1) * 0.2);
     const mul = (gameState.synergyMultiplier || 1.0) * (gameState.scoreMul || 1.0) * comboMul;
     gameState.score = (gameState.score || 0) + Math.round(150 * mul);
     // Guard: don't exceed peaceTotal to prevent over-collection
@@ -250,7 +250,7 @@ export function movePlayer(gameState, dx, dy) {
         }
       }
     }
-    // Schedule memory score bonus (200 pts)
+    // Award memory score bonus (200 pts) immediately
     gameState.score = (gameState.score || 0) + 200;
     gameState.memoryFlash = { x: newX, y: newY, radius, expiresMs: Date.now() + 800 };
     createParticles(gameState, newX, newY, '#66ccff', 14);

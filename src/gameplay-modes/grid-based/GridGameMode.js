@@ -22,8 +22,8 @@ import {
   getRouteAlternatives,
   checkThresholdMonitor,
   updateSessionManager,
-  applyRelapsCompassion,
-  resetRelapsCompassion,
+  applyRelapseCompassion,
+  resetRelapseCompassion,
   checkRealityCheck,
   renderRecoveryOverlays,
 } from '../../systems/recovery-tools.js';
@@ -268,7 +268,7 @@ export class GridGameMode extends GameMode {
     // Check lose condition
     if (gameState.player && gameState.player.hp <= 0) {
       // Relapse compassion: give a second chance before game over
-      if (!applyRelapsCompassion(gameState)) {
+      if (!applyRelapseCompassion(gameState)) {
         this.onGameOver(gameState);
       }
     }
@@ -709,7 +709,7 @@ export class GridGameMode extends GameMode {
     gameState.score += 500 * gameState.level;
     
     // Reset per-level state
-    resetRelapsCompassion(gameState);
+    resetRelapseCompassion(gameState);
     
     // Advance level
     gameState.level++;

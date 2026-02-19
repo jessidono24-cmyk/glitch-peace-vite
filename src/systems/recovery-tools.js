@@ -241,7 +241,7 @@ export function updateSessionManager(gameState, deltaMs) {
  * Call when player HP reaches 0. Returns true if player was rescued (second chance).
  * Mutates gameState.player.hp to rescue value.
  */
-export function applyRelapsCompassion(gameState) {
+export function applyRelapseCompassion(gameState) {
   if (!gameState.mechanics?.compassionateRelapse) return false;
   if (gameState._compassionUsedThisLevel) return false;
 
@@ -269,7 +269,7 @@ export function applyRelapsCompassion(gameState) {
 /**
  * Reset relapse compassion state at level start.
  */
-export function resetRelapsCompassion(gameState) {
+export function resetRelapseCompassion(gameState) {
   delete gameState._compassionUsedThisLevel;
   delete gameState._compassionMessage;
 }

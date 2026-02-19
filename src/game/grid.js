@@ -4,11 +4,24 @@
 // ═══════════════════════════════════════════════════════════
 
 import { T, DIFFICULTY, DIFF_CFG } from '../core/constants.js';
-import { random, randomChoice, distance, fibonacci } from '../core/utils.js';
+import { random, randomChoice, distance, fibonacci, createSeededRandom, getDailySeed } from '../core/utils.js';
 
 export function generateGrid(gameState) {
   const sz = gameState.gridSize;
   const diff = DIFF_CFG[gameState.settings.difficulty] || DIFF_CFG.normal;
+
+  // DAILY mode: use a deterministic seeded random for reproducible level
+  let seededRng = null;
+  if (gameState.playMode === 'DAILY' || gameState.playMode === 'daily') {
+    const seed = getDailySeed() + gameState.level * 1000;
+    seededRng = createSeededRandom(seed);
+  }
+  const rng = seededRng
+    ? (min, max) => Math.floor(seededRng() * (max - min + 1)) + min
+    : random;
+  const rngChoice = seededRng
+    ? (arr) => arr[Math.floor(seededRng() * arr.length)]
+    : randomChoice;
 
   // Play-mode multipliers (set by applyMode) override difficulty defaults when present
   const hazardMulBase = diff.hazardMul !== undefined ? diff.hazardMul : 1.0;
@@ -26,8 +39,8 @@ export function generateGrid(gameState) {
   // Add internal walls
   const wallCount = Math.floor(sz * 1.5);
   for (let i = 0; i < wallCount; i++) {
-    const x = random(2, sz-3);
-    const y = random(2, sz-3);
+    const x = rng(2, sz-3);
+    const y = rng(2, sz-3);
     gameState.grid[y][x] = T.WALL;
   }
   
@@ -40,10 +53,10 @@ export function generateGrid(gameState) {
   const hazardCount = Math.floor(sz * sz * 0.08 * hazardMul);
   
   for (let i = 0; i < hazardCount; i++) {
-    const x = random(1, sz-2);
-    const y = random(1, sz-2);
+    const x = rng(1, sz-2);
+    const y = rng(1, sz-2);
     if (gameState.grid[y][x] === T.VOID) {
-      gameState.grid[y][x] = randomChoice(hazardTypes);
+      gameState.grid[y][x] = rngChoice(hazardTypes);
     }
   }
   
@@ -61,8 +74,8 @@ export function generateGrid(gameState) {
     let placed = false;
     let attempts = 0;
     while (!placed && attempts < 100) {
-      const x = random(2, sz-3);
-      const y = random(2, sz-3);
+      const x = rng(2, sz-3);
+      const y = rng(2, sz-3);
       const dist = distance(x, y, gameState.player.x, gameState.player.y);
       if (gameState.grid[y][x] === T.VOID && dist > 3) {
         gameState.grid[y][x] = T.PEACE;
@@ -82,12 +95,12 @@ export function generateGrid(gameState) {
     let placed = false;
     let attempts = 0;
     while (!placed && attempts < 100) {
-      const x = random(2, sz-3);
-      const y = random(2, sz-3);
+      const x = rng(2, sz-3);
+      const y = rng(2, sz-3);
       const dist = distance(x, y, gameState.player.x, gameState.player.y);
       if (gameState.grid[y][x] === T.VOID && dist > 3) {
         gameState.grid[y][x] = T.POWERUP;
-        const type = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+        const type = rngChoice(powerupTypes);
         gameState.powerupNodes.push({x, y, type});
         placed = true;
       }

@@ -16,6 +16,32 @@ export function randomChoice(arr) {
 export const rnd = n => Math.floor(Math.random() * n);
 export const pick = arr => arr[rnd(arr.length)];
 
+/**
+ * Simple seeded pseudo-random number generator (mulberry32).
+ * Returns a function that generates values in [0, 1).
+ */
+export function createSeededRandom(seed) {
+  let s = seed >>> 0;
+  return function() {
+    s |= 0; s = s + 0x6D2B79F5 | 0;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Generate today's seed based on the date (YYYYMMDD as integer).
+ * Same seed for all players on the same day.
+ */
+export function getDailySeed() {
+  const d = new Date();
+  return parseInt(
+    `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`,
+    10,
+  );
+}
+
 // ─── MATH HELPERS ──────────────────────────────────────────────────────
 
 export function clamp(val, min, max) {

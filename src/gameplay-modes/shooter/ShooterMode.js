@@ -273,14 +273,32 @@ export default class ShooterMode extends GameMode {
    */
   updateEnemies(dt) {
     for (const enemy of this.enemies) {
-      // Simple chase AI
-      const dx = this.player.x - enemy.x;
-      const dy = this.player.y - enemy.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      
-      if (dist > 0) {
-        enemy.x += (dx / dist) * enemy.speed * dt;
-        enemy.y += (dy / dist) * enemy.speed * dt;
+      if (enemy.type === 'zigzag') {
+        // Zigzag: perpendicular oscillation added to chase direction
+        if (!enemy._zigTime) enemy._zigTime = 0;
+        enemy._zigTime += dt;
+        const dx = this.player.x - enemy.x;
+        const dy = this.player.y - enemy.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          const nx = dx / dist;
+          const ny = dy / dist;
+          // Perpendicular component
+          const perpX = -ny;
+          const perpY = nx;
+          const zigAmt = Math.sin(enemy._zigTime * 6) * 0.7;
+          enemy.x += (nx + perpX * zigAmt) * enemy.speed * dt;
+          enemy.y += (ny + perpY * zigAmt) * enemy.speed * dt;
+        }
+      } else {
+        // Default chase AI
+        const dx = this.player.x - enemy.x;
+        const dy = this.player.y - enemy.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          enemy.x += (dx / dist) * enemy.speed * dt;
+          enemy.y += (dy / dist) * enemy.speed * dt;
+        }
       }
     }
   }
@@ -396,12 +414,45 @@ export default class ShooterMode extends GameMode {
       
       this.enemies.push({
         x, y,
-        health: 30,
-        maxHealth: 30,
+        health: 30 + Math.floor(waveNum * 5),
+        maxHealth: 30 + Math.floor(waveNum * 5),
         size: 12,
         speed: 50 + waveNum * 5,
         type: 'chaser'
       });
+    }
+
+    // Add special enemy types on later waves
+    if (waveNum >= 3) {
+      // TANK: slow, high HP, big
+      const tanks = Math.floor(waveNum / 3);
+      for (let t = 0; t < tanks; t++) {
+        const side = Math.floor(Math.random() * 4);
+        let tx, ty;
+        switch (side) {
+          case 0: tx = Math.random() * this.canvas.width; ty = 0; break;
+          case 1: tx = this.canvas.width; ty = Math.random() * this.canvas.height; break;
+          case 2: tx = Math.random() * this.canvas.width; ty = this.canvas.height; break;
+          default: tx = 0; ty = Math.random() * this.canvas.height; break;
+        }
+        this.enemies.push({ x: tx, y: ty, health: 150, maxHealth: 150, size: 22, speed: 25 + waveNum * 2, type: 'tank', color: '#ff6600' });
+      }
+    }
+
+    if (waveNum >= 5) {
+      // ZIGZAG: fast and erratic
+      const zigzags = Math.min(3, Math.floor(waveNum / 5));
+      for (let z = 0; z < zigzags; z++) {
+        const side = Math.floor(Math.random() * 4);
+        let zx, zy;
+        switch (side) {
+          case 0: zx = Math.random() * this.canvas.width; zy = 0; break;
+          case 1: zx = this.canvas.width; zy = Math.random() * this.canvas.height; break;
+          case 2: zx = Math.random() * this.canvas.width; zy = this.canvas.height; break;
+          default: zx = 0; zy = Math.random() * this.canvas.height; break;
+        }
+        this.enemies.push({ x: zx, y: zy, health: 20, maxHealth: 20, size: 8, speed: 110 + waveNum * 8, type: 'zigzag', zigPhase: Math.random() * Math.PI * 2, color: '#ff44ff' });
+      }
     }
     
     console.log(`[ShooterMode] Wave ${waveNum} started - ${count} enemies`);

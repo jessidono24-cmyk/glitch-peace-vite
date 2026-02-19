@@ -404,7 +404,7 @@ export function applyMode(game, mode) {
     game.moveSpeedBoost = cfg.mechanics.moveSpeedBoost;
   }
 
-  if (cfg.mechanics.timeLimit) {
+  if (cfg.config.timeLimit) {
     game.mechanics.timeLimit = cfg.config.timeLimit;
   }
   

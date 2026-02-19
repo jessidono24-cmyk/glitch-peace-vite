@@ -398,6 +398,15 @@ export function applyMode(game, mode) {
   if (cfg.mechanics.moveLimit) {
     game.movesRemaining = cfg.mechanics.moveLimit;
   }
+
+  if (cfg.mechanics.moveSpeedBoost) {
+    // Grid move delay is halved by speed multiplier (faster = lower delay)
+    game.moveSpeedBoost = cfg.mechanics.moveSpeedBoost;
+  }
+
+  if (cfg.mechanics.timeLimit) {
+    game.mechanics.timeLimit = cfg.config.timeLimit;
+  }
   
   return game;
 }

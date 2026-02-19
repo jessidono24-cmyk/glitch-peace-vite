@@ -154,8 +154,9 @@ export class GridGameMode extends GameMode {
     // Update active powerups (expiry + REGEN effect)
     updatePowerups(gameState);
 
-    // Apply SPEED powerup to movement delay
-    this.moveDelay = hasPowerup(gameState, 'movement_boost') ? 75 : 150;
+    // Apply SPEED powerup or SPEEDRUN mode boost to movement delay
+    const speedBoost = hasPowerup(gameState, 'movement_boost') ? 2.0 : (gameState.moveSpeedBoost || 1.0);
+    this.moveDelay = Math.max(50, Math.round(150 / speedBoost));
 
     // Update enemies
     if (gameState.enemies && gameState.enemies.length > 0) {
@@ -183,6 +184,25 @@ export class GridGameMode extends GameMode {
     if (gameState.movesRemaining !== undefined && gameState.movesRemaining <= 0
         && gameState.peaceCollected < gameState.peaceTotal) {
       this.onGameOver(gameState);
+    }
+
+    // ZEN_GARDEN tileRespawn: periodically add new PEACE tiles
+    if (gameState.mechanics?.tileRespawn && gameState.grid && gameState.peaceCollected > 0) {
+      if (!this._respawnTimer) this._respawnTimer = 0;
+      this._respawnTimer += deltaTime;
+      if (this._respawnTimer >= 3000) { // every 3 seconds
+        this._respawnTimer = 0;
+        const sz = gameState.gridSize;
+        for (let attempt = 0; attempt < 30; attempt++) {
+          const x = 1 + Math.floor(Math.random() * (sz - 2));
+          const y = 1 + Math.floor(Math.random() * (sz - 2));
+          if (gameState.grid[y]?.[x] === T.VOID) {
+            gameState.grid[y][x] = T.PEACE;
+            gameState.peaceTotal++;
+            break;
+          }
+        }
+      }
     }
   }
 

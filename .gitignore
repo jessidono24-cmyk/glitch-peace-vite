@@ -23,3 +23,6 @@ Thumbs.db
 .env.local
 .vite/
 _archive/".env" 
+*.log
+src/main-backup.js
+src/main-phase1.js

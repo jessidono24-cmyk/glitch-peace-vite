@@ -65,21 +65,19 @@ export class GridGameMode extends GameMode {
    * Generate a new level
    */
   generateLevel(gameState) {
-    const result = generateGrid(gameState);
+    // generateGrid modifies gameState directly (doesn't return result)
+    generateGrid(gameState);
     
-    // Store in mode state
-    gameState.modeState.grid = result.grid || gameState.grid;
-    gameState.modeState.peaceNodes = result.peaceNodes || gameState.peaceNodes || [];
-    gameState.modeState.peaceTotal = gameState.modeState.peaceNodes.length;
-    gameState.modeState.peaceCollected = 0;
+    // Grid data is already in gameState.grid, gameState.peaceNodes, etc.
+    // No need to copy to modeState - we'll use gameState directly
     
     // Initialize enemies based on play mode
     const enemyCount = this.getEnemyCount(gameState);
-    gameState.modeState.enemies = [];
+    gameState.enemies = [];
     for (let i = 0; i < enemyCount; i++) {
       const enemy = createEnemy(gameState, 'chase');
       if (enemy) {
-        gameState.modeState.enemies.push(enemy);
+        gameState.enemies.push(enemy);
       }
     }
 
@@ -102,20 +100,19 @@ export class GridGameMode extends GameMode {
    */
   update(gameState, deltaTime) {
     const now = Date.now();
-    const modeState = gameState.modeState;
 
-    // Update enemies
-    if (modeState.enemies && modeState.enemies.length > 0) {
-      updateEnemies(gameState, modeState.enemies, deltaTime);
+    // Update enemies (use gameState.enemies directly - legacy location)
+    if (gameState.enemies && gameState.enemies.length > 0) {
+      updateEnemies(gameState, gameState.enemies, deltaTime);
     }
 
-    // Update particles
-    if (modeState.particles && modeState.particles.length > 0) {
-      updateParticles(modeState.particles, deltaTime);
+    // Update particles (use gameState.particles directly - legacy location)
+    if (gameState.particles && gameState.particles.length > 0) {
+      updateParticles(gameState.particles, deltaTime);
     }
 
-    // Check win condition
-    if (modeState.peaceCollected >= modeState.peaceTotal) {
+    // Check win condition (use gameState directly)
+    if (gameState.peaceCollected >= gameState.peaceTotal) {
       this.onLevelComplete(gameState);
     }
 
@@ -129,11 +126,14 @@ export class GridGameMode extends GameMode {
    * Render the game
    */
   render(gameState, ctx) {
-    const modeState = gameState.modeState;
-    const grid = modeState.grid;
+    // Use grid from main gameState (generateGrid writes there)
+    const grid = gameState.grid;
     const tileSize = this.tileSize;
 
-    if (!grid) return;
+    if (!grid || !Array.isArray(grid)) {
+      console.warn('[GridGameMode] No grid data to render');
+      return;
+    }
 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -144,17 +144,22 @@ export class GridGameMode extends GameMode {
         const tileDef = TILE_DEF[tile] || {};
         
         // Draw tile
-        ctx.fillStyle = tileDef.color || '#1a1a2e';
+        ctx.fillStyle = tileDef.bg || '#1a1a2e';
         ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
+        // Draw border
+        ctx.strokeStyle = tileDef.bd || 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
+
         // Draw symbol
-        if (tileDef.symbol) {
-          ctx.fillStyle = tileDef.textColor || '#fff';
+        if (tileDef.sy) {
+          ctx.fillStyle = tileDef.g || tileDef.bd || '#fff';
           ctx.font = `${tileSize * 0.6}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(
-            tileDef.symbol,
+            tileDef.sy,
             x * tileSize + tileSize / 2,
             y * tileSize + tileSize / 2
           );
@@ -162,19 +167,20 @@ export class GridGameMode extends GameMode {
       }
     }
 
-    // Render peace nodes
-    if (modeState.peaceNodes) {
-      modeState.peaceNodes.forEach(node => {
+    // Render peace nodes (use gameState.peaceNodes)
+    const peaceNodes = gameState.peaceNodes;
+    if (peaceNodes) {
+      peaceNodes.forEach(node => {
         if (!node.collected) {
-          ctx.fillStyle = TILE_DEF[T.PEACE].color;
+          ctx.fillStyle = TILE_DEF[T.PEACE].bg;
           ctx.fillRect(node.x * tileSize, node.y * tileSize, tileSize, tileSize);
           
-          ctx.fillStyle = TILE_DEF[T.PEACE].textColor;
+          ctx.fillStyle = TILE_DEF[T.PEACE].g || '#fff';
           ctx.font = `${tileSize * 0.6}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(
-            TILE_DEF[T.PEACE].symbol,
+            TILE_DEF[T.PEACE].sy,
             node.x * tileSize + tileSize / 2,
             node.y * tileSize + tileSize / 2
           );
@@ -182,11 +188,12 @@ export class GridGameMode extends GameMode {
       });
     }
 
-    // Render enemies
-    if (modeState.enemies) {
-      modeState.enemies.forEach(enemy => {
-        if (enemy.active) {
-          ctx.fillStyle = enemy.color || '#f00';
+    // Render enemies (use gameState.enemies)
+    const enemies = gameState.enemies;
+    if (enemies) {
+      enemies.forEach(enemy => {
+        if (enemy.active !== false) {
+          ctx.fillStyle = enemy.color || '#ff6600';
           ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize, tileSize, tileSize);
           
           ctx.fillStyle = '#fff';
@@ -194,7 +201,7 @@ export class GridGameMode extends GameMode {
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(
-            enemy.symbol || '◆',
+            enemy.symbol || '■',
             enemy.x * tileSize + tileSize / 2,
             enemy.y * tileSize + tileSize / 2
           );
@@ -207,12 +214,14 @@ export class GridGameMode extends GameMode {
       const px = gameState.player.x * tileSize;
       const py = gameState.player.y * tileSize;
       
-      // Player background
-      ctx.fillStyle = PLAYER.BG;
+      // Player glow
+      ctx.fillStyle = '#00e5ff';
+      ctx.globalAlpha = 0.3;
       ctx.fillRect(px, py, tileSize, tileSize);
+      ctx.globalAlpha = 1.0;
       
       // Player symbol
-      ctx.fillStyle = PLAYER.OUTLINE;
+      ctx.fillStyle = '#ffffff';
       ctx.font = `${tileSize * 0.7}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -223,19 +232,17 @@ export class GridGameMode extends GameMode {
       );
     }
 
-    // Render particles
-    if (modeState.particles) {
-      modeState.particles.forEach(particle => {
+    // Render particles (use gameState.particles)
+    const particles = gameState.particles;
+    if (particles && particles.length) {
+      particles.forEach(particle => {
         if (particle.life > 0) {
           ctx.save();
-          ctx.globalAlpha = particle.life;
-          ctx.fillStyle = particle.color;
-          ctx.fillRect(
-            particle.x * tileSize,
-            particle.y * tileSize,
-            tileSize * 0.3,
-            tileSize * 0.3
-          );
+          ctx.globalAlpha = Math.min(1, particle.life / (particle.maxLife || 20));
+          ctx.fillStyle = particle.color || '#fff';
+          ctx.beginPath();
+          ctx.arc(particle.x, particle.y, particle.r || 2, 0, Math.PI * 2);
+          ctx.fill();
           ctx.restore();
         }
       });
@@ -278,29 +285,31 @@ export class GridGameMode extends GameMode {
    * Check if player collected a peace node
    */
   checkPeaceNodeCollection(gameState) {
-    const modeState = gameState.modeState;
     const player = gameState.player;
+    const peaceNodes = gameState.peaceNodes;
     
-    if (!modeState.peaceNodes) return;
+    if (!peaceNodes) return;
     
-    modeState.peaceNodes.forEach(node => {
+    peaceNodes.forEach((node, index) => {
       if (!node.collected && node.x === player.x && node.y === player.y) {
         node.collected = true;
-        modeState.peaceCollected++;
+        gameState.peaceCollected++;
         
         // Award points
         gameState.score += 100;
         
-        // Trigger emotional response
-        gameState.emotionalField?.trigger('joy', 0.6);
-        
-        // Create particles
-        if (modeState.particles) {
-          const particles = createParticles(node.x, node.y, 8);
-          modeState.particles.push(...particles);
+        // Trigger emotional response (check if method exists)
+        if (gameState.emotionalField && typeof gameState.emotionalField.trigger === 'function') {
+          gameState.emotionalField.trigger('joy', 0.6);
         }
         
-        console.log(`[GridGameMode] Peace node collected (${modeState.peaceCollected}/${modeState.peaceTotal})`);
+        // Create particles
+        if (gameState.particles) {
+          const particles = createParticles(node.x, node.y, 8);
+          gameState.particles.push(...particles);
+        }
+        
+        console.log(`[GridGameMode] Peace node collected (${gameState.peaceCollected}/${gameState.peaceTotal})`);
       }
     });
   }
@@ -317,8 +326,10 @@ export class GridGameMode extends GameMode {
     // Advance level
     gameState.level++;
     
-    // Trigger positive emotion
-    gameState.emotionalField?.trigger('triumph', 0.8);
+    // Trigger positive emotion (check if method exists)
+    if (gameState.emotionalField && typeof gameState.emotionalField.trigger === 'function') {
+      gameState.emotionalField.trigger('joy', 0.8); // Use 'joy' instead of 'triumph'
+    }
     
     // Generate new level
     this.generateLevel(gameState);
@@ -331,8 +342,10 @@ export class GridGameMode extends GameMode {
     console.log('[GridGameMode] Game Over');
     gameState.gameState = 'GAME_OVER';
     
-    // Trigger emotion
-    gameState.emotionalField?.trigger('despair', 0.5);
+    // Trigger emotion (check if method exists)
+    if (gameState.emotionalField && typeof gameState.emotionalField.trigger === 'function') {
+      gameState.emotionalField.trigger('despair', 0.5);
+    }
   }
 
   /**

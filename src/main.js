@@ -1,6 +1,9 @@
-// GLITCH·PEACE BASE LAYER v1.0 - Phase 2A Integration
+// GLITCH·PEACE BASE LAYER v1.0 - Phase 2A Integration + Phase 1 Modular Architecture
 // Emotional + Temporal Systems fully wired to gameplay
 // MenuSystem + core consciousness engine
+// Phase 1: Modular gameplay mode system
+
+// Core imports
 import { T, TILE_DEF, DIFF_CFG, GRID_SIZES, BIOMES, SYNERGY_MESSAGES, EXIT_MESSAGES } from './core/constants.js';
 import { saveGame, loadGame, hasSaveData } from './core/storage.js';
 import { generateGrid } from './game/grid.js';
@@ -13,7 +16,18 @@ import { TemporalSystem } from './core/temporal-system.js';
 import { updateHUD } from './ui/hud.js';
 import AudioManager from './systems/audio.js';
 
-// Game state
+// PHASE 1: New modular architecture imports
+import GameStateManager from './core/game-engine/GameStateManager.js';
+import InputManager from './core/game-engine/InputManager.js';
+import { modeRegistry } from './gameplay-modes/ModeRegistry.js';
+import './gameplay-modes/grid-based/index.js'; // Auto-registers GridGameMode
+
+// PHASE 1: Initialize new architecture
+let gameStateManager = null;
+let inputManager = null;
+let currentMode = null;
+
+// Game state (legacy - will be gradually migrated to GameStateManager)
 const game = {
   state: 'MENU', // MENU | MENU_DREAMSCAPE | PLAYING | PAUSED
   level: 1,
@@ -76,6 +90,15 @@ function initUI() {
   canvas = document.getElementById('canvas');
   ctx = canvas?.getContext('2d');
   
+  // PHASE 1: Initialize new architecture components
+  gameStateManager = new GameStateManager({
+    settings: game.settings
+  });
+  gameStateManager.state = game; // Link to legacy state for now
+  gameStateManager.initConsciousnessSystems();
+  
+  inputManager = new InputManager();
+  
   // Initialize MenuSystem with callbacks
   menuSystem = new MenuSystem({
     CFG: game.settings,
@@ -117,6 +140,9 @@ function initUI() {
 
   // Check for existing save
   menuSystem.setSaveState({ hasSave: hasSaveData(), meta: null });
+  
+  console.log('[Phase 1] Modular architecture initialized');
+  console.log('[ModeRegistry] Available modes:', modeRegistry.getAllModes());
 }
 
 // Attach game to window for cross-module access (menu -> temporalSystem)
@@ -140,7 +166,30 @@ function startGame() {
   if (game.level === 1) {
     game.player = createPlayer();
   }
-  generateGrid(game);
+  
+  // PHASE 1: Create and initialize game mode
+  if (!currentMode) {
+    currentMode = modeRegistry.createMode('grid-classic', {
+      playMode: 'ARCADE' // Default play mode
+    });
+    
+    if (currentMode) {
+      currentMode.init(game, canvas, ctx);
+      console.log('[Phase 1] Game mode initialized:', currentMode.name);
+    } else {
+      // Fallback to legacy grid generation if mode creation fails
+      console.warn('[Phase 1] Mode creation failed, using legacy grid generation');
+      generateGrid(game);
+    }
+  } else {
+    // Mode already exists, just generate new level
+    if (currentMode.generateLevel) {
+      currentMode.generateLevel(game);
+    } else {
+      generateGrid(game);
+    }
+  }
+  
   spawnEnemies();
   updateHUD(game);
 }
@@ -168,7 +217,7 @@ function spawnEnemies() {
 
 // HUD rendering moved to src/ui/hud.js (updateHUD imported)
 
-// Input handling
+// Input handling (legacy - kept for menu and pause)
 const keys = {};
 document.addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
@@ -197,15 +246,25 @@ document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
 let lastMoveTime = 0;
 const MOVE_MS = 150;
+
+// PHASE 1: Enhanced input handling using InputManager
 function handleGameInput() {
   const now = Date.now();
-  if (now - lastMoveTime < MOVE_MS) return;
   if (game.state !== 'PLAYING') return;
-  lastMoveTime = Date.now();
-  if (keys['w'] || keys['arrowup']) { movePlayer(game, 0, -1); lastMoveTime = now; }
-  else if (keys['s'] || keys['arrowdown']) { movePlayer(game, 0, 1); lastMoveTime = now; }
-  else if (keys['a'] || keys['arrowleft']) { movePlayer(game, -1, 0); lastMoveTime = now; }
-  else if (keys['d'] || keys['arrowright']) { movePlayer(game, 1, 0); lastMoveTime = now; }
+  
+  // Use new InputManager if available and mode supports it
+  if (inputManager && currentMode && currentMode.handleInput) {
+    currentMode.handleInput(game, inputManager);
+    inputManager.clearFrameInput();
+  } else {
+    // Fallback to legacy input handling
+    if (now - lastMoveTime < MOVE_MS) return;
+    lastMoveTime = Date.now();
+    if (keys['w'] || keys['arrowup']) { movePlayer(game, 0, -1); lastMoveTime = now; }
+    else if (keys['s'] || keys['arrowdown']) { movePlayer(game, 0, 1); lastMoveTime = now; }
+    else if (keys['a'] || keys['arrowleft']) { movePlayer(game, -1, 0); lastMoveTime = now; }
+    else if (keys['d'] || keys['arrowright']) { movePlayer(game, 1, 0); lastMoveTime = now; }
+  }
 }
 
 // Render
@@ -226,75 +285,85 @@ function render(deltaMs = 16) {
   }
   
   if (game.state === 'PLAYING') {
-    // Draw game
-    game.tileSize = canvas.width / game.gridSize;
-    
-    // Draw grid
-    for (let y = 0; y < game.gridSize; y++) {
-      for (let x = 0; x < game.gridSize; x++) {
-        const tile = game.grid[y][x];
-        const def = TILE_DEF[tile];
-        const px = x * game.tileSize;
-        const py = y * game.tileSize;
-        
-        ctx.fillStyle = def.bg;
-        ctx.fillRect(px, py, game.tileSize, game.tileSize);
-        
-        // Draw border
-        ctx.strokeStyle = def.bd || 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(px, py, game.tileSize, game.tileSize);
-        
-        // Draw symbol
-        if (def.sy) {
-          ctx.fillStyle = def.g || def.bd || '#fff';
-          ctx.font = `${game.tileSize * 0.6}px Courier New`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(def.sy, px + game.tileSize / 2, py + game.tileSize / 2);
-        }
-      }
-    }
-    
-    // Draw player (CYAN glow + WHITE core - fixed anchor)
-    const px = game.player.x * game.tileSize;
-    const py = game.player.y * game.tileSize;
-    ctx.fillStyle = '#00e5ff'; // Cyan glow
-    ctx.globalAlpha = 0.3;
-    ctx.fillRect(px, py, game.tileSize, game.tileSize);
-    ctx.globalAlpha = 1.0;
-    ctx.fillStyle = '#ffffff'; // White core
-    ctx.font = `${game.tileSize * 0.7}px Courier New`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('◈', px + game.tileSize / 2, py + game.tileSize / 2);
-    
-    // Draw enemies
-    for (const enemy of game.enemies) {
-      const ex = enemy.x * game.tileSize;
-      const ey = enemy.y * game.tileSize;
-      ctx.fillStyle = '#ff6600'; // Enemy orange
-      ctx.font = `${game.tileSize * 0.6}px Courier New`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('■', ex + game.tileSize / 2, ey + game.tileSize / 2);
-    }
-
-    // Draw particles (enhanced system)
-    if (game.particles && game.particles.length) {
-      for (const p of game.particles) {
-        const alpha = Math.max(0, Math.min(1, p.life / (p.maxLife || 20)));
-        ctx.globalAlpha = alpha;
-        ctx.fillStyle = p.color || '#fff';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r || 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1.0;
+    // PHASE 1: Use mode rendering if available
+    if (currentMode && currentMode.render) {
+      currentMode.render(game, ctx);
+    } else {
+      // Fallback to legacy rendering
+      renderLegacy();
     }
     
     // Show HUD
     document.querySelector('#hud').style.display = 'flex';
+  }
+}
+
+// Legacy rendering (kept as fallback)
+function renderLegacy() {
+  game.tileSize = canvas.width / game.gridSize;
+  
+  // Draw grid
+  for (let y = 0; y < game.gridSize; y++) {
+    for (let x = 0; x < game.gridSize; x++) {
+      const tile = game.grid[y][x];
+      const def = TILE_DEF[tile];
+      const px = x * game.tileSize;
+      const py = y * game.tileSize;
+      
+      ctx.fillStyle = def.bg;
+      ctx.fillRect(px, py, game.tileSize, game.tileSize);
+      
+      // Draw border
+      ctx.strokeStyle = def.bd || 'rgba(255,255,255,0.1)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px, py, game.tileSize, game.tileSize);
+      
+      // Draw symbol
+      if (def.sy) {
+        ctx.fillStyle = def.g || def.bd || '#fff';
+        ctx.font = `${game.tileSize * 0.6}px Courier New`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(def.sy, px + game.tileSize / 2, py + game.tileSize / 2);
+      }
+    }
+  }
+  
+  // Draw player (CYAN glow + WHITE core - fixed anchor)
+  const px = game.player.x * game.tileSize;
+  const py = game.player.y * game.tileSize;
+  ctx.fillStyle = '#00e5ff'; // Cyan glow
+  ctx.globalAlpha = 0.3;
+  ctx.fillRect(px, py, game.tileSize, game.tileSize);
+  ctx.globalAlpha = 1.0;
+  ctx.fillStyle = '#ffffff'; // White core
+  ctx.font = `${game.tileSize * 0.7}px Courier New`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('◈', px + game.tileSize / 2, py + game.tileSize / 2);
+  
+  // Draw enemies
+  for (const enemy of game.enemies) {
+    const ex = enemy.x * game.tileSize;
+    const ey = enemy.y * game.tileSize;
+    ctx.fillStyle = '#ff6600'; // Enemy orange
+    ctx.font = `${game.tileSize * 0.6}px Courier New`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('■', ex + game.tileSize / 2, ey + game.tileSize / 2);
+  }
+
+  // Draw particles (enhanced system)
+  if (game.particles && game.particles.length) {
+    for (const p of game.particles) {
+      const alpha = Math.max(0, Math.min(1, p.life / (p.maxLife || 20)));
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = p.color || '#fff';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r || 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1.0;
   }
 }
 
@@ -310,9 +379,15 @@ function gameLoop(currentTime) {
     // PHASE 2A: Update consciousness engine systems
     updateConsciousnessEngine(deltaMs);
     
-    // Game systems
-    updateEnemies(game);
-    updateParticles(game);
+    // PHASE 1: Use mode update if available
+    if (currentMode && currentMode.update) {
+      currentMode.update(game, deltaMs);
+    } else {
+      // Fallback to legacy game systems
+      updateEnemies(game);
+      updateParticles(game);
+    }
+    
     updateHUD(game);
   }
   
@@ -346,12 +421,6 @@ function updateConsciousnessEngine(deltaMs) {
 }
 
 // Init
-console.log('🌌 GLITCH·PEACE BASE LAYER v1.0');
+console.log('🌌 GLITCH·PEACE BASE LAYER v1.0 - Phase 1 Modular Architecture');
 initUI();
 requestAnimationFrame(gameLoop);
-
-
-
-
-
-

@@ -12,6 +12,7 @@ import { T, TILE_DEF, PLAYER } from '../../core/constants.js';
 import { applyMode } from '../../systems/play-modes.js';
 import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscapes.js';
 import { updatePowerups, hasPowerup } from '../../systems/powerups.js';
+import { undoGameMove } from '../../systems/undo.js';
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -467,10 +468,32 @@ export class GridGameMode extends GameMode {
       return;
     }
 
+    // PUZZLE mode undo: U key
+    if (gameState.mechanics?.undoEnabled && input.isKeyPressed('u') || input.isKeyPressed('U')) {
+      undoGameMove(gameState);
+      this.lastMoveTime = now;
+      return;
+    }
+
     // Get directional input
     const dir = input.getDirectionalInput();
     
     if (dir.x !== 0 || dir.y !== 0) {
+      // Save undo snapshot for PUZZLE mode before moving
+      if (gameState.mechanics?.undoEnabled) {
+        if (!gameState.history) gameState.history = [];
+        const snap = {
+          player: { ...gameState.player },
+          grid: gameState.grid.map(row => [...row]),
+          peaceCollected: gameState.peaceCollected,
+          peaceTotal: gameState.peaceTotal,
+          score: gameState.score,
+          movesRemaining: gameState.movesRemaining,
+        };
+        gameState.history.push(snap);
+        if (gameState.history.length > 20) gameState.history.shift(); // cap at 20
+      }
+
       // Attempt to move player — player.js:movePlayer handles all tile interactions
       // including peace node collection, particles, audio, and peaceCollected increment
       const moved = movePlayer(gameState, dir.x, dir.y);

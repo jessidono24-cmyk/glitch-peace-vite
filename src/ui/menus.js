@@ -7,6 +7,7 @@ import { GRID_SIZES, DIFF_CFG } from '../core/constants.js';
 import { TUTORIAL_PAGES } from './tutorial-content.js';
 import { listDreamscapes } from '../systems/dreamscapes.js';
 import { getAvailableModes } from '../systems/play-modes.js';
+import { getAvailableCosmologies } from '../systems/cosmologies.js';
 
 function listFromObjKeys(obj) { return Object.keys(obj); }
 function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
@@ -21,12 +22,14 @@ export class MenuSystem {
     this.onRestart = onRestart;
     this.onSelectDreamscape = onSelectDreamscape;
 
-    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode'
+    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology'
     this.sel = 0;
     this.tutPage = 0;
     this.dreamscapeSel = 0;
     this.playmodeSel = 0;
+    this.cosmologySel = 0;
     this._pendingDreamscape = null; // dreamscape id chosen before play mode
+    this._pendingPlaymode = null;   // play mode id chosen before cosmology
 
     this.hasSave = false;
     this.saveMeta = null;
@@ -49,6 +52,7 @@ export class MenuSystem {
     if (screen === 'tutorial') this.tutPage = 0;
     if (screen === 'dreamscape') this.dreamscapeSel = 0;
     if (screen === 'playmode') this.playmodeSel = 0;
+    if (screen === 'cosmology') this.cosmologySel = 0;
     console.log(`[DEBUG] MenuSystem.open('${screen}') called`);
     // Note: Canvas-based rendering happens in draw() method, not _render()
   }
@@ -68,6 +72,10 @@ export class MenuSystem {
       }
       if (this.screen === 'playmode') {
         this.open('dreamscape');
+        return { consumed: true };
+      }
+      if (this.screen === 'cosmology') {
+        this.open('playmode');
         return { consumed: true };
       }
       return { consumed: false };
@@ -91,6 +99,10 @@ export class MenuSystem {
 
     if (this.screen === 'playmode') {
       return this._handlePlaymode(k);
+    }
+
+    if (this.screen === 'cosmology') {
+      return this._handleCosmology(k);
     }
 
     if (this.screen === 'credits') {
@@ -219,13 +231,42 @@ export class MenuSystem {
     }
     if (k === 'Enter' || k === ' ') {
       const mode = modes[this.playmodeSel];
-      if (mode && this.onSelectDreamscape) {
-        this.onSelectDreamscape(this._pendingDreamscape || 'RIFT', mode.id); // use id as-is (already uppercase)
+      if (mode) {
+        this._pendingPlaymode = mode.id;
+        this.open('cosmology'); // proceed to cosmology selection
       }
       return { consumed: true };
     }
     if (k === 'Backspace') {
       this.open('dreamscape');
+      return { consumed: true };
+    }
+    return { consumed: false };
+  }
+
+  _handleCosmology(k) {
+    const cosmologies = this.getCosmologyOptions();
+    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
+      this.cosmologySel = (this.cosmologySel - 1 + cosmologies.length) % cosmologies.length;
+      return { consumed: true };
+    }
+    if (k === 'ArrowDown' || k === 's' || k === 'S') {
+      this.cosmologySel = (this.cosmologySel + 1) % cosmologies.length;
+      return { consumed: true };
+    }
+    if (k === 'Enter' || k === ' ') {
+      const cosmo = cosmologies[this.cosmologySel];
+      if (this.onSelectDreamscape) {
+        this.onSelectDreamscape(
+          this._pendingDreamscape || 'RIFT',
+          this._pendingPlaymode || 'ARCADE',
+          cosmo?.id || null, // null = no cosmology
+        );
+      }
+      return { consumed: true };
+    }
+    if (k === 'Backspace') {
+      this.open('playmode');
       return { consumed: true };
     }
     return { consumed: false };
@@ -367,6 +408,15 @@ export class MenuSystem {
     return getAvailableModes().filter(m => m.id !== 'coop'); // exclude co-op (future)
   }
 
+  getCosmologyOptions() {
+    // "None" as first option so cosmology is optional
+    const cosmos = getAvailableCosmologies();
+    return [
+      { id: null, name: 'NO COSMOLOGY', tradition: '—', subtitle: 'Standard gameplay, no cosmology modifier' },
+      ...cosmos,
+    ];
+  }
+
   // ────────────────────────────────────────────────────────────────────
   //  DRAWING
   // ────────────────────────────────────────────────────────────────────
@@ -389,6 +439,7 @@ export class MenuSystem {
     if (this.screen === 'tutorial') return this._drawTutorial(ctx, w, h);
     if (this.screen === 'dreamscape') return this._drawDreamscape(ctx, w, h);
     if (this.screen === 'playmode') return this._drawPlaymode(ctx, w, h);
+    if (this.screen === 'cosmology') return this._drawCosmology(ctx, w, h);
     if (this.screen === 'credits') return this._drawCredits(ctx, w, h);
   }
 
@@ -654,6 +705,82 @@ export class MenuSystem {
     ctx.font = '8px Courier New';
     ctx.textAlign = 'center';
     ctx.fillText('↑/↓ choose · ENTER confirm · ESC back', w / 2, by + boxH + 22);
+    ctx.textAlign = 'left';
+  }
+
+  _drawCosmology(ctx, w, h) {
+    const dreamId = this._pendingDreamscape || 'RIFT';
+    const playMode = this._pendingPlaymode || 'ARCADE';
+    this._drawHeader(ctx, w, h, `CHOOSE COSMOLOGY · ${dreamId} · ${playMode}`);
+
+    const cosmologies = this.getCosmologyOptions();
+    const boxW = 500;
+    const rowH = 38;
+    const paddingV = 14;
+    const boxH = Math.min(cosmologies.length * rowH + paddingV * 2, h * 0.75);
+    const visibleRows = Math.floor((boxH - paddingV * 2) / rowH);
+    const bx = (w - boxW) / 2;
+    const by = h / 2 - boxH / 2 + 10;
+
+    // Scroll so selected item is visible
+    const scrollStart = Math.max(0, Math.min(
+      this.cosmologySel - Math.floor(visibleRows / 2),
+      cosmologies.length - visibleRows,
+    ));
+
+    ctx.fillStyle = 'rgba(7,7,20,0.92)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(bx, by, boxW, boxH);
+    ctx.clip();
+
+    for (let i = 0; i < cosmologies.length; i++) {
+      const cosmo = cosmologies[i];
+      const isSel = i === this.cosmologySel;
+      const rowY = by + paddingV + (i - scrollStart) * rowH;
+      if (rowY + rowH < by || rowY > by + boxH) continue;
+
+      if (isSel) {
+        ctx.fillStyle = `rgba(0,229,255,${0.07 + pulse * 0.10})`;
+        ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
+        ctx.strokeStyle = `rgba(0,229,255,${0.28 + pulse * 0.20})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
+      }
+
+      const label = cosmo.id === null ? cosmo.name : `${cosmo.name}`;
+      ctx.fillStyle = isSel ? '#00e5ff' : '#b8b8d0';
+      ctx.font = isSel ? 'bold 11px Courier New' : '11px Courier New';
+      ctx.textAlign = 'left';
+      ctx.fillText((isSel ? '▶ ' : '  ') + label, bx + 26, rowY + rowH / 2 - 4);
+
+      // tradition + subtitle
+      const tradLabel = cosmo.tradition ? `${cosmo.tradition}` : '';
+      ctx.fillStyle = isSel ? '#88ffcc' : '#445566';
+      ctx.font = '8px Courier New';
+      const sub = (cosmo.subtitle || '').length > 38 ? cosmo.subtitle.slice(0, 36) + '…' : (cosmo.subtitle || '');
+      ctx.fillText(sub, bx + 26, rowY + rowH / 2 + 8);
+      if (tradLabel) {
+        ctx.textAlign = 'right';
+        ctx.fillStyle = isSel ? '#ccaaff' : '#334';
+        ctx.fillText(tradLabel, bx + boxW - 20, rowY + rowH / 2 - 4);
+        ctx.textAlign = 'left';
+      }
+    }
+
+    ctx.restore();
+
+    ctx.fillStyle = '#445566';
+    ctx.font = '8px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('↑/↓ choose · ENTER start · BKSP back', w / 2, by + boxH + 22);
     ctx.textAlign = 'left';
   }
 

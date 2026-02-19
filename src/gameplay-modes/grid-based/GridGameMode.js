@@ -14,6 +14,7 @@ import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscap
 import { updatePowerups, hasPowerup } from '../../systems/powerups.js';
 import { undoGameMove } from '../../systems/undo.js';
 import { updateCombo } from '../../game/player.js';
+import { getCosmoModifiers } from '../../systems/cosmologies.js';
 import {
   checkImpulseBuffer,
   cancelImpulseBuffer,
@@ -84,6 +85,14 @@ export class GridGameMode extends GameMode {
     if (s.consequencePreview !== undefined)  gameState.mechanics.consequencePreview  = s.consequencePreview;
     // Session reminders: controlled by settings.sessionReminders (default ON)
     if (s.sessionReminders === false)        gameState._sessionRemindersDisabled = true;
+
+    // Apply cosmology modifiers (if a cosmology was selected in the menu)
+    if (gameState.currentCosmology) {
+      const cosmoMods = getCosmoModifiers(gameState.currentCosmology);
+      Object.assign(gameState.mechanics, cosmoMods);
+      // Cosmology accent color for HUD display
+      if (cosmoMods.accent) gameState._cosmoAccent = cosmoMods.accent;
+    }
 
     // Initialize timer for timed modes (SPEEDRUN, PATTERN_TRAINING, DAILY, etc.)
     if (gameState.mechanics?.timeLimit && typeof gameState.mechanics.timeLimit === 'number') {

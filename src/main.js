@@ -143,10 +143,11 @@ function initUI() {
       game.player = createPlayer();
       startGame();
     },
-    onSelectDreamscape: (dreamscapeId, playModeId) => {
+    onSelectDreamscape: (dreamscapeId, playModeId, cosmologyId = null) => {
       // Fresh start — reset run state
       game.currentDreamscape = dreamscapeId;
       game.playMode = playModeId || 'ARCADE';
+      game.currentCosmology = cosmologyId || null;
       game.level = 1;
       game.score = 0;
       game.player = createPlayer();

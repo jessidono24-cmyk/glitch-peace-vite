@@ -296,3 +296,54 @@ export function getAvailableCosmologies() {
 export function getCosmoloniesByTradition(tradition) {
   return Object.values(COSMOLOGIES).filter(c => c.tradition === tradition);
 }
+
+// ─────────────────────────────────────────────────────────────────────
+//  COSMOLOGY MECHANICAL MODIFIERS
+//  Each cosmology tunes the game physics without requiring a new mode.
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns a modifier object for a cosmology ID.
+ * Merged into gameState.mechanics when a cosmology is selected.
+ */
+export function getCosmoModifiers(cosmoId) {
+  const MAP = {
+    // 1. Chakra - progressive healing layers; enemies flee at high coherence
+    chakra_realm:      { autoHeal: 0.5, bossEnabled: true, layerAscent: true, accent: '#ffdd00' },
+
+    // 2. Buddhist Wheel - score penalty on hazard steps (attachment); insight×1.5
+    wheel_of_becoming: { insightMul: 1.5, hazardScorePenalty: 50, breakCycle: true, accent: '#6655ff' },
+
+    // 3. Taoist Wu Wei - less input = better: bonus score for standing still
+    wu_wei_flow:       { flowBonus: true, scoreMul: 1.3, moveSpeedBoost: 0.8, accent: '#00eedd' },
+
+    // 4. Tantric Union - polarity meter; balance gives aura shield
+    tantric_union:     { polarityMeter: true, shieldWhenBalanced: true, accent: '#ff0088' },
+
+    // 5. Norse Yggdrasil - 9 realms: extra peace nodes, enhanced enemy drops
+    world_tree:        { peaceMul: 1.4, extraPeaceOnKill: true, bossEnabled: true, accent: '#558855' },
+
+    // 6. Celtic Otherworld - veil mechanic: hidden tiles auto-reveal with awe
+    celtic_otherworld: { veilReveal: true, aweOnHidden: true, insightMul: 1.3, accent: '#00cc88' },
+
+    // 7. Hermetic - as above so below: boss reflects player stats
+    hermetic_ladder:   { mirrorBoss: true, insightMul: 2.0, hazardMul: 1.2, accent: '#aabb00' },
+
+    // 8. Shamanic - spirit guide: random helpful particle burst every 2 min
+    shamanic_web:      { spiritGuide: true, autoHeal: 0.3, tileRespawn: true, accent: '#ff8833' },
+
+    // 9. Sufi - whirling: player gains score for unbroken circular paths
+    sufi_path:         { circleBonus: true, scoreMul: 1.2, accent: '#ff99cc' },
+
+    // 10. Egyptian Duat - shadow self: spawns a mirror enemy of the player
+    egyptian_duat:     { shadowSelf: true, hazardMul: 1.3, insightMul: 1.8, accent: '#ffdd55' },
+
+    // 11. Mayan Tzolk'in - day cycles: different rules every 20 levels
+    mayan_calendar:    { dayRotation: true, scoreMul: 1.5, accent: '#cc4400' },
+
+    // 12. I Ching - hexagram: random mechanic shift every 64 moves
+    i_ching_hexagrams: { hexagramShift: true, scoreMul: 1.4, routeAlternatives: true, accent: '#ddaa22' },
+  };
+
+  return MAP[cosmoId] || {};
+}

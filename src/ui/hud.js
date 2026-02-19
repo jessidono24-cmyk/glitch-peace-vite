@@ -116,7 +116,8 @@ export function updateHUD(game) {
   const temporalMods = game.temporalSystem?.getModifiers?.();
   const dreamscape = game.currentDreamscape ? ` · ${game.currentDreamscape}` : '';
   const playMode = game.playMode && game.playMode !== 'ARCADE' ? ` · ${game.playMode}` : '';
-  let realmText = `${realm.name}${dreamscape}${playMode} · ${temporalMods?.phaseName || ''} ${temporalMods?.dayName || ''}`;
+  const cosmology = game.currentCosmology ? ` · ${game.currentCosmology.replace(/_/g, ' ').toUpperCase()}` : '';
+  let realmText = `${realm.name}${dreamscape}${playMode}${cosmology} · ${temporalMods?.phaseName || ''} ${temporalMods?.dayName || ''}`;
 
   // Append insight tokens if any earned
   if (game.insightTokens && game.insightTokens > 0) {

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════════════
-//  RPG Mode Registration — Phase M5 Skeleton
+//  RPG Mode Registration — Phase M5 (Active)
 //  Registers the RPG mode in the ModeRegistry.
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -9,8 +9,8 @@ import RPGMode from './RPGMode.js';
 modeRegistry.register('rpg', RPGMode, {
   name: 'RPG Adventure',
   type: 'rpg',
-  description: 'Narrative RPG with dialogue trees, character stats, and quests. Phase M5.',
+  description: 'Narrative RPG — walkable grid world, dialogue trees, character stats, shadow enemies, quests.',
   icon: '⚔',
 });
 
-console.log('[RPGMode] Registered RPG mode (Phase M5 skeleton)');
+console.log('[RPGMode] Registered RPG Adventure mode (Phase M5 active)');

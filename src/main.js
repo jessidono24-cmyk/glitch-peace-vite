@@ -15,6 +15,7 @@ import { EmotionalField, getEmotionalModifiers } from './core/emotional-engine.j
 import { TemporalSystem } from './core/temporal-system.js';
 import { updateHUD } from './ui/hud.js';
 import AudioManager from './systems/audio.js';
+import { renderStatsDashboard } from './ui/stats-dashboard.js';
 
 // PHASE 1: New modular architecture imports
 import GameStateManager from './core/game-engine/GameStateManager.js';
@@ -102,6 +103,16 @@ function initUI() {
   // Re-get canvas reference after creating it and expose globally
   canvas = document.getElementById('canvas');
   ctx = canvas?.getContext('2d');
+
+  // Responsive canvas: fit viewport while keeping square aspect ratio
+  function _resizeCanvas() {
+    if (!canvas) return;
+    const size = Math.min(window.innerWidth, window.innerHeight, 620);
+    canvas.style.width  = `${size}px`;
+    canvas.style.height = `${size}px`;
+  }
+  _resizeCanvas();
+  window.addEventListener('resize', _resizeCanvas);
   
   // PHASE 1: Initialize new architecture components
   gameStateManager = new GameStateManager({
@@ -353,6 +364,15 @@ document.addEventListener('keydown', e => {
       return;
     }
   }
+
+  // Stats dashboard: ESC or D closes it
+  if (game._showStats) {
+    if (e.key === 'Escape' || e.key === 'd' || e.key === 'D') {
+      game._showStats = false;
+      e.preventDefault();
+      return;
+    }
+  }
   
   // Game input
   if (game.state === 'PLAYING') {
@@ -369,6 +389,13 @@ document.addEventListener('keydown', e => {
       game.state = 'PAUSED';
       menuSystem._tutorialReturnScreen = 'pause'; // ESC from tutorial → pause menu
       menuSystem.open('tutorial');
+      e.preventDefault();
+      return;
+    }
+
+    // D key: toggle live stats dashboard overlay
+    if (e.key === 'd' || e.key === 'D') {
+      game._showStats = !game._showStats;
       e.preventDefault();
       return;
     }
@@ -390,7 +417,10 @@ const MOVE_MS = 150;
 function handleGameInput() {
   const now = Date.now();
   if (game.state !== 'PLAYING') return;
-  
+
+  // Poll gamepad each frame so controller input maps to keyboard actions
+  if (inputManager) inputManager.pollGamepad();
+
   // Use new InputManager if available and mode supports it
   if (inputManager && currentMode && currentMode.handleInput) {
     currentMode.handleInput(game, inputManager);
@@ -442,7 +472,7 @@ function render(deltaMs = 16) {
       hint.style.display = 'block';
       const hints = {
         'shooter':       'WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Switch Mode · ESC: Pause',
-        'rpg':           '↑/↓: Dialogue · ENTER: Confirm · M: Switch Mode · ESC: Pause',
+        'rpg':           'WASD/Arrows: Move · Walk to ◈ Peace nodes · ↑/↓+ENTER: Dialogue · U: Shop · D: Stats · M: Switch Mode · ESC: Pause',
         'ornithology':   'WASD/Arrows: Move to observe birds · 1-4: Answer challenges · M: Switch Mode · ESC: Pause',
         'mycology':      'WASD/Arrows: Forage mushrooms · 1-4: Identify toxic species · M: Switch Mode · ESC: Pause',
         'architecture':  'WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · M: Switch Mode · ESC: Pause',
@@ -450,7 +480,12 @@ function render(deltaMs = 16) {
         'alchemy':       'WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute · M: Switch Mode · ESC: Pause',
         'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
       };
-      hint.textContent = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · ESC: Pause';
+      hint.textContent = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · D: Stats · ESC: Pause';
+    }
+
+    // Stats dashboard overlay — rendered on top of game, below game-over
+    if (game._showStats) {
+      renderStatsDashboard(game, ctx, canvas.width, canvas.height);
     }
   }
 

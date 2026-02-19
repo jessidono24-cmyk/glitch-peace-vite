@@ -200,8 +200,8 @@ export default class ShooterMode extends GameMode {
     this.player.x = Math.max(margin, Math.min(this.canvas.width - margin, this.player.x));
     this.player.y = Math.max(margin, Math.min(this.canvas.height - margin, this.player.y));
     
-    // Rotation towards mouse
-    const mouse = input.getMousePos();
+    // Rotation towards mouse — use canvas-relative position for correct aiming
+    const mouse = input.getCanvasMousePos(this.canvas);
     if (mouse) {
       const dx = mouse.x - this.player.x;
       const dy = mouse.y - this.player.y;

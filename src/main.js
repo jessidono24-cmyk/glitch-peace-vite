@@ -307,7 +307,8 @@ function handleGameInput() {
   // Use new InputManager if available and mode supports it
   if (inputManager && currentMode && currentMode.handleInput) {
     currentMode.handleInput(game, inputManager);
-    inputManager.clearFrameInput();
+    // NOTE: clearFrameInput() is called AFTER currentMode.update() in the game loop
+    // so modes using game.input.isKeyPressed() inside update() still get press events
   } else {
     // Fallback to legacy input handling
     if (now - lastMoveTime < MOVE_MS) return;
@@ -466,6 +467,8 @@ function gameLoop(currentTime) {
     if (currentMode && currentMode.update) {
       game.input = inputManager; // Expose inputManager for modes that use it (e.g. ShooterMode)
       currentMode.update(game, deltaMs);
+      // Clear per-frame input AFTER update so isKeyPressed() works inside update()
+      if (inputManager) inputManager.clearFrameInput();
       // Sync mode-specific stats to game so HUD stays accurate
       if (currentMode.type === 'shooter' && currentMode.player) {
         game.player.hp = Math.max(0, Math.round(currentMode.player.health));

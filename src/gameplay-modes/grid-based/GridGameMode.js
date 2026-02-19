@@ -61,6 +61,11 @@ export class GridGameMode extends GameMode {
     // Apply play mode configuration
     applyMode(gameState, this.playMode);
 
+    // Initialize timer for timed modes (SPEEDRUN, PATTERN_TRAINING, DAILY, etc.)
+    if (gameState.mechanics?.timeLimit && typeof gameState.mechanics.timeLimit === 'number') {
+      gameState.timeRemainingMs = gameState.mechanics.timeLimit * 1000;
+    }
+
     // Generate initial grid
     this.generateLevel(gameState);
   }
@@ -127,6 +132,15 @@ export class GridGameMode extends GameMode {
     // Tick level-complete overlay timer
     if (this._levelFlashMs > 0) {
       this._levelFlashMs -= deltaTime;
+    }
+
+    // Timed mode countdown (SPEEDRUN, PATTERN_TRAINING, DAILY...)
+    if (gameState.timeRemainingMs !== undefined) {
+      gameState.timeRemainingMs = Math.max(0, gameState.timeRemainingMs - deltaTime);
+      if (gameState.timeRemainingMs <= 0) {
+        this.onGameOver(gameState);
+        return;
+      }
     }
 
     // ZEN_GARDEN auto-heal

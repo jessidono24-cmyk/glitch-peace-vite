@@ -362,8 +362,13 @@ export const PLAY_MODES = {
 };
 
 // Helper to get mode config
+// Accepts both the outer key ('ARCADE') and the inner id ('arcade')
 export function getModeConfig(modeName) {
-  return PLAY_MODES[modeName] || PLAY_MODES.ARCADE;
+  if (!modeName) return PLAY_MODES.ARCADE;
+  return PLAY_MODES[modeName]
+    || PLAY_MODES[String(modeName).toUpperCase()]
+    || Object.values(PLAY_MODES).find(m => m.id === modeName)
+    || PLAY_MODES.ARCADE;
 }
 
 // Apply mode settings to game

@@ -16,14 +16,26 @@ export function updateHUD(game) {
   const objective = document.getElementById('objective');
 
   if (hpText) hpText.textContent = `${Math.round(Math.max(0, game.player.hp || 0))}/${game.player.maxHp || 100}`;
-  if (hpFill) hpFill.style.width = `${(Math.max(0, game.player.hp || 0) / (game.player.maxHp || 100)) * 100}%`;
+  if (hpFill) {
+    hpFill.style.width = `${(Math.max(0, game.player.hp || 0) / (game.player.maxHp || 100)) * 100}%`;
+    // Red flash when low HP
+    const hpRatio = Math.max(0, game.player.hp || 0) / (game.player.maxHp || 100);
+    hpFill.style.background = hpRatio < 0.25
+      ? 'linear-gradient(90deg, #ff3344, #aa1122)'
+      : 'linear-gradient(90deg, #00ff88, #00aa66)';
+  }
   if (level) level.textContent = String(game.level || 1);
   if (score) score.textContent = String(game.score || 0);
-  // Objective: remaining peace nodes, or moves left for PUZZLE mode
-  const objText = game.movesRemaining !== undefined
-    ? `◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))} · ${game.movesRemaining}↕`
-    : `◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}`;
-  if (objective) objective.textContent = objText;
+  // Objective: remaining peace nodes + timer (if timed) + moves left (PUZZLE)
+  let objParts = [`◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}`];
+  if (game.movesRemaining !== undefined) objParts.push(`${game.movesRemaining}↕`);
+  if (game.timeRemainingMs !== undefined) {
+    const secs = Math.ceil(game.timeRemainingMs / 1000);
+    const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+    const ss = String(secs % 60).padStart(2, '0');
+    objParts.push(`⏱${mm}:${ss}`);
+  }
+  if (objective) objective.textContent = objParts.join(' · ');
 
   // Emotional Field indicator (compact)
   const ef = game.emotionalField;

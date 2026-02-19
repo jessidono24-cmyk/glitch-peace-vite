@@ -9,6 +9,7 @@ import { listDreamscapes } from '../systems/dreamscapes.js';
 import { getAvailableModes } from '../systems/play-modes.js';
 import { getAvailableCosmologies } from '../systems/cosmologies.js';
 import { LANGUAGES, getLanguageProgression, getLearnableLanguages } from '../systems/languages.js';
+import { getGlobalTopScores } from '../systems/leaderboard.js';
 
 function listFromObjKeys(obj) { return Object.keys(obj); }
 function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
@@ -23,7 +24,7 @@ export class MenuSystem {
     this.onRestart = onRestart;
     this.onSelectDreamscape = onSelectDreamscape;
 
-    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology' | 'onboarding'
+    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology' | 'onboarding' | 'highscores'
     this.sel = 0;
     this.tutPage = 0;
     this.dreamscapeSel = 0;
@@ -74,7 +75,7 @@ export class MenuSystem {
 
     // Global escapes
     if (k === 'Escape') {
-      if (this.screen === 'options' || this.screen === 'credits' || this.screen === 'dreamscape') {
+      if (this.screen === 'options' || this.screen === 'credits' || this.screen === 'dreamscape' || this.screen === 'highscores') {
         this.open('title');
         return { consumed: true };
       }
@@ -409,6 +410,7 @@ export class MenuSystem {
     }
 
     common.push({ label: 'TUTORIAL', action: () => this.open('tutorial') });
+    common.push({ label: 'HIGH SCORES', action: () => this.open('highscores') });
     common.push({ label: 'OPTIONS', action: () => this.open('options') });
     common.push({ label: 'CREDITS', action: () => this.open('credits') });
     common.push({
@@ -598,6 +600,7 @@ export class MenuSystem {
     if (this.screen === 'cosmology') return this._drawCosmology(ctx, w, h);
     if (this.screen === 'credits') return this._drawCredits(ctx, w, h);
     if (this.screen === 'onboarding') return this._drawOnboarding(ctx, w, h);
+    if (this.screen === 'highscores') return this._drawHighScores(ctx, w, h);
   }
 
   _drawHeader(ctx, w, h, subtitle) {
@@ -957,6 +960,55 @@ export class MenuSystem {
     ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.fillText('ENTER to return', w / 2, h / 2 + 75);
+    ctx.textAlign = 'left';
+  }
+
+  _drawHighScores(ctx, w, h) {
+    this._drawHeader(ctx, w, h, 'HIGH SCORES');
+
+    const entries = getGlobalTopScores(10);
+    const bx = w / 2 - 180;
+    const by = h / 2 - 120;
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#00ff88';
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 8;
+    ctx.font = 'bold 11px Courier New';
+    ctx.fillText('TOP 10  —  All Modes', w / 2, by + 2);
+    ctx.shadowBlur = 0;
+
+    // Column header
+    ctx.fillStyle = '#334466';
+    ctx.font = '8px Courier New';
+    ctx.fillText('#   Score          Level   Mode         Dreamscape', w / 2, by + 20);
+
+    // Separator line
+    ctx.strokeStyle = '#1a2a3a';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(bx, by + 26); ctx.lineTo(bx + 360, by + 26); ctx.stroke();
+
+    if (entries.length === 0) {
+      ctx.fillStyle = '#334466';
+      ctx.font = '10px Courier New';
+      ctx.fillText('No scores yet — play to record your first run!', w / 2, by + 60);
+    } else {
+      entries.forEach((e, i) => {
+        const ey = by + 42 + i * 20;
+        const isTop3 = i < 3;
+        ctx.fillStyle = isTop3 ? '#ffcc44' : (i < 7 ? '#88aacc' : '#445566');
+        ctx.font = isTop3 ? 'bold 10px Courier New' : '9px Courier New';
+        const mode = (e.mode || 'ARCADE').slice(0, 10).padEnd(10);
+        const ds   = (e.dreamscape || 'RIFT').slice(0, 10);
+        const score = e.score.toLocaleString().padStart(10);
+        const level = String(e.level).padStart(4);
+        ctx.fillText(`${String(i + 1).padStart(2)}.  ${score}    ${level}   ${mode}  ${ds}`, w / 2, ey);
+      });
+    }
+
+    ctx.fillStyle = '#334466';
+    ctx.font = '8px Courier New';
+    ctx.fillText('ESC · back to menu', w / 2, by + 260);
     ctx.textAlign = 'left';
   }
 

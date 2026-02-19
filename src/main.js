@@ -20,6 +20,8 @@ import { logicPuzzles }        from './intelligence/logic-puzzles.js';
 import { emotionRecognition }  from './intelligence/emotion-recognition.js';
 import { empathyTraining }     from './intelligence/empathy-training.js';
 import { strategicThinking }   from './intelligence/strategic-thinking.js';
+import { addScore, getTopScores } from './systems/leaderboard.js';
+import { recordSession, getAnalyticsSummary } from './systems/session-analytics.js';
 
 // Expose intelligence singletons for stats dashboard (avoids circular imports)
 try {

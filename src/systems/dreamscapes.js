@@ -118,6 +118,21 @@ export const DREAMSCAPE_THEMES = {
     // Teleport tiles and glitch portals dominate; many hidden tiles; peace sparse
     tileBias: { [T.TELE]: 8, [T.GLITCH]: 6, [T.HIDDEN]: 8, [T.ARCH]: 4, [T.PEACE]: -3 },
   },
+  // ── 12th Dreamscape: The Mirror ──────────────────────────────────────────
+  // The self-reflection world. Every tile seen is part of the self.
+  // Research: Jungian shadow integration — what we reject in ourselves
+  // mirrors what we encounter in the external world (Jung, 1951 Aion §14).
+  // COVER tiles (safe self-knowledge) + MEM tiles (memory integration) +
+  // reduced HARM/TERROR — this is a gentle confrontation, not punishment.
+  MIRROR: {
+    id: 'MIRROR',
+    label: 'The Mirror',
+    flavor: 'Every shadow you\nmeet is your own.',
+    bg: '#040210',
+    ambient: 'rgba(200,180,255,0.04)',
+    accent: '#cc99ff',
+    tileBias: { [T.COVER]: 6, [T.MEM]: 8, [T.INSIGHT]: 6, [T.HARM]: -4, [T.TERROR]: -3, [T.GLITCH]: 4 },
+  },
 };
 
 /** Returns the theme for a given dreamscape ID, falling back to RIFT. */

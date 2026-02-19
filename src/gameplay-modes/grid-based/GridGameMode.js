@@ -66,6 +66,8 @@ import { emotionRecognition }  from '../../intelligence/emotion-recognition.js';
 import { empathyTraining }     from '../../intelligence/empathy-training.js';
 import { strategicThinking }   from '../../intelligence/strategic-thinking.js';
 import { achievementSystem }   from '../../systems/achievements.js';
+import { addScore }            from '../../systems/leaderboard.js';
+import { recordSession }       from '../../systems/session-analytics.js';
 
 // ── GLITCH tile animation constants ─────────────────────────────────────────
 const GLITCH_FLICKER_PERIOD_MS = 180;  // how fast the GLITCH tile color cycles
@@ -182,6 +184,11 @@ export class GridGameMode extends GameMode {
     // Apply dreamscape-specific tile bias
     const dreamscapeId = gameState.currentDreamscape || 'RIFT';
     applyDreamscapeBias(gameState, dreamscapeId);
+
+    // Play dreamscape-specific ambient tone when entering The Mirror
+    if (dreamscapeId === 'MIRROR') {
+      try { window.AudioManager?.play('mirror_chime'); } catch(_) {}
+    }
     
     // Grid data is already in gameState.grid, gameState.peaceNodes, etc.
     // No need to copy to modeState - we'll use gameState directly
@@ -540,6 +547,8 @@ export class GridGameMode extends GameMode {
           if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', enemy.isBoss ? 1.0 : 0.5);
           createParticles(gameState, px, py, enemy.isBoss ? '#ff44aa' : 'damage', enemy.isBoss ? 16 : 8);
           try { window.AudioManager?.play('damage'); } catch (e) {}
+          // Gamepad rumble on hit — tactile feedback
+          try { gameState.input?.vibrateGamepad(0.6, 0.3, enemy.isBoss ? 300 : 150); } catch (_) {}
           // Strategic thinking: record damage and which matrix was active
           strategicThinking.onDamage(gameState.matrixActive || 'B');
           // Reset no-damage tracking for pacifist achievement
@@ -574,11 +583,38 @@ export class GridGameMode extends GameMode {
     ctx.fillStyle = theme.bg;
     ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-    // Dreamscape ambient tint behind tiles
-    if (theme.ambient) {
+    // High Contrast mode: override background with black for WCAG AA compliance
+    const highContrast = gameState.settings?.highContrast;
+    if (highContrast) {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+
+    // Dreamscape ambient tint behind tiles (skip in high contrast)
+    if (theme.ambient && !highContrast) {
       ctx.fillStyle = theme.ambient;
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
+
+    // High Contrast tile color overrides — WCAG AA (4.5:1 on black background)
+    // Maps each tile type to a strongly contrasting fill and symbol color.
+    const HC_TILE = highContrast ? {
+      bg: '#000000', bd: '#555555',
+      [T.PEACE]:    { bg: '#001a00', bd: '#00ff44', sy: '#00ff44' },
+      [T.INSIGHT]:  { bg: '#001818', bd: '#00ffee', sy: '#00ffee' },
+      [T.ARCH]:     { bg: '#1a1400', bd: '#ffee00', sy: '#ffee00' },
+      [T.DESPAIR]:  { bg: '#000033', bd: '#4488ff', sy: '#4488ff' },
+      [T.TERROR]:   { bg: '#220000', bd: '#ff3333', sy: '#ff3333' },
+      [T.HARM]:     { bg: '#1a0000', bd: '#ff6666', sy: '#ff6666' },
+      [T.RAGE]:     { bg: '#1a0010', bd: '#ff44bb', sy: '#ff44bb' },
+      [T.HOPELESS]: { bg: '#001020', bd: '#3399ff', sy: '#3399ff' },
+      [T.GLITCH]:   { bg: '#0d0022', bd: '#cc88ff', sy: '#cc88ff' },
+      [T.TRAP]:     { bg: '#1a0a00', bd: '#ffaa33', sy: '#ffaa33' },
+      [T.TELE]:     { bg: '#001422', bd: '#33aaff', sy: '#33aaff' },
+      [T.COVER]:    { bg: '#0a0a14', bd: '#aaaacc', sy: '#aaaacc' },
+      [T.MEM]:      { bg: '#000a08', bd: '#66ccaa', sy: '#66ccaa' },
+      [T.WALL]:     { bg: '#141414', bd: '#888888', sy: null },
+    } : null;
 
     // Render grid tiles (with per-tile animations for GLITCH and INSIGHT)
     const nowTile = Date.now();
@@ -586,13 +622,14 @@ export class GridGameMode extends GameMode {
       for (let x = 0; x < grid[y].length; x++) {
         const tile = grid[y][x];
         const tileDef = TILE_DEF[tile] || {};
+        const hcDef   = HC_TILE?.[tile];
         
         // Draw tile
-        ctx.fillStyle = tileDef.bg || '#1a1a2e';
+        ctx.fillStyle = hcDef ? hcDef.bg : (tileDef.bg || '#1a1a2e');
         ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
         // Draw border
-        ctx.strokeStyle = tileDef.bd || 'rgba(255,255,255,0.1)';
+        ctx.strokeStyle = hcDef ? hcDef.bd : (tileDef.bd || 'rgba(255,255,255,0.1)');
         ctx.lineWidth = 1;
         ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
@@ -633,7 +670,7 @@ export class GridGameMode extends GameMode {
 
         // Draw symbol (default)
         if (tileDef.sy) {
-          ctx.fillStyle = tileDef.g || tileDef.bd || '#fff';
+          ctx.fillStyle = hcDef?.sy || tileDef.g || tileDef.bd || '#fff';
           ctx.font = `${tileSize * 0.6}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -1484,6 +1521,20 @@ export class GridGameMode extends GameMode {
             gameState._archetypeMsg = { text: 'SHIELD FADED', color: '#446688', expiresMs: now + 1000 };
           }
         }
+        // Witness: decrement clarity tile counters on each move
+        if (gameState._clarityTiles?.length) {
+          gameState._clarityTiles = gameState._clarityTiles.filter(ct => {
+            ct.movesLeft--;
+            if (ct.movesLeft <= 0) {
+              // Restore original shadow tile only if still COVER
+              if (gameState.grid[ct.y]?.[ct.x] === T.COVER) {
+                gameState.grid[ct.y][ct.x] = ct.original;
+              }
+              return false;
+            }
+            return true;
+          });
+        }
         // Glitch Pulse: charge +15 per peace node collected (tracked via peaceCollected change)
         if (gameState._lastPeaceCollected !== gameState.peaceCollected) {
           gameState.glitchPulseCharge = Math.min(100, (gameState.glitchPulseCharge || 0) + 15);
@@ -1524,6 +1575,8 @@ export class GridGameMode extends GameMode {
     // Start the readable transition overlay (3s total — blocks input for first 1.5s)
     this._levelFlashMs = this._LEVEL_FLASH_TOTAL;
     try { window.AudioManager?.play('level_complete'); } catch(e) {}
+    // Gamepad rumble on level complete — celebratory pulse
+    try { gameState.input?.vibrateGamepad(0.2, 0.7, 200); } catch(_) {}
     
     // Phase 9: signal dreamscape completion to logic puzzles (surfaces sequence challenge)
     logicPuzzles.onDreamscapeComplete();
@@ -1598,6 +1651,13 @@ export class GridGameMode extends GameMode {
     console.log('[GridGameMode] Game Over');
     gameState.state = 'GAME_OVER';
     gameState._gameOverAt = Date.now();
+
+    // Persist score to local leaderboard
+    const rank = addScore(gameState);
+    gameState._leaderboardRank = rank; // show in overlay if top-10
+
+    // Record session analytics
+    recordSession(gameState);
     
     // Trigger emotion
     if (gameState.emotionalField && typeof gameState.emotionalField.add === 'function') {
@@ -1669,6 +1729,13 @@ export class GridGameMode extends GameMode {
     ctx.font = `${Math.floor(w / 30)}px monospace`;
     ctx.fillText(`Score: ${(gameState.score || 0).toLocaleString()}  ·  Level ${gameState.level || 1}`, w / 2, h * 0.51);
     ctx.fillText(`Peace nodes collected: ${gameState.peaceCollected || 0}`, w / 2, h * 0.57);
+
+    // Leaderboard rank (show if score made top-10)
+    if (gameState._leaderboardRank && gameState._leaderboardRank <= 10) {
+      ctx.fillStyle = gameState._leaderboardRank <= 3 ? '#ffcc44' : '#778899';
+      ctx.font = `${Math.floor(w / 32)}px monospace`;
+      ctx.fillText(`Personal best #${gameState._leaderboardRank} for this run`, w / 2, h * 0.63);
+    }
 
     // Action prompts (appear after 1.2s)
     if (age > 1200) {

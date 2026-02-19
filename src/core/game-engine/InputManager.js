@@ -281,6 +281,36 @@ export class InputManager {
       break; // Use only the first connected gamepad
     }
   }
+
+  /**
+   * Trigger gamepad vibration/rumble if the Gamepad Vibration API is available.
+   * Silently no-ops when the API is absent (desktop without gamepad, browser without
+   * vibration support) — never throws.
+   *
+   * @param {number} weakMagnitude  - 0.0–1.0 (high-frequency motor)
+   * @param {number} strongMagnitude - 0.0–1.0 (low-frequency motor)
+   * @param {number} durationMs     - vibration duration in milliseconds
+   */
+  vibrateGamepad(weakMagnitude = 0.3, strongMagnitude = 0.6, durationMs = 120) {
+    if (typeof navigator === 'undefined' || !navigator.getGamepads) return;
+    try {
+      const gamepads = navigator.getGamepads();
+      for (const gp of gamepads) {
+        if (!gp || !gp.connected) continue;
+        if (typeof gp.vibrationActuator?.playEffect === 'function') {
+          gp.vibrationActuator.playEffect('dual-rumble', {
+            startDelay: 0,
+            duration: durationMs,
+            weakMagnitude: Math.min(1.0, Math.max(0.0, weakMagnitude)),
+            strongMagnitude: Math.min(1.0, Math.max(0.0, strongMagnitude)),
+          });
+        }
+        break; // Use only the first connected gamepad
+      }
+    } catch (_) {
+      // Vibration API unavailable — silently ignore
+    }
+  }
 }
 
 export default InputManager;

@@ -2,7 +2,10 @@
 //  STATS DASHBOARD — Phase 8 Polish
 //  In-game overlay (press D) showing live session metrics:
 //  session time · emotional field · lucidity meter · language progress
+//  Phase 10: lifetime analytics (cross-session totals)
 // ═══════════════════════════════════════════════════════════════════════
+
+import { getAnalyticsSummary } from '../systems/session-analytics.js';
 
 // Module-level fallback timestamp (used only if gameState._sessionStartMs was never set,
 // e.g. on direct page load without going through startGame()). The canonical session
@@ -25,8 +28,9 @@ export function renderStatsDashboard(gameState, ctx, w, h) {
   const mins    = Math.floor(elapsed / 60).toString().padStart(2, '0');
   const secs    = (elapsed % 60).toString().padStart(2, '0');
 
+  // Panel now taller to include lifetime analytics row
   const BOX_W = Math.min(500, Math.floor(w * 0.88));
-  const BOX_H = Math.min(400, Math.floor(h * 0.82));
+  const BOX_H = Math.min(460, Math.floor(h * 0.92));
   const bx    = Math.floor((w - BOX_W) / 2);
   const by    = Math.floor((h - BOX_H) / 2);
 
@@ -203,6 +207,25 @@ export function renderStatsDashboard(gameState, ctx, w, h) {
     ctx.fillText(`${Math.round(value)}`, sx, sy + 18);
   });
 
+  // ── Lifetime analytics (Phase 10) ──────────────────────────────────
+  const lifY = iqY + 46;
+  _hline(ctx, bx + 12, bx + BOX_W - 12, lifY - 6);
+  _sectionLabel(ctx, 'LIFETIME  (all sessions)', bx + 16, lifY + 6);
+
+  let analytics = { sessions: 0, minutes: 0, totalPeace: 0, peakScore: 0, peakLevel: 0, topEmotion: '—', topDreamscape: '—' };
+  try { analytics = getAnalyticsSummary(); } catch (_) {}
+
+  ctx.fillStyle = '#667799';
+  ctx.font      = '9px Courier New';
+  ctx.fillText(
+    `${analytics.sessions} sessions  ·  ${analytics.minutes}min played  ·  ${analytics.totalPeace} ◈ total`,
+    bx + 16, lifY + 20
+  );
+  ctx.fillText(
+    `Peak score: ${(analytics.peakScore || 0).toLocaleString()}  ·  Peak level: ${analytics.peakLevel}  ·  Top emotion: ${analytics.topEmotion}`,
+    bx + 16, lifY + 34
+  );
+
   ctx.restore();
 }
 
@@ -234,3 +257,4 @@ function _sectionLabel(ctx, text, x, y) {
   ctx.font      = 'bold 9px Courier New';
   ctx.fillText(text, x, y);
 }
+  const now     = Date.now();

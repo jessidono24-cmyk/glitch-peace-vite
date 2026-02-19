@@ -61,6 +61,15 @@ export const ARCHETYPE_DEF = {
     activationMsg: 'PROTECT — shield active, enemies stunned!',
     description: 'Activate shield and stun all enemies for 1.5s',
   },
+  witness: {
+    id: 'witness',
+    name: 'The Witness',
+    power: 'clarity_field',
+    symbol: '◎',
+    color: '#cc99ff',
+    activationMsg: 'WITNESS — shadow tiles revealed and calmed',
+    description: 'Convert all DESPAIR/HOPELESS tiles in radius 4 to COVER for 8 moves',
+  },
 };
 
 // ─── Archetype picked by dreamscape (fallback: orb) ──────────────────────
@@ -77,6 +86,7 @@ const DREAMSCAPE_ARCHETYPE = {
   NEIGHBORHOOD: 'child',      // Child Guide: familiar territory, memory reveals
   AZTEC: 'dragon',            // Dragon: leap through labyrinth walls
   ORB_ESCAPE: 'orb',          // Orb: phase-walk through dimensional portals
+  MIRROR: 'witness',          // Witness: clarity field converts shadow tiles
 };
 
 export function getArchetypeForDreamscape(dreamscapeId) {
@@ -162,6 +172,28 @@ export function activateArchetype(gameState) {
       e.stunTurns = 3;
     }
     if (gameState.boss) gameState.boss.stunTimer = 2000;
+
+  } else if (def.power === 'clarity_field') {
+    // Witness: convert DESPAIR/HOPELESS tiles in radius 4 to COVER (safe ground)
+    // for 8 moves — shadow integration mechanic.
+    const radius = 4;
+    if (!gameState._clarityTiles) gameState._clarityTiles = [];
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        const v = gameState.grid[y]?.[x];
+        if (v === T.DESPAIR || v === T.HOPELESS) {
+          const dist = Math.abs(x - px) + Math.abs(y - py);
+          if (dist <= radius) {
+            gameState._clarityTiles.push({ y, x, original: v, movesLeft: 8 });
+            gameState.grid[y][x] = T.COVER;
+          }
+        }
+      }
+    }
+    if (gameState.emotionalField?.add) {
+      gameState.emotionalField.add('hope', 1.5);
+      gameState.emotionalField.add('despair', -1.0);
+    }
   }
 }
 
@@ -198,6 +230,9 @@ export function updateArchetypes(gameState, deltaTime) {
 
   // Phase walk: decrement on each move (handled in handleInput via _phaseWalkMoves)
   // Shield: decrement on each move (handled in handleInput via _archetypeShield.moves)
+
+  // Witness: clarity tiles tracked per-move; decrement each time the player moves.
+  // (Actual move deduction is done in GridGameMode.handleInput — see _clarityTiles block.)
 
   // Clear expired archetype message
   if (gameState._archetypeMsg && now > gameState._archetypeMsg.expiresMs) {

@@ -103,7 +103,7 @@ export const REACTIONS = [
     points: 2000,
     statBoost: { wisdom: 3, clarity: 3, resilience: 2, empathy: 2 },
     lore: "THE PHILOSOPHER'S STONE — The lapis philosophorum. The goal of the Great Work (Opus Magnum). Not a thing to be found, but a transformation to be undergone. Jung: 'The stone is a symbol of the Self — the unified psyche that has integrated its shadow, its anima/animus, and the collective unconscious.' You have completed the Great Work.",
-    audio: 'level_complete',
+    audio: 'alchemy_discover',
     levelComplete: true,
   },
 ];

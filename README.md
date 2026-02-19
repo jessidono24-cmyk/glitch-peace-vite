@@ -135,9 +135,10 @@ The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness ·
 | Save/Load | ✅ | Persists cosmology, language, difficulty, progress |
 | First-Run Onboarding | ✅ | Age group → native language → target language |
 | Age-Accessible Difficulty | ✅ | SPROUT (age 5+) through NIGHTMARE |
-| Particle System | ✅ | Dynamic visual effects |
+| Particle System | ✅ | Dynamic VFX with object pooling, 300-particle live cap, pool capped at 200 |
 | Audio Engine | ✅ | Procedural Web Audio API SFX, no external files |
 | Modular Architecture | ✅ | Plugin system for unlimited gameplay modes |
+| Level Transitions | ✅ | 3s readable overlay: fade-in, score earned, skip after 1.5s |
 
 ---
 
@@ -170,7 +171,7 @@ Phase 4: Cosmology           [████████████████�
 Phase 5: Boss System         [████████████████████] 100% ✅  (+400 lines)
 Phase 6: Dreamscape Expand   [████████████████████] 100% ✅  (11/11 canonical dreamscapes)
 Phase 7: Upgrade Shop        [████████████████████] 100% ✅  (+700 lines)
-Phase 8: Polish & Testing    [███░░░░░░░░░░░░░░░░░]  15% 📋  (smoke tests + tip system)
+Phase 8: Polish & Testing    [████░░░░░░░░░░░░░░░░]  20% 📋  (transitions, particle caps, tip system)
 Phase Language Learning      [████████████████████] 100% ✅  (16 langs + progressive overload)
 Phase Archetypes             [████████████████████] 100% ✅  (5 archetypes, J key, 11 dreamscapes)
 Phase Matrix A/B             [████████████████████] 100% ✅  (SHIFT toggle, energy)

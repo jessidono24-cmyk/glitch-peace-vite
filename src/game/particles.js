@@ -9,11 +9,15 @@ function obtainParticle() {
 }
 
 function releaseParticle(p) {
-  POOL.push(p);
+  if (POOL.length < 200) POOL.push(p); // cap pool size to prevent unbounded growth
 }
 
 export function createParticles(gameState, gridX, gridY, color = '#ffffff', count = 10) {
   if (!gameState?.settings?.particles) return;
+
+  // Ensure particles array exists, then enforce a hard cap to prevent FPS spikes.
+  gameState.particles = gameState.particles || [];
+  if (gameState.particles.length >= 300) return;
 
   const reduced = !!gameState.settings.reducedMotion;
   const tile = gameState.tileSize || 32;
@@ -48,7 +52,6 @@ export function createParticles(gameState, gridX, gridY, color = '#ffffff', coun
     p.color = col;
     p.life = reduced ? (10 + Math.random() * 8) : (18 + Math.random() * 18);
     p.maxLife = p.life;
-    gameState.particles = gameState.particles || [];
     gameState.particles.push(p);
   }
 }

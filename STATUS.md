@@ -1,8 +1,8 @@
 # 🎮 GLITCH·PEACE Development Status
 
 **Last Updated**: February 19, 2026  
-**Current Version**: Phase 2 Complete  
-**Total LOC**: ~6,015 (4,300 base + 1,715 new)
+**Current Version**: Phase 2+ (polish in progress)  
+**Total LOC**: ~11,100
 
 ---
 
@@ -374,10 +374,22 @@ npm run dev      # Start dev server
 
 ### Performance
 - ✅ Smooth 60fps
-- ✅ Fast build times (339ms)
-- ✅ Small bundle (69KB)
-- ✅ No memory leaks
-- ✅ Efficient rendering
+- ✅ Fast build times (~570ms)
+- ✅ Bundle: 181KB (gzip 59KB)
+- ✅ Particle pool capped at 200 (no unbounded growth)
+- ✅ Live particle count hard-capped at 300
+- ✅ `_lucidityHistory` capped at 100 entries
+- ✅ No observed memory leaks
+- ✅ Efficient tile-spread and enemy update loops
+
+### Phase 8: Polish & Transitions ✅ (partial — Feb 2026)
+- ✅ Level-complete transition overlay extended to 3s (was 1.8s)
+- ✅ Smooth fade-in (400ms) + solid hold + fade-out (600ms) phases
+- ✅ Input hard-blocked for first 1.5s (player must read); skip with any-key after 1.5s
+- ✅ Richer transition content: score earned, total, next-level line, skip hint
+- ✅ Particle system growth contained (pool cap + live cap)
+- ✅ Lucidity history array capped at 100 entries
+- ✅ Per-level score delta tracked and shown in transition screen
 
 ---
 

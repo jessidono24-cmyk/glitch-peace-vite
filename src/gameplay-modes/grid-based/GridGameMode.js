@@ -78,7 +78,11 @@ export class GridGameMode extends GameMode {
     this.tileSize = 0;
     this.lastMoveTime = 0;
     this.moveDelay = 150; // ms between moves
-    this._levelFlashMs = 0; // countdown ms for "LEVEL COMPLETE" overlay
+    this._levelFlashMs = 0;       // countdown ms for "LEVEL COMPLETE" overlay
+    this._LEVEL_FLASH_TOTAL = 3000; // total overlay duration ms
+    this._completedLevel = 0;      // level number captured before increment
+    this._levelStartScore = 0;     // score at start of level (for delta display)
+    this._levelScoreEarned = 0;    // score delta shown in transition screen
     this._ENEMY_HIT_COOLDOWN = 600; // ms between enemy collision hits
   }
 
@@ -160,6 +164,9 @@ export class GridGameMode extends GameMode {
    * Generate a new level
    */
   generateLevel(gameState) {
+    // Track score at level start (used by transition screen to compute earned delta)
+    this._levelStartScore = gameState.score || 0;
+
     // generateGrid modifies gameState directly (doesn't return result)
     generateGrid(gameState);
 
@@ -706,28 +713,75 @@ export class GridGameMode extends GameMode {
       }
     }
 
-    // Level-complete overlay flash
+    // ── Level-complete transition overlay ────────────────────────────────
     if (this._levelFlashMs > 0) {
+      const total = this._LEVEL_FLASH_TOTAL;
+      const remaining = this._levelFlashMs;
+      const age = total - remaining;
+      const w = ctx.canvas.width;
+      const h = ctx.canvas.height;
+
+      // Smooth fade-in (0→400ms) + solid hold + fade-out (last 600ms)
+      const fadeIn  = Math.min(1, age / 400);
+      const fadeOut = remaining < 600 ? remaining / 600 : 1;
+      const alpha   = fadeIn * fadeOut;
+
       const completed = this._completedLevel || (gameState.level - 1);
-      const bonus = 500 * completed;
-      const alpha = Math.min(0.72, this._levelFlashMs / 800);
-      const theme = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+      const earned    = this._levelScoreEarned || (500 * completed);
+      const theme     = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+      const accent    = theme.accent || '#00ff88';
+
       ctx.save();
+
+      // Nearly-opaque background so text is fully legible
+      ctx.globalAlpha = alpha * 0.93;
+      ctx.fillStyle   = theme.bg || '#040408';
+      ctx.fillRect(0, 0, w, h);
+
+      // Subtle accent scanlines at ±35% height
+      ctx.globalAlpha = alpha * 0.25;
+      ctx.strokeStyle = accent;
+      ctx.lineWidth   = 1;
+      [[h * 0.38, w * 0.08, w * 0.92], [h * 0.64, w * 0.08, w * 0.92]].forEach(([y, x0, x1]) => {
+        ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
+      });
+
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = theme.bg;
-      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-      ctx.globalAlpha = 1.0;
-      ctx.fillStyle = theme.accent;
-      ctx.font = `bold ${Math.floor(ctx.canvas.width / 12)}px monospace`;
-      ctx.textAlign = 'center';
+      ctx.textAlign   = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = theme.accent;
-      ctx.shadowBlur = 24;
-      ctx.fillText(`LEVEL ${completed} COMPLETE`, ctx.canvas.width / 2, ctx.canvas.height / 2 - 20);
-      ctx.shadowBlur = 0;
-      ctx.font = `${Math.floor(ctx.canvas.width / 22)}px monospace`;
-      ctx.fillStyle = '#b8b8d0';
-      ctx.fillText(`+${bonus} pts · Level ${gameState.level} begins`, ctx.canvas.width / 2, ctx.canvas.height / 2 + 24);
+
+      // ── Header: level complete ───────────────────────────────────────
+      ctx.shadowColor = accent;
+      ctx.shadowBlur  = 22;
+      ctx.fillStyle   = accent;
+      ctx.font        = `bold ${Math.floor(w / 13)}px monospace`;
+      ctx.fillText(`LEVEL  ${completed}  COMPLETE`, w / 2, h * 0.30);
+      ctx.shadowBlur  = 0;
+
+      // ── Score earned ────────────────────────────────────────────────
+      ctx.fillStyle = '#ffdd88';
+      ctx.font      = `${Math.floor(w / 24)}px monospace`;
+      ctx.fillText(`+${earned.toLocaleString()} pts earned`, w / 2, h * 0.43);
+
+      // ── Total score ─────────────────────────────────────────────────
+      ctx.fillStyle = '#778899';
+      ctx.font      = `${Math.floor(w / 30)}px monospace`;
+      ctx.fillText(`Total: ${(gameState.score || 0).toLocaleString()}`, w / 2, h * 0.50);
+
+      // ── Next level line ──────────────────────────────────────────────
+      ctx.fillStyle = '#99aacc';
+      ctx.font      = `${Math.floor(w / 26)}px monospace`;
+      ctx.fillText(`Level ${gameState.level} loading...`, w / 2, h * 0.59);
+
+      // ── Skip prompt (appears after hard-block expires at 1.5s) ───────
+      if (age > 1500) {
+        ctx.globalAlpha = alpha * Math.min(1, (age - 1500) / 300);
+        ctx.fillStyle   = '#445566';
+        ctx.font        = `${Math.floor(w / 38)}px monospace`;
+        ctx.fillText('Move or Space to continue', w / 2, h * 0.72);
+        ctx.globalAlpha = alpha;
+      }
+
       ctx.restore();
     }
 
@@ -938,6 +992,21 @@ export class GridGameMode extends GameMode {
   handleInput(gameState, input) {
     const now = Date.now();
 
+    // ── Level transition: block input until overlay has been readable ──────
+    if (this._levelFlashMs > 0) {
+      const age = this._LEVEL_FLASH_TOTAL - this._levelFlashMs;
+      // Hard block for first 1.5s so the player always reads the screen.
+      if (age < 1500) return;
+      // After 1.5s: any directional move or SPACE/ENTER dismisses the overlay.
+      const dir = input.getDirectionalInput?.();
+      if ((dir && (dir.x !== 0 || dir.y !== 0))
+          || input.isKeyPressed?.(' ')
+          || input.isKeyPressed?.('Enter')) {
+        this._levelFlashMs = 0;
+      }
+      return;
+    }
+
     // SHIFT: toggle Matrix A ↔ B
     if (input.isKeyPressed('Shift')) {
       gameState.matrixActive = gameState.matrixActive === 'A' ? 'B' : 'A';
@@ -1120,11 +1189,21 @@ export class GridGameMode extends GameMode {
    */
   onLevelComplete(gameState) {
     console.log(`[GridGameMode] Level ${gameState.level} complete!`);
-    this._levelFlashMs = 1800; // show completion overlay for 1.8s
     this._completedLevel = gameState.level; // capture before increment
-    
+
+    // Capture score earned during this level (before bonus)
+    const preBonusScore = gameState.score || 0;
+    const levelBonus = 500 * gameState.level;
+
     // Award bonus points
-    gameState.score += 500 * gameState.level;
+    gameState.score = preBonusScore + levelBonus;
+
+    // Store total score earned this level (gameplay delta + completion bonus)
+    // Use ?? instead of || so a legitimate _levelStartScore of 0 (level 1) is handled correctly
+    this._levelScoreEarned = (preBonusScore - (this._levelStartScore ?? 0)) + levelBonus;
+
+    // Start the readable transition overlay (3s total — blocks input for first 1.5s)
+    this._levelFlashMs = this._LEVEL_FLASH_TOTAL;
     
     // Reset per-level state
     resetRelapseCompassion(gameState);
@@ -1154,7 +1233,7 @@ export class GridGameMode extends GameMode {
       openUpgradeShop(gameState);
     }
     
-    // Generate new level
+    // Generate new level grid (ready underneath the transition overlay)
     this.generateLevel(gameState);
   }
 

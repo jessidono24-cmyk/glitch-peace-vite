@@ -55,7 +55,7 @@ let menuSystem = null;
 function initUI() {
   const app = document.getElementById('app');
   app.innerHTML = `
-    <canvas id="canvas" width="700" height="700"></canvas>
+    <canvas id="canvas" width="600" height="600"></canvas>
     <div id="hud" style="display:none">
       <div class="hud-section">
         <div class="hud-item">

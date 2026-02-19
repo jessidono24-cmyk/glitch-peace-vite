@@ -10,6 +10,7 @@ import { createEnemy, updateEnemies } from './grid-enemy.js';
 import { createParticles, updateParticles } from './grid-particles.js';
 import { T, TILE_DEF, PLAYER } from '../../core/constants.js';
 import { applyMode } from '../../systems/play-modes.js';
+import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscapes.js';
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -67,6 +68,10 @@ export class GridGameMode extends GameMode {
   generateLevel(gameState) {
     // generateGrid modifies gameState directly (doesn't return result)
     generateGrid(gameState);
+
+    // Apply dreamscape-specific tile bias
+    const dreamscapeId = gameState.currentDreamscape || 'RIFT';
+    applyDreamscapeBias(gameState, dreamscapeId);
     
     // Grid data is already in gameState.grid, gameState.peaceNodes, etc.
     // No need to copy to modeState - we'll use gameState directly
@@ -135,7 +140,16 @@ export class GridGameMode extends GameMode {
       return;
     }
 
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    // Apply dreamscape background and ambient overlay
+    const theme = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // Dreamscape ambient tint behind tiles
+    if (theme.ambient) {
+      ctx.fillStyle = theme.ambient;
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
 
     // Render grid tiles
     for (let y = 0; y < grid.length; y++) {
@@ -274,9 +288,7 @@ export class GridGameMode extends GameMode {
         this.checkPeaceNodeCollection(gameState);
         
         // Trigger move sound if audio available
-        if (window.AudioManager) {
-          window.AudioManager.playSound('move');
-        }
+        try { window.AudioManager?.play('move'); } catch (e) { console.warn('[GridGameMode] Audio error:', e); }
       }
     }
   }

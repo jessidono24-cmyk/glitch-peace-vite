@@ -5,6 +5,7 @@
 
 import { GRID_SIZES, DIFF_CFG } from '../core/constants.js';
 import { TUTORIAL_PAGES } from './tutorial-content.js';
+import { listDreamscapes } from '../systems/dreamscapes.js';
 
 function listFromObjKeys(obj) { return Object.keys(obj); }
 function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
@@ -306,10 +307,7 @@ export class MenuSystem {
   }
 
   getDreamscapeOptions() {
-    return [
-      { id: 'RIFT', label: 'The Rift', flavor: 'A fractured space where logic bends.' },
-      { id: 'LODGE', label: 'The Lodge', flavor: 'A refuge where time moves gently.' }
-    ];
+    return listDreamscapes();
   }
 
   // ────────────────────────────────────────────────────────────────────
@@ -498,9 +496,11 @@ export class MenuSystem {
 
     const dreams = this.getDreamscapeOptions();
     const boxW = 460;
-    const boxH = 220;
+    const rowH = 42;
+    const paddingV = 16;
+    const boxH = dreams.length * rowH + paddingV * 2;
     const bx = (w - boxW) / 2;
-    const by = h / 2 - 50;
+    const by = h / 2 - boxH / 2 + 10;
 
     ctx.fillStyle = 'rgba(7,7,20,0.92)';
     ctx.fillRect(bx, by, boxW, boxH);
@@ -509,53 +509,40 @@ export class MenuSystem {
     ctx.strokeRect(bx, by, boxW, boxH);
 
     const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
-    const cardW = (boxW - 30) / 2;
-    const cardH = 140;
 
     for (let i = 0; i < dreams.length; i++) {
       const dream = dreams[i];
       const isSel = i === this.dreamscapeSel;
-      const cardX = bx + 10 + i * (cardW + 8);
-      const cardY = by + 50;
+      const rowY = by + paddingV + i * rowH;
 
       if (isSel) {
         ctx.fillStyle = `rgba(0,255,136,${0.08 + pulse * 0.10})`;
-        ctx.fillRect(cardX, cardY, cardW, cardH);
+        ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
         ctx.strokeStyle = `rgba(0,255,136,${0.30 + pulse * 0.20})`;
-        ctx.lineWidth = 2;
-        ctx.strokeRect(cardX, cardY, cardW, cardH);
-      } else {
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
         ctx.lineWidth = 1;
-        ctx.strokeRect(cardX, cardY, cardW, cardH);
+        ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
       }
 
+      // Label
       ctx.fillStyle = isSel ? '#00ff88' : '#b8b8d0';
       ctx.font = isSel ? 'bold 13px Courier New' : '12px Courier New';
-      ctx.textAlign = 'center';
-      ctx.fillText(dream.label, cardX + cardW / 2, cardY + 28);
+      ctx.textAlign = 'left';
+      ctx.fillText((isSel ? '▶ ' : '  ') + dream.label, bx + 26, rowY + rowH / 2 - 3);
 
-      ctx.fillStyle = isSel ? '#00eeff' : '#667099';
+      // Flavor (single line, truncated with ellipsis if needed)
+      const rawFlavor = dream.flavor.replace(/\n/g, ' ');
+      const flavorLine = rawFlavor.length > 40 ? rawFlavor.slice(0, 38) + '…' : rawFlavor;
+      ctx.fillStyle = isSel ? '#00eeff' : '#445566';
       ctx.font = '9px Courier New';
-      const lines = dream.flavor.split(' ');
-      let line = '';
-      let ly = cardY + 50;
-      for (const word of lines) {
-        if ((line + ' ' + word).length > 18) {
-          ctx.fillText(line.trim(), cardX + cardW / 2, ly);
-          line = word;
-          ly += 14;
-        } else {
-          line += ' ' + word;
-        }
-      }
-      if (line) ctx.fillText(line.trim(), cardX + cardW / 2, ly);
+      ctx.textAlign = 'right';
+      ctx.fillText(flavorLine, bx + boxW - 20, rowY + rowH / 2 - 3);
+      ctx.textAlign = 'left';
     }
 
     ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillText('←/→ choose · ENTER confirm · ESC back', w / 2, by + boxH + 24);
+    ctx.fillText('↑/↓ choose · ENTER confirm · ESC back', w / 2, by + boxH + 22);
     ctx.textAlign = 'left';
   }
 

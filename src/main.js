@@ -85,6 +85,7 @@ const game = {
     intensityMul: 1.0,
     audio: false,
     timezone: 'AUTO',
+    messagePause: true, // Pause gameplay when tip/message appears (challenge mode = OFF)
     // Recovery tools (optional global overrides — mode defaults apply when undefined)
     impulseBuffer: undefined,
     patternEcho: undefined,
@@ -101,7 +102,7 @@ let menuSystem = null;
 function initUI() {
   const app = document.getElementById('app');
   app.innerHTML = `
-    <canvas id="canvas" width="600" height="600"></canvas>
+    <canvas id="canvas" width="800" height="800"></canvas>
     <div id="hud" style="display:none">
       <div class="hud-section">
         <div class="hud-item">
@@ -129,10 +130,17 @@ function initUI() {
     canvas.setAttribute('aria-label', 'GLITCH·PEACE game canvas. Use arrow keys or WASD to move. Press H for help.');
   }
 
-  // Responsive canvas: fit viewport while keeping square aspect ratio
+  // Responsive canvas: fill viewport while keeping square aspect ratio
   function _resizeCanvas() {
     if (!canvas) return;
-    const size = Math.min(window.innerWidth, window.innerHeight, 620);
+    // Use full viewport: subtract HUD height (40px) from height to avoid overlap
+    const hudH = 40;
+    const availW = window.innerWidth;
+    const availH = window.innerHeight - hudH;
+    const size = Math.min(availW, availH);
+    // Update internal resolution to match display size for crisp rendering
+    canvas.width = size;
+    canvas.height = size;
     canvas.style.width  = `${size}px`;
     canvas.style.height = `${size}px`;
   }
@@ -190,11 +198,12 @@ function initUI() {
       game.player = createPlayer();
       startGame();
     },
-    onSelectDreamscape: (dreamscapeId, playModeId, cosmologyId = null) => {
+    onSelectDreamscape: (dreamscapeId, playModeId, cosmologyId = null, gameModeId = 'grid-classic') => {
       // Fresh start — reset run state
       game.currentDreamscape = dreamscapeId;
       game.playMode = playModeId || 'ARCADE';
       game.currentCosmology = cosmologyId || null;
+      game.selectedGameMode = gameModeId || 'grid-classic';
       game.level = 1;
       game.score = 0;
       game.player = createPlayer();
@@ -297,7 +306,8 @@ function startGame() {
   
   // PHASE 1: Create and initialize game mode
   if (!currentMode) {
-    currentMode = modeRegistry.createMode('grid-classic', {
+    const modeId = game.selectedGameMode || 'grid-classic';
+    currentMode = modeRegistry.createMode(modeId, {
       playMode: game.playMode || 'ARCADE'
     });
     
@@ -327,7 +337,18 @@ function startGame() {
 
   // Show a brief first-play tip on level 1 so new players know where to start.
   if (game.level === 1) {
-    _showGameTip('Collect ◈ Peace tiles to advance · Press H anytime for Help', 5000);
+    const modeTips = {
+      'shooter':       'WASD: Move · Mouse: Aim · LMB: Shoot · Survive the waves · Press H for Help',
+      'rpg':           'WASD: Move on the grid · Walk to ◈ Peace nodes · ↑/↓+ENTER: Dialogue · Press H for Help',
+      'ornithology':   'WASD: Move through biomes · Observe birds · Answer challenges · Press H for Help',
+      'mycology':      'WASD: Forage mushrooms · Identify toxic species to avoid them · Press H for Help',
+      'architecture':  'WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · Press H for Help',
+      'constellation': 'WASD: Navigate to stars · Activate them in sequence · Press H for Help',
+      'alchemy':       'WASD: Collect elements · Walk to ⚗ Athanor to transmute · Press H for Help',
+      'rhythm':        'WASD: Move to pulsing tiles ON THE BEAT · Build a streak for score multipliers · Press H for Help',
+    };
+    const tip = modeTips[currentMode?.type] || 'Collect ◈ Peace tiles to advance · Press H anytime for Help';
+    _showGameTip(tip, 5000);
   }
 }
 
@@ -355,7 +376,8 @@ function spawnEnemies() {
 /** Timer handle for the game tip auto-dismiss (module-level to avoid DOM property mutation). */
 let _tipTimer = null;
 
-/** Show a brief tip message in the #message element, auto-fades after durationMs. */
+/** Show a brief tip message in the #message element, auto-fades after durationMs.
+ *  If game.settings.messagePause is true, gameplay pauses until player dismisses. */
 function _showGameTip(text, durationMs = 4000) {
   try {
     const el = document.getElementById('message');
@@ -363,7 +385,14 @@ function _showGameTip(text, durationMs = 4000) {
     el.textContent = text;
     el.classList.add('show');
     clearTimeout(_tipTimer);
-    _tipTimer = setTimeout(() => el.classList.remove('show'), durationMs);
+    if (game.settings.messagePause && game.state === 'PLAYING') {
+      // Pause gameplay — player dismisses by pressing any key or clicking
+      game.state = 'MESSAGE_PAUSE';
+      game._messagePauseText = text;
+    } else {
+      // Challenge mode: message auto-dismisses, game keeps running
+      _tipTimer = setTimeout(() => el.classList.remove('show'), durationMs);
+    }
   } catch (e) {
     console.warn('[_showGameTip] Could not display tip:', e);
   }
@@ -376,6 +405,22 @@ const keys = {};
 document.addEventListener('keydown', e => {
   keys[e.key.toLowerCase()] = true;
   
+  // MESSAGE_PAUSE: any meaningful key dismisses the message and resumes play
+  if (game.state === 'MESSAGE_PAUSE') {
+    // Ignore modifier-only keys so accidental presses don't dismiss
+    const dismiss = !['Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(e.key);
+    if (dismiss) {
+      game.state = 'PLAYING';
+      game._messagePauseText = null;
+      try {
+        const el = document.getElementById('message');
+        if (el) el.classList.remove('show');
+      } catch (_) {}
+      e.preventDefault();
+      return;
+    }
+  }
+
   // Menu input
   if (menuSystem && (game.state === 'MENU' || game.state === 'MENU_DREAMSCAPE' || game.state === 'PAUSED')) {
     const result = menuSystem.handleKey(e);
@@ -441,6 +486,18 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
+// Click-to-dismiss message pause
+document.addEventListener('click', () => {
+  if (game.state === 'MESSAGE_PAUSE') {
+    game.state = 'PLAYING';
+    game._messagePauseText = null;
+    try {
+      const el = document.getElementById('message');
+      if (el) el.classList.remove('show');
+    } catch (_) {}
+  }
+});
+
 let lastMoveTime = 0;
 const MOVE_MS = 150;
 
@@ -487,7 +544,7 @@ function render(deltaMs = 16) {
     return;
   }
   
-  if (game.state === 'PLAYING') {
+  if (game.state === 'PLAYING' || game.state === 'MESSAGE_PAUSE') {
     // PHASE 1: Use mode rendering if available
     if (currentMode && currentMode.render) {
       currentMode.render(game, ctx);
@@ -512,6 +569,19 @@ function render(deltaMs = 16) {
         'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
       };
       hint.textContent = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · D: Stats · ESC: Pause';
+    }
+
+    // MESSAGE_PAUSE overlay: dim the screen and show "press any key to continue"
+    if (game.state === 'MESSAGE_PAUSE') {
+      ctx.fillStyle = 'rgba(0,0,0,0.55)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff88';
+      ctx.font = '13px Courier New';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText('[ press any key to continue ]', canvas.width / 2, canvas.height - 20);
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
     }
 
     // Stats dashboard overlay — rendered on top of game, below game-over
@@ -643,6 +713,10 @@ function gameLoop(currentTime) {
       updateParticles(game);
     }
     
+    updateHUD(game);
+  } else if (game.state === 'MESSAGE_PAUSE') {
+    // Gameplay is paused for message — still clear per-frame input to avoid stale presses
+    if (inputManager) inputManager.clearFrameInput();
     updateHUD(game);
   }
   

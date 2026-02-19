@@ -568,23 +568,33 @@ export class GridGameMode extends GameMode {
       }
     }
 
-    // Render peace nodes (use gameState.peaceNodes)
+    // Render peace nodes with animated pulse glow
     const peaceNodes = gameState.peaceNodes;
     if (peaceNodes) {
-      peaceNodes.forEach(node => {
+      const nowPeace = Date.now();
+      peaceNodes.forEach((node, idx) => {
         if (!node.collected) {
-          ctx.fillStyle = TILE_DEF[T.PEACE].bg;
+          const pulse = 0.55 + 0.45 * Math.sin(nowPeace / 700 + idx * 0.8);
+          const px = node.x * tileSize + tileSize / 2;
+          const py = node.y * tileSize + tileSize / 2;
+          ctx.save();
+          // Glow halo
+          ctx.globalAlpha = pulse * 0.35;
+          ctx.fillStyle = '#00ff88';
+          ctx.shadowColor = '#00ff88';
+          ctx.shadowBlur = 10;
           ctx.fillRect(node.x * tileSize, node.y * tileSize, tileSize, tileSize);
-          
-          ctx.fillStyle = TILE_DEF[T.PEACE].g || '#fff';
+          // Symbol
+          ctx.globalAlpha = 0.7 + pulse * 0.3;
+          ctx.shadowColor = '#00ff88';
+          ctx.shadowBlur = 8 + pulse * 6;
+          ctx.fillStyle = TILE_DEF[T.PEACE].g || '#00ff88';
           ctx.font = `${tileSize * 0.6}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(
-            TILE_DEF[T.PEACE].sy,
-            node.x * tileSize + tileSize / 2,
-            node.y * tileSize + tileSize / 2
-          );
+          ctx.fillText(TILE_DEF[T.PEACE].sy, px, py);
+          ctx.shadowBlur = 0;
+          ctx.restore();
         }
       });
     }
@@ -1308,6 +1318,7 @@ export class GridGameMode extends GameMode {
 
     // Start the readable transition overlay (3s total — blocks input for first 1.5s)
     this._levelFlashMs = this._LEVEL_FLASH_TOTAL;
+    try { window.AudioManager?.play('level_complete'); } catch(e) {}
     
     // Reset per-level state
     resetRelapseCompassion(gameState);

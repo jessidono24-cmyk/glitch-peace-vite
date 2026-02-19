@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════════════
-//  Tutorial Content v2 — first-timer friendly, covers all current systems
+//  Tutorial Content v3 — first-timer friendly, covers all current systems
 //  Updated to reflect: archetypes, matrix A/B, glitch pulse, shop, Z-undo,
-//  dreamscapes, play modes, cosmologies, language challenges, sigils, and
-//  the full age-accessible difficulty range.
+//  dreamscapes, play modes, cosmologies, language challenges, sigils,
+//  Ornithology, Mycology, Architecture, and Constellation modes.
 // ═══════════════════════════════════════════════════════════════════════
 
 export const TUTORIAL_PAGES = [
@@ -193,6 +193,66 @@ export const TUTORIAL_PAGES = [
       "",
       "Begin in stillness. Emerge through pattern recognition.",
       "The path is the practice."
+    ]
+  },
+  {
+    title: "🐦 Ornithology Mode",
+    body: [
+      "Press M to switch to Ornithology Mode from the grid.",
+      "Move through biome tiles (forest, wetland, urban, tundra, ocean) to observe birds.",
+      "Each ✦ glowing icon is a bird sighting — walk over it to observe.",
+      "Rare birds (★★★ or more) trigger a species ID challenge.",
+      "Answer 1-2-3-4 to choose the correct species within 12 seconds.",
+      "Build your Field Notebook: track how many species you've observed.",
+      "Rarer birds award more points and knowledge.",
+      "",
+      "Grounded in attention restoration theory: nature observation restores directed attention and reduces cognitive fatigue."
+    ]
+  },
+  {
+    title: "🍄 Mycology Mode",
+    body: [
+      "Press M to switch to Mycology Mode.",
+      "Move through forest substrates (oak, pine, deadwood, meadow) to forage mushrooms.",
+      "🍄 Green glow = edible · Red glow when near = TOXIC — step carefully!",
+      "Walking onto a toxic mushroom deals damage and triggers a mandatory ID challenge.",
+      "Answer 1-2-3-4 to identify the toxic species. Knowledge protects you next time.",
+      "Step on 🕸 Mycelium Network nodes to reveal underground connections between species.",
+      "Build your species log: safe foraged, toxic encountered, species identified.",
+      "",
+      "Inspired by Suzanne Simard's 'wood wide web' research (1997):",
+      "underground fungal networks support and communicate between trees."
+    ]
+  },
+  {
+    title: "🏛 Architecture Mode",
+    body: [
+      "Press M to switch to Architecture Mode.",
+      "Navigate the construction grid and place tiles to match a Blueprint.",
+      "Controls: WASD = move · SPACE = place selected tile · Q/E = cycle tile · X = erase",
+      "Current tile shown in the selector bar at the bottom.",
+      "The ghost overlay shows what the blueprint needs at each position.",
+      "Complete the full blueprint for a large bonus!",
+      "Blueprints include: Meditation Hall · Garden Court · Watchtower · Sanctuary",
+      "Each completed blueprint advances to the next design challenge.",
+      "",
+      "Grounded in embodied cognition: spatial construction strengthens",
+      "abstract pattern thinking through physical-metaphor reasoning."
+    ]
+  },
+  {
+    title: "✦ Constellation Mode",
+    body: [
+      "Press M to switch to Constellation Mode.",
+      "Navigate the dark star field to find and activate ✦ star tiles.",
+      "Activate stars in sequence (numbered 1, 2, 3...) to trace the constellation.",
+      "Each activated star draws a glowing line connecting to the previous.",
+      "Complete all stars to unlock the constellation's mythological lore.",
+      "Press any key or move after the lore to advance to the next constellation.",
+      "Constellations: Orion · The Pleiades · Ursa Major · Cassiopeia · Scorpius · Andromeda",
+      "",
+      "Night-sky gazing as restorative practice (Kaplan 1989).",
+      "Cross-cultural mythologies as shared archetypes (Jung 1968)."
     ]
   }
 ];

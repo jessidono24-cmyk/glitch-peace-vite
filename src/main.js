@@ -20,9 +20,13 @@ import AudioManager from './systems/audio.js';
 import GameStateManager from './core/game-engine/GameStateManager.js';
 import InputManager from './core/game-engine/InputManager.js';
 import { modeRegistry } from './gameplay-modes/ModeRegistry.js';
-import './gameplay-modes/grid-based/index.js'; // Auto-registers GridGameMode
-import './gameplay-modes/shooter/index.js';    // Auto-registers ShooterMode (Phase 2)
-import './gameplay-modes/rpg/index.js';         // Auto-registers RPGMode skeleton (Phase M5)
+import './gameplay-modes/grid-based/index.js';    // Auto-registers GridGameMode
+import './gameplay-modes/shooter/index.js';        // Auto-registers ShooterMode (Phase 2)
+import './gameplay-modes/rpg/index.js';            // Auto-registers RPGMode skeleton (Phase M5)
+import './gameplay-modes/ornithology/index.js';    // Auto-registers OrnithologyMode
+import './gameplay-modes/mycology/index.js';       // Auto-registers MycologyMode
+import './gameplay-modes/architecture/index.js';   // Auto-registers ArchitectureMode
+import './gameplay-modes/constellation/index.js';  // Auto-registers ConstellationMode
 
 // PHASE 1: Initialize new architecture
 let gameStateManager = null;
@@ -213,9 +217,14 @@ game.temporalSystem = new TemporalSystem(game.settings.timezone);
 
 // PHASE 2: Mode switching function
 function switchGameMode() {
-  const availableModes = ['grid-classic', 'shooter', 'rpg'];
+  const availableModes = ['grid-classic', 'shooter', 'rpg', 'ornithology', 'mycology', 'architecture', 'constellation'];
+  const typeToId = {
+    'grid': 'grid-classic', 'shooter': 'shooter', 'rpg': 'rpg',
+    'ornithology': 'ornithology', 'mycology': 'mycology',
+    'architecture': 'architecture', 'constellation': 'constellation',
+  };
   const currentModeId = currentMode
-    ? (currentMode.type === 'shooter' ? 'shooter' : currentMode.type === 'rpg' ? 'rpg' : 'grid-classic')
+    ? (typeToId[currentMode.type] || 'grid-classic')
     : 'grid-classic';
   const currentIndex = availableModes.indexOf(currentModeId);
   const nextIndex = (currentIndex + 1) % availableModes.length;
@@ -428,11 +437,15 @@ function render(deltaMs = 16) {
     const hint = document.querySelector('.controls-hint');
     if (hint) {
       hint.style.display = 'block';
-      hint.textContent = currentMode?.type === 'shooter'
-        ? 'WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Grid Mode · ESC: Pause'
-        : currentMode?.type === 'rpg'
-          ? '↑/↓: Dialogue · ENTER: Confirm · M: Grid Mode · ESC: Pause'
-          : 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · ESC: Pause';
+      const hints = {
+        'shooter':       'WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Switch Mode · ESC: Pause',
+        'rpg':           '↑/↓: Dialogue · ENTER: Confirm · M: Switch Mode · ESC: Pause',
+        'ornithology':   'WASD/Arrows: Move to observe birds · 1-4: Answer challenges · M: Switch Mode · ESC: Pause',
+        'mycology':      'WASD/Arrows: Forage mushrooms · 1-4: Identify toxic species · M: Switch Mode · ESC: Pause',
+        'architecture':  'WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · M: Switch Mode · ESC: Pause',
+        'constellation': 'WASD/Arrows: Navigate to stars · Activate in sequence · M: Switch Mode · ESC: Pause',
+      };
+      hint.textContent = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · ESC: Pause';
     }
   }
 

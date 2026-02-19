@@ -101,6 +101,7 @@ export function activateArchetype(gameState) {
   gameState._archetypeActive = { id: archetypeId, power: def.power, timer: 180, color: def.color };
   gameState._archetypeMsg = { text: def.activationMsg, color: def.color, expiresMs: now + 2500 };
   if (gameState.emotionalField?.add) gameState.emotionalField.add('awe', 1.0);
+  try { window.AudioManager?.play('archetype'); } catch(e) {}
 
   // Execute power-specific effects
   const sz = gameState.gridSize;

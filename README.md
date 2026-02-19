@@ -2,12 +2,12 @@
 
 **A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
 
-[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
+[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
-[![LOC](https://img.shields.io/badge/lines-10%2C972-purple.svg)](src/)
-[![Modules](https://img.shields.io/badge/modules-42-blueviolet.svg)](src/)
+[![LOC](https://img.shields.io/badge/lines-~14%2C200-purple.svg)](src/)
+[![Modules](https://img.shields.io/badge/modules-52-blueviolet.svg)](src/)
 
 > *Begin in stillness. Emerge through pattern recognition. Transform through play.*
 
@@ -38,7 +38,7 @@ GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than e
 
 ---
 
-## ✨ What's Working Right Now (v2.2)
+## ✨ What's Working Right Now (v2.3)
 
 ### 🎮 Two Complete Gameplay Modes
 
@@ -143,6 +143,11 @@ The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness ·
 | Synergy Banner | ✅ | Named emotional synergy popup (affect labeling — see RESEARCH §18) |
 | Game-Over Overlay | ✅ | Compassionate PATTERN INCOMPLETE screen; ENTER restarts in-mode |
 | Quest Notifications | ✅ | RPGMode quest completions surface as timed banner on grid |
+| Ornithology Mode | ✅ | Bird-watching grid: 16 species, 7 biomes, species ID challenges, field notebook |
+| Mycology Mode | ✅ | Mushroom foraging: 12 species, 5 substrates, toxic ID challenges, mycelium networks |
+| Architecture Mode | ✅ | Spatial construction: 10 tile types, 4 sacred-geometry blueprints, pattern matching |
+| Constellation Mode | ✅ | Connect-the-stars meditation: 6 constellations, sequential activation, mythological lore |
+| Audio Engine | ✅ | 12 synthesized SFX: peace, damage, combo, level_complete, archetype, insight, bird, spore, build + more |
 
 ---
 
@@ -175,19 +180,22 @@ Phase 4: Cosmology           [████████████████�
 Phase 5: Boss System         [████████████████████] 100% ✅  (+400 lines)
 Phase 6: Dreamscape Expand   [████████████████████] 100% ✅  (11/11 canonical dreamscapes)
 Phase 7: Upgrade Shop        [████████████████████] 100% ✅  (+700 lines)
-Phase 8: Polish & Testing    [██████░░░░░░░░░░░░░░]  30% 📋  (transitions, combo HUD, synergy, game-over)
+Phase 8: Polish & Testing    [████████░░░░░░░░░░░░]  40% 📋  (transitions, combo, synergy, audio SFX, visual glow)
 Phase Language Learning      [████████████████████] 100% ✅  (16 langs + progressive overload)
 Phase Archetypes             [████████████████████] 100% ✅  (5 archetypes, J key, 11 dreamscapes)
 Phase Matrix A/B             [████████████████████] 100% ✅  (SHIFT toggle, energy)
 Phase Enemy AI               [████████████████████] 100% ✅  (9 behaviors + hallucinations)
 Phase Sigil Database         [████████████████████] 100% ✅  (31 sigils, 6 traditions)
 Phase RPG Mode Scaffold      [████████░░░░░░░░░░░░]  40% 🚧  (stats, quests, dialogue, banner wired)
+Phase Ornithology Mode       [████████████████████] 100% ✅  (16 birds, 7 biomes, ID challenges, notebook)
+Phase Mycology Mode          [████████████████████] 100% ✅  (12 species, substrates, mycelium networks)
+Phase Architecture Mode      [████████████████████] 100% ✅  (10 tiles, 4 blueprints, pattern matching)
+Phase Constellation Mode     [████████████████████] 100% ✅  (6 constellations, lore, star-path activation)
 ────────────────────────────────────────────────────────────
-Overall:  ~11,250 / 23,500 lines  ≈  48% of full vision complete
+Overall:  ~14,200 / 23,500 lines  ≈  60% of full vision complete
 
 Remaining high-priority:
   - RPG Mode full grid rendering + stat combat (Phase M5)
-  - Constellation Mode (meditative connect-the-stars puzzles)
   - Multiplayer infrastructure
   - 80%+ test coverage
   - Performance optimization
@@ -200,8 +208,11 @@ Remaining high-priority:
 
 ### Immediate Next Steps
 - [x] **11 canonical dreamscapes** — Childhood Neighborhood, Aztec Chase Labyrinth, Orb Escape Event ✅
+- [x] **Constellation Mode** — connect-the-stars meditative puzzles ✅
+- [x] **Ornithology Mode** — bird-watching with species ID challenges ✅
+- [x] **Mycology Mode** — mushroom foraging with toxic ID challenges ✅
+- [x] **Architecture Mode** — spatial construction with blueprints ✅
 - [ ] **RPG Mode full grid rendering** — wire grid renderer into RPGMode, stat combat (Phase M5)
-- [ ] **Constellation Mode** — connect-the-stars meditative puzzles (Phase M6)
 - [ ] **Full test suite** — 80%+ coverage for core systems (Phase 8)
 - [ ] **Performance audit** — memory leak checks, particle pooling, canvas optimization
 
@@ -459,12 +470,12 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 
 | Metric | Value |
 |--------|-------|
-| Version | 2.1.0 |
-| Lines of Code | ~11,000 |
+| Version | 2.3.0 |
+| Lines of Code | ~14,200 |
 | Target LOC | 23,500+ |
-| Blueprint Completion | ~48% |
-| Source Modules | 42 |
-| Gameplay Modes (running) | 2 (Grid + Shooter) |
+| Blueprint Completion | ~60% |
+| Source Modules | 52 |
+| Gameplay Modes (running) | 7 (Grid + Shooter + RPG + Ornithology + Mycology + Architecture + Constellation) |
 | Gameplay Modes (designed) | 31+ |
 | Languages | 16 |
 | Dreamscapes | 11 |
@@ -473,8 +484,13 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 | Enemy AI Behaviors | 9 |
 | Archetypes | 5 |
 | Sigils in Database | 31 |
-| Build Time | 559ms |
-| Bundle Size | 167KB (54KB gzip) |
+| Audio SFX (synthesized) | 12 |
+| Bird Species | 16 |
+| Mushroom Species | 12 |
+| Blueprints | 4 |
+| Constellations | 6 |
+| Build Time | ~630ms |
+| Bundle Size | 227KB (72KB gzip) |
 | Vulnerabilities | 0 |
 
 ---

@@ -94,7 +94,12 @@ export function movePlayer(gameState, dx, dy) {
       gameState.emotionalField.add('hope', 0.6);
     }
     createParticles(gameState, newX, newY, 'healing', 18);
-    try { window.AudioManager?.play('peace'); } catch (e) {}
+    // Play combo sound on streaks of 3+, peace otherwise
+    if (gameState.combo >= 3) {
+      try { window.AudioManager?.play('combo'); } catch (e) {}
+    } else {
+      try { window.AudioManager?.play('peace'); } catch (e) {}
+    }
     return true;
   }
 

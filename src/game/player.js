@@ -15,8 +15,7 @@ export function updateCombo(gameState, comboTimeout = 3000) {
 // Enhanced from: _archive/gp-v5-YOUR-BUILD/src/main.js (tile interactions)
 import { T, TILE_DEF, PLAYER } from '../core/constants.js';
 import { createParticles } from './particles.js';
-// audio engine (singleton attached in main)
-const audio = typeof window !== 'undefined' ? window.AudioManager : null;
+import { createPowerup, applyPowerup } from '../systems/powerups.js';
 
 export function createPlayer() {
   return {
@@ -78,15 +77,12 @@ export function movePlayer(gameState, dx, dy) {
 
   // Power-up: collect and apply
   if (stepped === T.POWERUP) {
-    // Find which powerup is at this location
     if (Array.isArray(gameState.powerupNodes)) {
       const idx = gameState.powerupNodes.findIndex(p => p.x === newX && p.y === newY);
       if (idx !== -1) {
         const { type } = gameState.powerupNodes[idx];
-        if (typeof applyPowerup === 'function' && typeof createPowerup === 'function') {
-          const powerupObj = createPowerup(type, newX, newY);
-          applyPowerup(gameState, powerupObj);
-        }
+        const powerupObj = createPowerup(type, newX, newY);
+        applyPowerup(gameState, powerupObj);
         gameState.grid[newY][newX] = T.VOID;
         gameState.powerupNodes.splice(idx, 1);
         createParticles(gameState, newX, newY, '#00aaff', 16);

@@ -45,7 +45,7 @@ export const TILE_DEF = {
   [T.TRAP]:     { d: 16, s: 0, p: 0, bg: '#1a0800', bd: '#cc6600', g: '#ff8800', sy: '×', solid: false, emo: ['anxiety'] },
   [T.MEM]:      { d: 0,  s: 0, p: 0, bg: '#06060a', bd: 'rgba(100,200,150,0.2)', g: null, sy: '·', solid: false, emo: ['nostalgia'] },
   [T.PAIN]:     { d: 6,  s: 0, p: 0, bg: '#200808', bd: '#661111', g: '#880000', sy: '•', solid: false, emo: ['pain','hurt'] },
-  [T.POWERUP]:  { d: 0,  s: 0, p: 0, bg: '#0e0e18', bd: '#252535', g: null, sy: '', solid: true, emo: [] },
+  [T.POWERUP]:  { d: 0,  s: 0, p: 0, bg: '#0a1020', bd: '#00aaff', g: '#00ccff', sy: '⊕', solid: false, emo: ['joy'] },
 };
 
 // Player Colors (FIXED - anchor identity)

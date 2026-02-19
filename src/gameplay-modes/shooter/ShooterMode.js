@@ -6,6 +6,7 @@
  */
 
 import GameMode from '../../core/interfaces/GameMode.js';
+import { getDreamscapeTheme } from '../../systems/dreamscapes.js';
 
 export default class ShooterMode extends GameMode {
   constructor() {
@@ -143,24 +144,29 @@ export default class ShooterMode extends GameMode {
    * Render shooter game
    */
   render(gameState, ctx) {
-    // Clear canvas
-    ctx.fillStyle = '#0a0a0f';
+    // Use dreamscape theme for background
+    const theme = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+    ctx.fillStyle = theme.bg || '#0a0a0f';
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    if (theme.ambient) {
+      ctx.fillStyle = theme.ambient;
+      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+    }
     
     // Render enemies
-    this.renderEnemies(ctx);
+    this.renderEnemies(ctx, theme);
     
     // Render bullets
-    this.renderBullets(ctx);
+    this.renderBullets(ctx, theme);
     
     // Render particles
     this.renderParticles(ctx);
     
     // Render player
-    this.renderPlayer(ctx);
+    this.renderPlayer(ctx, theme);
     
     // Render UI overlay
-    this.renderUI(ctx);
+    this.renderUI(ctx, theme);
   }
   
   /**
@@ -420,19 +426,23 @@ export default class ShooterMode extends GameMode {
   /**
    * Render player ship
    */
-  renderPlayer(ctx) {
+  renderPlayer(ctx, theme = {}) {
     ctx.save();
     ctx.translate(this.player.x, this.player.y);
     ctx.rotate(this.player.rotation);
     
-    // Draw ship (triangle)
-    ctx.fillStyle = '#00ffff';
+    // Draw ship (triangle) — use dreamscape accent color
+    const accent = theme.accent || '#00ffff';
+    ctx.fillStyle = accent;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 10;
     ctx.beginPath();
     ctx.moveTo(15, 0);
     ctx.lineTo(-10, -8);
     ctx.lineTo(-10, 8);
     ctx.closePath();
     ctx.fill();
+    ctx.shadowBlur = 0;
     
     // Draw weapon indicator
     const weaponColors = ['#ffff00', '#ff00ff', '#ff4444', '#00ff00'];
@@ -445,38 +455,53 @@ export default class ShooterMode extends GameMode {
   /**
    * Render all bullets
    */
-  renderBullets(ctx) {
-    const bulletColors = ['#ffff00', '#ff00ff', '#ff4444', '#00ff00'];
+  renderBullets(ctx, theme = {}) {
+    const weaponColors = ['#ffff00', '#ff00ff', '#ff4444', theme.accent || '#00ff00'];
     
     for (const bullet of this.bullets) {
-      ctx.fillStyle = bulletColors[bullet.weapon];
+      ctx.fillStyle = weaponColors[bullet.weapon] || '#fff';
+      ctx.shadowColor = weaponColors[bullet.weapon] || '#fff';
+      ctx.shadowBlur = 4;
       ctx.beginPath();
       ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
       ctx.fill();
     }
+    ctx.shadowBlur = 0;
   }
   
   /**
    * Render all enemies
    */
-  renderEnemies(ctx) {
+  renderEnemies(ctx, theme = {}) {
+    const enemyColor = theme.accent ? this._shiftHue(theme.accent, 180) : '#ff3333';
     for (const enemy of this.enemies) {
-      // Draw enemy (circle)
-      ctx.fillStyle = '#ff3333';
+      ctx.fillStyle = enemyColor;
+      ctx.shadowColor = enemyColor;
+      ctx.shadowBlur = 6;
       ctx.beginPath();
       ctx.arc(enemy.x, enemy.y, enemy.size, 0, Math.PI * 2);
       ctx.fill();
+      ctx.shadowBlur = 0;
       
-      // Draw health bar
+      // Health bar
       const barWidth = 20;
       const barHeight = 3;
       const healthPercent = enemy.health / enemy.maxHealth;
-      
-      ctx.fillStyle = '#333';
+      ctx.fillStyle = '#222';
       ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.size - 8, barWidth, barHeight);
       ctx.fillStyle = '#00ff00';
       ctx.fillRect(enemy.x - barWidth / 2, enemy.y - enemy.size - 8, barWidth * healthPercent, barHeight);
     }
+  }
+
+  /** Simple complementary hue shift for enemy color differentiation */
+  _shiftHue(hex, degrees) {
+    // Simplified: for specific dreamscape accents, return a readable enemy color
+    const shiftMap = {
+      '#00e5ff': '#ff4444', '#00ff88': '#ff3366',
+      '#8844ff': '#ffaa00', '#ffcc00': '#cc44ff', '#ddddff': '#ff6644',
+    };
+    return shiftMap[hex] || '#ff3333';
   }
   
   /**
@@ -496,17 +521,20 @@ export default class ShooterMode extends GameMode {
   /**
    * Render UI overlay
    */
-  renderUI(ctx) {
+  renderUI(ctx, theme = {}) {
+    const accent = theme.accent || '#00ffff';
     ctx.fillStyle = '#ffffff';
     ctx.font = '16px monospace';
     
     // Health
-    ctx.fillText(`HP: ${Math.max(0, this.player.health)}/${this.player.maxHealth}`, 10, 25);
+    ctx.fillText(`HP: ${Math.max(0, Math.round(this.player.health))}/${this.player.maxHealth}`, 10, 25);
     
     // Wave
+    ctx.fillStyle = accent;
     ctx.fillText(`Wave: ${this.waveNumber}`, 10, 45);
     
     // Score
+    ctx.fillStyle = '#ffffff';
     ctx.fillText(`Score: ${this.score}`, 10, 65);
     
     // Combo
@@ -517,24 +545,19 @@ export default class ShooterMode extends GameMode {
     
     // Weapon name
     const weaponNames = ['SPREAD', 'LASER', 'MISSILES', 'ENERGY'];
-    ctx.fillStyle = '#00ffff';
+    ctx.fillStyle = accent;
     ctx.fillText(`Weapon: ${weaponNames[this.player.currentWeapon]} (${this.player.currentWeapon + 1})`, 10, 105);
     
-    // Game over
-    if (this.player.health <= 0) {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-      ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      
-      ctx.fillStyle = '#ff0000';
-      ctx.font = '48px monospace';
+    // Wave incoming banner
+    if (!this.waveActive && this.enemies.length === 0) {
+      ctx.fillStyle = accent;
+      ctx.font = 'bold 20px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', this.canvas.width / 2, this.canvas.height / 2 - 20);
-      
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '24px monospace';
-      ctx.fillText(`Final Score: ${this.score}`, this.canvas.width / 2, this.canvas.height / 2 + 20);
-      ctx.fillText(`Waves Survived: ${this.waveNumber - 1}`, this.canvas.width / 2, this.canvas.height / 2 + 50);
-      
+      ctx.shadowColor = accent;
+      ctx.shadowBlur = 12;
+      ctx.fillText(`WAVE ${this.waveNumber + 1} INCOMING...`, this.canvas.width / 2, this.canvas.height - 40);
+      ctx.shadowBlur = 0;
+      ctx.font = '16px monospace';
       ctx.textAlign = 'left';
     }
   }

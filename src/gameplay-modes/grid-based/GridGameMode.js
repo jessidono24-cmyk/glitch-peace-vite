@@ -11,6 +11,7 @@ import { createParticles, updateParticles } from './grid-particles.js';
 import { T, TILE_DEF, PLAYER } from '../../core/constants.js';
 import { applyMode } from '../../systems/play-modes.js';
 import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscapes.js';
+import { updatePowerups, hasPowerup } from '../../systems/powerups.js';
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -135,6 +136,12 @@ export class GridGameMode extends GameMode {
       );
     }
 
+    // Update active powerups (expiry + REGEN effect)
+    updatePowerups(gameState);
+
+    // Apply SPEED powerup to movement delay
+    this.moveDelay = hasPowerup(gameState, 'movement_boost') ? 75 : 150;
+
     // Update enemies (use gameState directly — enemy.js updateEnemies(gameState))
     if (gameState.enemies && gameState.enemies.length > 0) {
       updateEnemies(gameState);
@@ -178,12 +185,18 @@ export class GridGameMode extends GameMode {
 
     for (const enemy of gameState.enemies) {
       if (enemy.x === px && enemy.y === py) {
-        const dmg = 10;
-        gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
-        this._lastEnemyDamageMs = now;
-        if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', 0.5);
-        createParticles(gameState, px, py, 'damage', 8);
-        try { window.AudioManager?.play('damage'); } catch (e) {}
+        // SHIELD powerup: absorb hit without damage
+        if (hasPowerup(gameState, 'absorb_damage')) {
+          this._lastEnemyDamageMs = now;
+          createParticles(gameState, px, py, '#00aaff', 6);
+        } else {
+          const dmg = 10;
+          gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
+          this._lastEnemyDamageMs = now;
+          if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', 0.5);
+          createParticles(gameState, px, py, 'damage', 8);
+          try { window.AudioManager?.play('damage'); } catch (e) {}
+        }
         break;
       }
     }

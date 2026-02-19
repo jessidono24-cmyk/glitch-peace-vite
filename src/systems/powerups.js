@@ -42,11 +42,21 @@ export function applyPowerup(gameState, powerup) {
     type: powerup.type,
     effect: powerup.effect,
     expiresAt: Date.now() + powerup.duration,
+    duration: powerup.duration,
     icon: powerup.icon,
     color: powerup.color
   };
   
   gameState.activePowerups.push(active);
+
+  // Immediate effects on application
+  if (powerup.effect === 'stun_enemies' && Array.isArray(gameState.enemies)) {
+    const until = Date.now() + powerup.duration;
+    for (const enemy of gameState.enemies) {
+      enemy.stunned = true;
+      enemy.stunnedUntil = until;
+    }
+  }
 }
 
 export function updatePowerups(gameState) {
@@ -55,12 +65,15 @@ export function updatePowerups(gameState) {
   const now = Date.now();
   gameState.activePowerups = gameState.activePowerups.filter(p => p.expiresAt > now);
   
-  // Apply effects
+  // Apply continuous effects
   for (const p of gameState.activePowerups) {
-    if (p.effect === 'heal_over_time') {
-      // Heal 1 HP per second
-      if (Math.random() < 0.016) { // ~1/60 chance per frame at 60fps
-        if (typeof heal === 'function') heal(gameState, 1);
+    if (p.effect === 'heal_over_time' && gameState.player) {
+      // Heal ~1 HP per second at 60fps
+      if (Math.random() < 0.016) {
+        gameState.player.hp = Math.min(
+          gameState.player.maxHp || 100,
+          (gameState.player.hp || 0) + 1
+        );
       }
     }
   }

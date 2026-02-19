@@ -56,9 +56,26 @@ export function movePlayer(gameState, dx, dy) {
 
   // Peace: heal + collect
   if (stepped === T.PEACE) {
+    // REVERSE mode: peace tiles deal damage instead of healing!
+    if (gameState.mechanics?.reversedTiles) {
+      const dmg = 8;
+      gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
+      gameState.grid[newY][newX] = T.VOID;
+      gameState.peaceCollected = Math.min(
+        (gameState.peaceTotal || 0),
+        (gameState.peaceCollected || 0) + 1
+      );
+      if (gameState.emotionalField?.add) gameState.emotionalField.add('despair', 0.8);
+      createParticles(gameState, newX, newY, '#ff3344', 12);
+      return true;
+    }
     const healAmt = 10;
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
-    const mul = (gameState.synergyMultiplier || 1.0) * (gameState.scoreMul || 1.0);
+    // Build combo on peace collection
+    gameState.combo = (gameState.combo || 0) + 1;
+    gameState.comboTimer = Date.now();
+    const comboMul = 1 + Math.min(3, (gameState.combo - 1) * 0.2); // up to 1.6× at combo×10
+    const mul = (gameState.synergyMultiplier || 1.0) * (gameState.scoreMul || 1.0) * comboMul;
     gameState.score = (gameState.score || 0) + Math.round(150 * mul);
     // Guard: don't exceed peaceTotal to prevent over-collection
     const newCollected = (gameState.peaceCollected || 0) + 1;
@@ -107,6 +124,15 @@ export function movePlayer(gameState, dx, dy) {
 
   // Damage tiles (despair, terror, rage, trap, pain, harm)
   if (def && def.d > 0) {
+    // REVERSE mode: hazard tiles heal instead of dealing damage
+    if (gameState.mechanics?.reversedTiles) {
+      const healAmt = Math.round(def.d * 0.8);
+      gameState.player.hp = Math.min(gameState.player.maxHp || 100, (gameState.player.hp || 0) + healAmt);
+      gameState.grid[newY][newX] = T.VOID;
+      if (gameState.emotionalField?.add) gameState.emotionalField.add('awe', 0.8);
+      createParticles(gameState, newX, newY, '#00ffcc', 12);
+      return true;
+    }
     const hazardMod = (gameState.hazardMul !== undefined ? gameState.hazardMul : 1.0)
                     * (gameState.emotionHazardMod || 1.0);
     const dmg = Math.max(1, Math.round(def.d * hazardMod));
@@ -202,7 +228,7 @@ export function movePlayer(gameState, dx, dy) {
     return true;
   }
 
-  // Memory: restores small HP and adds grief/hope (bittersweet nostalgia)
+  // Memory: restores HP and triggers a brief pattern flash (memory training)
   if (stepped === T.MEM) {
     const healAmt = 6;
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
@@ -211,7 +237,23 @@ export function movePlayer(gameState, dx, dy) {
       gameState.emotionalField.add('grief', 0.6); // nostalgia → grief (bittersweet)
       gameState.emotionalField.add('hope', 0.4);
     }
-    createParticles(gameState, newX, newY, '#66ccff', 10);
+    // Trigger memory flash: briefly reveal hidden tiles around the player
+    const radius = 3;
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const fx = newX + dx;
+        const fy = newY + dy;
+        if (fx >= 0 && fy >= 0 && fx < gameState.gridSize && fy < gameState.gridSize) {
+          if (gameState.grid[fy]?.[fx] === T.HIDDEN) {
+            gameState.grid[fy][fx] = T.VOID; // reveal hidden tiles in range
+          }
+        }
+      }
+    }
+    // Schedule memory score bonus (200 pts)
+    gameState.score = (gameState.score || 0) + 200;
+    gameState.memoryFlash = { x: newX, y: newY, radius, expiresMs: Date.now() + 800 };
+    createParticles(gameState, newX, newY, '#66ccff', 14);
     try { window.AudioManager?.play('peace'); } catch (e) {}
     return true;
   }

@@ -116,7 +116,19 @@ export function updateHUD(game) {
   const temporalMods = game.temporalSystem?.getModifiers?.();
   const dreamscape = game.currentDreamscape ? ` · ${game.currentDreamscape}` : '';
   const playMode = game.playMode && game.playMode !== 'ARCADE' ? ` · ${game.playMode}` : '';
-  realmRow.textContent = `${realm.name}${dreamscape}${playMode} · ${temporalMods?.phaseName || ''} ${temporalMods?.dayName || ''}`;
+  let realmText = `${realm.name}${dreamscape}${playMode} · ${temporalMods?.phaseName || ''} ${temporalMods?.dayName || ''}`;
+
+  // Append insight tokens if any earned
+  if (game.insightTokens && game.insightTokens > 0) {
+    realmText += ` · ☆×${game.insightTokens}`;
+  }
+
+  // Append near-miss count (threshold monitor)
+  if (game._nearMissCount && game._nearMissCount > 0) {
+    realmText += ` · ⚠×${game._nearMissCount}`;
+  }
+
+  realmRow.textContent = realmText;
   realmRow.style.color = realm.col;
 }
 

@@ -13,6 +13,7 @@ import { applyMode } from '../../systems/play-modes.js';
 import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscapes.js';
 import { updatePowerups, hasPowerup } from '../../systems/powerups.js';
 import { undoGameMove } from '../../systems/undo.js';
+import { updateCombo } from '../../game/player.js';
 import {
   checkImpulseBuffer,
   cancelImpulseBuffer,
@@ -223,6 +224,9 @@ export class GridGameMode extends GameMode {
 
     // Update active powerups (expiry + REGEN effect)
     updatePowerups(gameState);
+
+    // Update combo decay (3s timeout between peace collections)
+    updateCombo(gameState, 3000);
 
     // ── Recovery Tools: session, threshold, reality check ──────────────
     updateSessionManager(gameState, deltaTime);
@@ -487,6 +491,26 @@ export class GridGameMode extends GameMode {
           ctx.restore();
         }
       });
+    }
+
+    // Memory flash ring (expands from MEM tile, reveals hidden area)
+    if (gameState.memoryFlash) {
+      const { x, y, radius, expiresMs } = gameState.memoryFlash;
+      const age = expiresMs - Date.now();
+      if (age > 0) {
+        const progress = 1 - age / 800;
+        const ringR = progress * radius * tileSize;
+        ctx.save();
+        ctx.globalAlpha = (1 - progress) * 0.8;
+        ctx.strokeStyle = '#66ccff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc((x + 0.5) * tileSize, (y + 0.5) * tileSize, ringR, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        delete gameState.memoryFlash;
+      }
     }
 
     // Recovery tool overlays (echo trail, consequence preview, impulse buffer, alerts)

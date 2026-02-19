@@ -7,6 +7,12 @@
  * InputManager provides a mode-agnostic input handling system.
  * Modes can query input state without directly handling events.
  */
+
+// ─── Named Constants ──────────────────────────────────────────────────────────
+
+// Deadzone for gamepad analog sticks; exposed as a constant for easy tuning.
+const GAMEPAD_DEADZONE = 0.42;
+
 export class InputManager {
   constructor() {
     this.keys = new Set();
@@ -230,7 +236,7 @@ export class InputManager {
     for (const gp of gamepads) {
       if (!gp || !gp.connected) continue;
 
-      const DEADZONE = 0.42;
+      const DEADZONE = GAMEPAD_DEADZONE;
       const ax = gp.axes[0] || 0;  // horizontal
       const ay = gp.axes[1] || 0;  // vertical
 

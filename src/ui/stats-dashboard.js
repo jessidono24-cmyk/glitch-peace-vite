@@ -4,7 +4,9 @@
 //  session time · emotional field · lucidity meter · language progress
 // ═══════════════════════════════════════════════════════════════════════
 
-// Module-level session start timestamp (resets on page load, not on level change)
+// Module-level fallback timestamp (used only if gameState._sessionStartMs was never set,
+// e.g. on direct page load without going through startGame()). The canonical session
+// start is written to gameState._sessionStartMs in startGame() on level 1.
 const _SESSION_START_MS = Date.now();
 
 // Emotion → display color mapping (consistent with emotional-engine palette)

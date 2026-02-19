@@ -1,8 +1,9 @@
 // ═══════════════════════════════════════════════════════════════════════
-//  Tutorial Content v4 — first-timer friendly, covers all current systems
+//  Tutorial Content v5 — first-timer friendly, covers all current systems
 //  Updated to reflect: archetypes, matrix A/B, glitch pulse, shop, Z-undo,
 //  dreamscapes, play modes, cosmologies, language challenges, sigils,
-//  Ornithology, Mycology, Architecture, Constellation, Alchemy, Rhythm modes.
+//  Ornithology, Mycology, Architecture, Constellation, Alchemy, Rhythm modes,
+//  RPG Adventure (Phase M5 active), Stats Dashboard (D key), gamepad.
 // ═══════════════════════════════════════════════════════════════════════
 
 export const TUTORIAL_PAGES = [
@@ -79,7 +80,7 @@ export const TUTORIAL_PAGES = [
     ]
   },
   {
-    title: "Special Controls — Shop & Undo",
+    title: "Special Controls — Shop, Undo & Dashboard",
     body: [
       "U — Open Upgrade Shop (when you have ☆ insight tokens):",
       "  Spend tokens on permanent run upgrades:",
@@ -87,9 +88,14 @@ export const TUTORIAL_PAGES = [
       "  Score Lens · Rewind Charges · Phase Walk · Lucid Anchor",
       "  The shop also auto-opens every 5 levels as a reward.",
       "",
+      "D — Toggle live Stats Dashboard overlay:",
+      "  Shows: session time, emotional field bars, lucidity meter,",
+      "  language learning progress, current mode/dreamscape info.",
+      "  Press D or ESC to close.",
+      "",
       "Z — Undo last move (in Puzzle mode only).",
       "H — Open this help screen from anywhere during play.",
-      "M — Switch between Grid mode and Shooter mode.",
+      "M — Cycle through all 9 game modes.",
       "ESC — Pause / save game."
     ]
   },
@@ -285,6 +291,53 @@ export const TUTORIAL_PAGES = [
       "",
       "Research: Thaut et al. (1997) Rhythmic Auditory Stimulation (RAS);",
       "Bittman et al. (2001) drumming reduces cortisol, increases NK-cell activity."
+    ]
+  },
+  {
+    title: "⚔ RPG Adventure Mode",
+    body: [
+      "Press M until you reach RPG Adventure mode.",
+      "You walk through a 12×12 tile grid — same WASD/Arrow movement.",
+      "Collect green ◈ Peace nodes to advance levels.",
+      "  Each peace node earns score (wisdom-boosted) and feeds quest progress.",
+      "  Collect all peace nodes → new level with refreshed grid.",
+      "Avoid purple ◌ Shadow Enemies — touching one deals HP damage.",
+      "  They wander toward you; your Resilience stat reduces their damage.",
+      "",
+      "Character Stats (shown in top-left panel):",
+      "  STR Strength  · WIS Wisdom (score bonus) · EMP Empathy",
+      "  RES Resilience (damage reduction) · CLR Clarity (vision range)",
+      "Stats grow as you level up and complete quests.",
+      "",
+      "Dialogue: on first entry, a story prompt appears at the bottom.",
+      "  ↑/↓ to select a response, ENTER to confirm.",
+      "  Each choice subtly shifts your emotional field.",
+      "",
+      "Press D for the Stats Dashboard · U for the Upgrade Shop."
+    ]
+  },
+  {
+    title: "📊 Stats Dashboard (D Key)",
+    body: [
+      "Press D at any time during gameplay to open the Stats Dashboard.",
+      "Press D or ESC to close it.",
+      "",
+      "The Dashboard shows:",
+      "  Session time · Current level · Score · Insight tokens · Combo",
+      "",
+      "  Emotional Field: top 5 active emotions with percentage bars.",
+      "    Emotions shift based on tiles you step on and archetypes used.",
+      "    High coherence (joy/hope/gratitude) boosts score multipliers.",
+      "",
+      "  Lucidity Meter: rises during focused play and dream-yoga practice.",
+      "    High lucidity (70%+) is associated with metacognitive awareness.",
+      "",
+      "  Language Learning: shows your selected language pair and",
+      "    total number of vocabulary/translation challenges completed.",
+      "",
+      "  Current Mode: active game mode, play variation, and dreamscape.",
+      "",
+      "The dashboard never pauses the game — it overlays transparently."
     ]
   }
 ];

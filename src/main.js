@@ -262,6 +262,7 @@ function startGame() {
   game.state = 'PLAYING';
   if (game.level === 1) {
     game.player = createPlayer();
+    game._sessionStartMs = Date.now(); // track session start for Stats Dashboard
   }
   
   // PHASE 1: Create and initialize game mode

@@ -34,6 +34,7 @@ const RPG_SHADOW_COUNT   = 3;    // wandering glitch spirit enemies
 const RPG_SHADOW_MOVE_MS = 900;  // ms between shadow enemy steps
 const RPG_TOP_OFFSET     = 58;   // px at top reserved for banner
 const RPG_BOT_OFFSET     = 178;  // px at bottom reserved for dialogue box
+const RPG_MIN_SPAWN_DIST = 5;    // min Manhattan distance from (1,1) for enemy spawn
 
 // ─── Sample Dialogue Tree ─────────────────────────────────────────────────────
 // Each node: { id, speaker, text, options: [{ label, next, effect }] }
@@ -468,7 +469,7 @@ export default class RPGMode extends GameMode {
       } while (
         attempts < 80 && (
           this._rpgState.grid[ey]?.[ex] !== T.VOID ||
-          Math.abs(ex - 1) + Math.abs(ey - 1) < 5
+          Math.abs(ex - 1) + Math.abs(ey - 1) < RPG_MIN_SPAWN_DIST
         )
       );
       this._shadowEnemies.push({ x: ex, y: ey, maxHp: 15 + i * 5 });
@@ -515,6 +516,8 @@ export default class RPGMode extends GameMode {
       // All peace nodes collected → advance level
       if (st.peaceCollected >= st.peaceTotal) {
         gameState.level = (gameState.level || 1) + 1;
+        // Wisdom grows cumulatively (persistent stat); clarity recalculates
+        // from level (tracking cognitive range as a level-derived capability).
         this.stats.wisdom   = Math.min(10, this.stats.wisdom + 1 + Math.floor(gameState.level / WISDOM_GROWTH_DIVISOR));
         this.stats.clarity  = Math.min(10, 1 + Math.floor(gameState.level / CLARITY_GROWTH_DIVISOR));
         this._initRpgGrid(gameState);

@@ -2,12 +2,12 @@
 
 **A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
 
-[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
+[![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
-[![LOC](https://img.shields.io/badge/lines-~17%2C000-purple.svg)](src/)
-[![Modules](https://img.shields.io/badge/modules-56-blueviolet.svg)](src/)
+[![LOC](https://img.shields.io/badge/lines-~19%2C000-purple.svg)](src/)
+[![Modules](https://img.shields.io/badge/modules-57-blueviolet.svg)](src/)
 
 > *Begin in stillness. Emerge through pattern recognition. Transform through play.*
 
@@ -143,13 +143,18 @@ The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness ·
 | Synergy Banner | ✅ | Named emotional synergy popup (affect labeling — see RESEARCH §18) |
 | Game-Over Overlay | ✅ | Compassionate PATTERN INCOMPLETE screen; ENTER restarts in-mode |
 | Quest Notifications | ✅ | RPGMode quest completions surface as timed banner on grid |
+| RPG Adventure Mode | ✅ | Live 12×12 walkable grid, 3 shadow enemies, stat-modulated damage, dialogue trees, quests |
+| Stats Dashboard | ✅ | D key overlay: session time, emotional field bars, lucidity meter, language progress |
+| Gamepad Support | ✅ | Left stick + D-pad → directional; A/B/X/Y → action keys; edge-detect press |
+| Canvas Responsive | ✅ | Auto-scales to viewport while keeping square internal resolution |
+| Shooter Boss Waves | ✅ | Every 5th wave: boss enemy with pulsing ring render and centered HP bar |
 | Ornithology Mode | ✅ | Bird-watching grid: 16 species, 7 biomes, species ID challenges, field notebook |
 | Mycology Mode | ✅ | Mushroom foraging: 12 species, 5 substrates, toxic ID challenges, mycelium networks |
 | Architecture Mode | ✅ | Spatial construction: 10 tile types, 4 sacred-geometry blueprints, pattern matching |
 | Constellation Mode | ✅ | Connect-the-stars meditation: 6 constellations, sequential activation, mythological lore |
 | Alchemy Mode | ✅ | Hermetic lab: collect Fire/Water/Earth/Air, 8 transmutation reactions, Jungian lore overlays, particle effects |
 | Rhythm Mode | ✅ | Beat-sync grid: drum machine (kick/snare/hihat), tiles pulse on beat, 4 BPM patterns, accuracy scoring |
-| Audio Engine | ✅ | 13 synthesized SFX: peace, damage, combo, level_complete, archetype, insight, bird, spore, build, heal + more |
+| Audio Engine | ✅ | 13+ synthesized SFX: peace, damage, combo, level_complete, archetype, insight, bird, spore, build, heal, boss |
 | Visual Polish | ✅ | GLITCH tile random color flicker, INSIGHT tile shimmer, peace node pulse glow, combo HUD |
 
 ---
@@ -183,28 +188,31 @@ Phase 4: Cosmology           [████████████████�
 Phase 5: Boss System         [████████████████████] 100% ✅  (+400 lines)
 Phase 6: Dreamscape Expand   [████████████████████] 100% ✅  (11/11 canonical dreamscapes)
 Phase 7: Upgrade Shop        [████████████████████] 100% ✅  (+700 lines)
-Phase 8: Polish & Testing    [████████████░░░░░░░░]  60% 📋  (transitions, combo, synergy, audio, tile anims, GLITCH/INSIGHT, heal SFX)
+Phase 8: Polish & Testing    [███████████████░░░░░]  75% 📋  (transitions, combo, synergy, audio, tile anims, gamepad, canvas resize, boss HP bar)
 Phase Language Learning      [████████████████████] 100% ✅  (16 langs + progressive overload)
 Phase Archetypes             [████████████████████] 100% ✅  (5 archetypes, J key, 11 dreamscapes)
 Phase Matrix A/B             [████████████████████] 100% ✅  (SHIFT toggle, energy)
 Phase Enemy AI               [████████████████████] 100% ✅  (9 behaviors + hallucinations)
 Phase Sigil Database         [████████████████████] 100% ✅  (31 sigils, 6 traditions)
-Phase RPG Mode Scaffold      [████████░░░░░░░░░░░░]  40% 🚧  (stats, quests, dialogue, banner wired)
+Phase RPG Mode               [████████████████████] 100% ✅  (live 12×12 grid, shadow enemies, stat combat, dialogue, quests — Phase M5 active)
 Phase Ornithology Mode       [████████████████████] 100% ✅  (16 birds, 7 biomes, ID challenges, notebook)
 Phase Mycology Mode          [████████████████████] 100% ✅  (12 species, substrates, mycelium networks)
 Phase Architecture Mode      [████████████████████] 100% ✅  (10 tiles, 4 blueprints, pattern matching)
 Phase Constellation Mode     [████████████████████] 100% ✅  (6 constellations, lore, star-path activation)
 Phase Alchemy Mode           [████████████████████] 100% ✅  (4 elements, 8 reactions, particle FX, Jungian lore)
 Phase Rhythm Mode            [████████████████████] 100% ✅  (4 BPM patterns, drum machine, beat-sync tiles)
+Phase Stats Dashboard        [████████████████████] 100% ✅  (D key overlay, emotional field, lucidity, language, mode info)
+Phase Gamepad Support        [███████████████░░░░░]  75% ✅  (left stick + D-pad + 6 buttons wired; rumble pending)
 ────────────────────────────────────────────────────────────
-Overall:  ~17,000 / 23,500 lines  ≈  72% of full vision complete
+Overall:  ~19,000 / 23,500 lines  ≈  82% of full vision complete
 
 Remaining high-priority:
-  - RPG Mode full grid rendering + stat combat (Phase M5)
   - Multiplayer infrastructure
   - 80%+ test coverage
-  - Performance optimization
   - WCAG AA accessibility audit
+  - Performance optimization (WebGL renderer candidate)
+  - Gamepad rumble / vibration feedback
+  - Integration metrics dashboard (cross-session analytics)
 ```
 
 ---
@@ -220,7 +228,11 @@ Remaining high-priority:
 - [x] **Alchemy Mode** — Hermetic laboratory, 8 transmutation reactions ✅
 - [x] **Rhythm Mode** — beat-synchronized grid, drum machine entrainment ✅
 - [x] **Phase 8 Polish** — GLITCH flicker, INSIGHT shimmer, heal SFX ✅
-- [ ] **RPG Mode full grid rendering** — wire grid renderer into RPGMode, stat combat (Phase M5)
+- [x] **RPG Mode full grid rendering** — live 12×12 walkable grid, shadow enemies, stat combat ✅
+- [x] **Stats Dashboard** — D key overlay, emotional field, lucidity, language progress ✅
+- [x] **Gamepad Support** — left stick + D-pad + action buttons via InputManager.pollGamepad() ✅
+- [x] **Shooter Boss Waves** — every 5th wave boss with pulsing HP bar ✅
+- [x] **Canvas Responsive Sizing** — fits viewport on all screen sizes ✅
 - [ ] **Full test suite** — 80%+ coverage for core systems (Phase 8)
 - [ ] **Performance audit** — memory leak checks, particle pooling, canvas optimization
 
@@ -480,8 +492,8 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 | Version | 2.4.0 |
 | Lines of Code | ~17,000 |
 | Target LOC | 23,500+ |
-| Blueprint Completion | ~72% |
-| Source Modules | 56 |
+| Blueprint Completion | ~82% |
+| Source Modules | 57 |
 | Gameplay Modes (running) | 9 (Grid + Shooter + RPG + Ornithology + Mycology + Architecture + Constellation + Alchemy + Rhythm) |
 | Gameplay Modes (designed) | 31+ |
 | Languages | 16 |

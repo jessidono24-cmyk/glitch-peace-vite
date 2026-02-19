@@ -1,10 +1,10 @@
 # 🗺️ GLITCH·PEACE Development Roadmap
 
-**Vision**: A consciousness awakening engine that supports addiction recovery and accelerates learning through gentle stress inoculation and pattern recognition training.
+**Vision**: A consciousness awakening engine that supports addiction recovery, accelerates learning, and cultivates embodiment and dream yoga practice through gentle stress inoculation and pattern recognition training.
 
-**Target**: 20,000+ lines of production-ready code
+**Target**: 23,500+ lines of production-ready code
 **Current**: 4,300 lines  
-**Timeline**: March 15, 2026
+**Timeline**: March 20, 2026 (extended for dream yoga integration)
 
 ---
 
@@ -15,6 +15,7 @@
 - Pattern recognition training
 - Emotional awareness development
 - Mindfulness integration
+- Reality testing and awareness cultivation
 
 ### 2. Addiction Recovery Support
 - Impulse delay training (1-second buffer)
@@ -34,11 +35,30 @@
 - Problem-solving scenarios
 - IQ/EQ skill development
 
-### 4. Consciousness Engine
+### 4. Embodiment Machine
+- Body awareness cultivation
+- Somatic presence training
+- Proprioceptive feedback integration
+- Energy body awareness (chakra connection)
+- Breath synchronization mechanics
+- Grounding techniques
+- Physical-digital bridge
+
+### 5. Dream Yoga Practice
+- Lucid dreaming preparation
+- Reality check training
+- Dream sign recognition and tracking
+- Sleep state awareness cultivation
+- Hypnagogic state practice
+- Consciousness continuity exercises
+- Dream journal integration prompts
+
+### 6. Consciousness Engine
 - Emergent complexity from simple rules
 - Multiple intelligence pathways
 - Self-directed exploration
 - Non-coercive design
+- Body-mind integration
 
 ---
 
@@ -79,6 +99,8 @@
 ### Phase 2: Recovery Tools Integration
 **Target**: +2,500 lines  
 **Timeline**: February 20-23, 2026 (4 days)
+
+**Status**: Scheduled next
 
 #### Missing Recovery Tools (7 total)
 - [ ] **Impulse Buffer** (~300 lines)
@@ -129,6 +151,101 @@
 - [ ] Unit tests for each recovery tool
 - [ ] Integration tests with game loop
 - [ ] User testing for effectiveness
+
+---
+
+### Phase 2.5: Dream Yoga & Embodiment (NEW)
+**Target**: +3,200 lines  
+**Timeline**: February 24-28, 2026 (5 days)
+
+#### Dream Yoga System (~1,500 lines)
+- [ ] **Reality Check Mechanics** (~300 lines)
+  - Trigger awareness prompts during gameplay
+  - "Am I dreaming?" reality testing
+  - Digital/waking state discrimination
+  - Critical awareness cultivation
+  - Check frequency tracking
+
+- [ ] **Dream Sign Recognition** (~400 lines)
+  - Pattern tracking across sessions
+  - Recurring symbol identification
+  - Personal dream dictionary
+  - Sign frequency analysis
+  - Awareness trigger system
+
+- [ ] **Lucidity Training** (~400 lines)
+  - Lucidity level meter
+  - Stability practice mechanics
+  - Awareness cultivation exercises
+  - Dream control simulation
+  - Progress tracking
+
+- [ ] **Sleep Preparation Mode** (~400 lines)
+  - Pre-sleep ritual interface
+  - Intention setting system
+  - Relaxation sequence
+  - Dream recall prompts
+  - Session wind-down
+
+#### Embodiment Features (~1,200 lines)
+- [ ] **Body Scan System** (~300 lines)
+  - Progressive body awareness
+  - Tension detection tiles
+  - Release mechanics
+  - Sensation mapping
+  - Somatic feedback
+
+- [ ] **Breath Integration** (~300 lines)
+  - Breathing rhythm sync
+  - Breath-linked movement
+  - Pranayama techniques
+  - Coherence training
+  - Rhythm visualization
+
+- [ ] **Energy Body System** (~300 lines)
+  - Chakra visualization (links to cosmology)
+  - Energy flow mechanics
+  - Blockage awareness
+  - Balance cultivation
+  - Subtle body mapping
+
+- [ ] **Somatic Tiles** (~300 lines)
+  - BODY_SCAN tile type
+  - BREATH_SYNC tile type
+  - ENERGY_NODE tile type
+  - GROUNDING tile type
+  - Proprioceptive feedback
+
+#### Dream State Mechanics (~500 lines)
+- [ ] **Reality Distortion Effects** (~200 lines)
+  - Dream-like visual warping
+  - Fluid boundary mechanics
+  - Symbolic transformations
+  - Physics anomalies
+
+- [ ] **Hypnagogic State** (~150 lines)
+  - Transitional state effects
+  - Consciousness level tracking
+  - Sleep onset simulation
+  - Wake-dream threshold
+
+- [ ] **Dream Logic Integration** (~150 lines)
+  - Non-linear mechanics
+  - Paradox acceptance
+  - Fluid identity
+  - Lucid triggers
+
+#### Integration
+- [ ] Dream signs affect emotional field
+- [ ] Breath sync affects temporal rhythm
+- [ ] Body awareness affects coherence
+- [ ] Reality checks trigger insights
+
+#### Testing
+- [ ] Reality check prompt system
+- [ ] Body awareness tracking
+- [ ] Dream sign pattern recognition
+- [ ] Lucidity scoring
 
 ---
 
@@ -369,21 +486,24 @@ Each dreamscape: ~250 lines
 
 ### Lines of Code Target
 ```
-Phase 1: ✅  4,300 lines (foundation)
-Phase 2: 📋  2,500 lines (recovery tools)
-Phase 3: 📋  4,000 lines (learning modules)
-Phase 4: 📋  2,000 lines (cosmology integration)
-Phase 5: 📋  1,500 lines (boss system)
-Phase 6: 📋  2,500 lines (dreamscape expansion)
-Phase 7: 📋  1,500 lines (upgrades/progression)
-Phase 8: 📋  2,000 lines (polish/testing)
+Phase 1:   ✅  4,300 lines (foundation)
+Phase 2:   📋  2,500 lines (recovery tools)
+Phase 2.5: 📋  3,200 lines (dream yoga & embodiment) ⭐ NEW
+Phase 3:   📋  4,000 lines (learning modules)
+Phase 4:   📋  2,000 lines (cosmology integration)
+Phase 5:   📋  1,500 lines (boss system)
+Phase 6:   📋  2,500 lines (dreamscape expansion)
+Phase 7:   📋  1,500 lines (upgrades/progression)
+Phase 8:   📋  2,000 lines (polish/testing)
 ─────────────────────────────────────────
-Total:      20,300 lines
+Total:      23,500 lines (+3,200 for dream yoga)
 ```
 
 ### Feature Completion
 - Foundation: 100% ✅
 - Recovery Tools: 28% (2/7 implemented)
+- Dream Yoga: 0% (new dimension) ⭐
+- Embodiment: 0% (new dimension) ⭐
 - Learning Modules: 0% (designed, not implemented)
 - Cosmology: 50% (defined, not connected)
 - Boss System: 0% (designed, not implemented)
@@ -399,6 +519,22 @@ Total:      20,300 lines
 - [ ] Players report increased mindfulness
 - [ ] Pattern recognition scores improve over time
 - [ ] Emotional awareness metrics show growth
+- [ ] Reality testing becomes habitual ⭐
+- [ ] Body awareness increases ⭐
+
+### Dream Yoga Practice ⭐ NEW
+- [ ] Reality check frequency increases
+- [ ] Dream recall improves over sessions
+- [ ] Lucid dream frequency increases
+- [ ] Dream sign recognition improves
+- [ ] Players report easier lucidity induction
+
+### Embodiment Development ⭐ NEW
+- [ ] Somatic awareness scores increase
+- [ ] Body scan completion improves
+- [ ] Breath coherence increases
+- [ ] Energy body awareness develops
+- [ ] Physical-digital integration deepens
 
 ### Addiction Recovery
 - [ ] Impulse delay improves across sessions
@@ -455,13 +591,14 @@ Total:      20,300 lines
 
 - **Feb 19**: ✅ Foundation complete (4,300 lines)
 - **Feb 23**: Recovery tools complete (6,800 lines)
-- **Feb 29**: Learning modules complete (10,800 lines)
-- **Mar 3**: Cosmology integration complete (12,800 lines)
-- **Mar 5**: Boss system complete (14,300 lines)
-- **Mar 8**: Dreamscape expansion complete (16,800 lines)
-- **Mar 10**: Upgrades complete (18,300 lines)
-- **Mar 14**: Polish complete (20,300 lines)
-- **Mar 15**: 🎉 **LAUNCH READY**
+- **Feb 28**: Dream yoga & embodiment complete (10,000 lines) ⭐
+- **Mar 5**: Learning modules complete (14,000 lines)
+- **Mar 8**: Cosmology integration complete (16,000 lines)
+- **Mar 10**: Boss system complete (17,500 lines)
+- **Mar 13**: Dreamscape expansion complete (20,000 lines)
+- **Mar 15**: Upgrades complete (21,500 lines)
+- **Mar 19**: Polish complete (23,500 lines)
+- **Mar 20**: 🎉 **LAUNCH READY** (with dream yoga integration)
 
 ---
 

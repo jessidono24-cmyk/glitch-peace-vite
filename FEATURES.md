@@ -3,6 +3,7 @@
 Complete inventory of all features - implemented, designed, and planned.
 
 **Last Updated**: February 19, 2026
+**New Addition**: Dream Yoga & Embodiment Machine features ⭐
 
 ---
 
@@ -318,6 +319,116 @@ Complete inventory of all features - implemented, designed, and planned.
 
 ---
 
+## 🧘 DREAM YOGA & EMBODIMENT FEATURES (0% complete) ⭐ NEW
+
+### Dream Yoga Module (0/8 features)
+- [ ] **Reality Check System** - NOT DESIGNED
+  - Awareness prompts during gameplay
+  - "Am I dreaming?" triggers
+  - Reality testing mechanics
+  - Check frequency tracking
+  - Digital-waking discrimination
+
+- [ ] **Dream Sign Recognition** - NOT DESIGNED
+  - Pattern tracking across sessions
+  - Recurring symbol identification
+  - Personal dream dictionary
+  - Sign frequency analysis
+  - Awareness trigger system
+
+- [ ] **Lucidity Training** - NOT DESIGNED
+  - Lucidity level meter
+  - Stability practice
+  - Awareness cultivation
+  - Dream control simulation
+  - Progress tracking
+
+- [ ] **Sleep Preparation Mode** - NOT DESIGNED
+  - Pre-sleep ritual interface
+  - Intention setting
+  - Relaxation sequences
+  - Dream recall prompts
+  - Session wind-down
+
+- [ ] **Hypnagogic State Practice** - NOT DESIGNED
+  - Transitional state effects
+  - Consciousness level tracking
+  - Sleep onset simulation
+  - Wake-dream threshold
+
+- [ ] **Dream Logic Mechanics** - NOT DESIGNED
+  - Non-linear gameplay
+  - Paradox acceptance
+  - Fluid identity
+  - Lucid triggers
+
+- [ ] **Reality Distortion Effects** - NOT DESIGNED
+  - Dream-like visuals
+  - Fluid boundaries
+  - Symbolic transformations
+  - Physics anomalies
+
+- [ ] **Dream Journal Integration** - NOT DESIGNED
+  - Session summary
+  - Pattern recognition
+  - Dream sign logging
+  - Progress tracking
+
+### Embodiment Features (0/8 features)
+- [ ] **Body Scan System** - NOT DESIGNED
+  - Progressive body awareness
+  - Tension detection
+  - Release mechanics
+  - Sensation mapping
+  - Somatic feedback
+
+- [ ] **Breath Integration** - NOT DESIGNED
+  - Breathing rhythm sync
+  - Breath-linked movement
+  - Pranayama techniques
+  - Coherence training
+  - Rhythm visualization
+
+- [ ] **Energy Body System** - NOT DESIGNED
+  - Chakra visualization
+  - Energy flow mechanics
+  - Blockage awareness
+  - Balance cultivation
+  - Subtle body mapping
+
+- [ ] **Somatic Tiles** - NOT DESIGNED
+  - BODY_SCAN tile type
+  - BREATH_SYNC tile type
+  - ENERGY_NODE tile type
+  - GROUNDING tile type
+  - Proprioceptive feedback
+
+- [ ] **Grounding Mechanics** - NOT DESIGNED
+  - Embodiment anchors
+  - Physical presence
+  - Root connection
+  - Stability cultivation
+
+- [ ] **Proprioceptive System** - NOT DESIGNED
+  - Body position awareness
+  - Movement feedback
+  - Spatial orientation
+  - Kinesthetic intelligence
+
+- [ ] **Tension Mapping** - NOT DESIGNED
+  - Body tension tracking
+  - Stress detection
+  - Release visualization
+  - Relaxation progress
+
+- [ ] **Somatic Scoring** - NOT DESIGNED
+  - Body awareness metrics
+  - Embodiment level
+  - Integration tracking
+  - Progress visualization
+
+---
+
 ## 🎯 PLANNED BUT NOT DESIGNED
 
 ### Learning Modules (0% complete)
@@ -414,13 +525,15 @@ Complete inventory of all features - implemented, designed, and planned.
 | Dreamscapes | 2/10 | 8/10 | 0/10 | 10 | 20% |
 | Upgrades | 1/3 | 2/3 | 0/3 | 3 | 33% |
 | Cosmology | 1/3 | 2/3 | 0/3 | 3 | 33% |
+| Dream Yoga | 0/8 | 0/8 | 8/8 | 8 | 0% ⭐ |
+| Embodiment | 0/8 | 0/8 | 8/8 | 8 | 0% ⭐ |
 | Learning | 0/12 | 0/12 | 12/12 | 12 | 0% |
-| **TOTAL** | **21/59** | **26/59** | **12/59** | **59** | **36%** |
+| **TOTAL** | **21/75** | **26/75** | **28/75** | **75** | **28%** |
 
 ### By Implementation Status
-- ✅ **Implemented**: 21 features (36%)
-- 📋 **Designed**: 26 features (44%)
-- 🎯 **Planned**: 12 features (20%)
+- ✅ **Implemented**: 21 features (28%)
+- 📋 **Designed**: 26 features (35%)
+- 🎯 **Planned**: 28 features (37%)
 
 ---
 
@@ -432,11 +545,15 @@ Complete inventory of all features - implemented, designed, and planned.
 - [ ] Session management
 - [ ] Upgrade shop
 - [ ] Cosmology integration
+- [ ] Dream yoga basics (reality checks, lucidity training) ⭐
+- [ ] Embodiment basics (body scan, breath sync) ⭐
 
 ### P1 - High Priority (Should Have for v1.0)
 - [ ] Boss system
-- [ ] 10 dreamscapes
+- [ ] 10 dreamscapes (reframed as dream states)
 - [ ] Basic learning modules (3-4)
+- [ ] Advanced dream yoga (dream signs, sleep prep) ⭐
+- [ ] Advanced embodiment (energy body, somatic tiles) ⭐
 
 ### P2 - Medium Priority (Could Have for v1.0)
 - [ ] Advanced learning modules (8-9)
@@ -450,7 +567,7 @@ Complete inventory of all features - implemented, designed, and planned.
 
 ---
 
-**Total Feature Count**: 59
-**Implemented**: 21 (36%)
-**Remaining**: 38 (64%)
-**Target Completion**: March 15, 2026
+**Total Feature Count**: 75 (+16 for dream yoga & embodiment)
+**Implemented**: 21 (28%)
+**Remaining**: 54 (72%)
+**Target Completion**: March 20, 2026 (extended for dream yoga integration)

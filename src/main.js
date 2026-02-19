@@ -582,6 +582,9 @@ function updateConsciousnessEngine(deltaMs) {
     if (synergy.effect.shieldBonus && game.player) {
       game.player.hp = Math.min(game.player.maxHp, (game.player.hp || 0) + synergy.effect.shieldBonus);
     }
+    // Show synergy banner so player knows what fired
+    const label = synergy.message || (synergy.id ? synergy.id.replace(/_/g, ' ').toUpperCase() : '') || '';
+    game._synergyBanner = { text: label, shownAtMs: Date.now(), durationMs: 2800, id: synergy.id };
   }
 
   // Decay synergy multiplier after duration expires

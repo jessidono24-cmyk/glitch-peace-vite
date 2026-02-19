@@ -2,7 +2,7 @@
 
 **A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
@@ -38,7 +38,7 @@ GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than e
 
 ---
 
-## ✨ What's Working Right Now (v2.1)
+## ✨ What's Working Right Now (v2.2)
 
 ### 🎮 Two Complete Gameplay Modes
 
@@ -139,6 +139,10 @@ The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness ·
 | Audio Engine | ✅ | Procedural Web Audio API SFX, no external files |
 | Modular Architecture | ✅ | Plugin system for unlimited gameplay modes |
 | Level Transitions | ✅ | 3s readable overlay: fade-in, score earned, skip after 1.5s |
+| Combo Multiplier HUD | ✅ | Live bottom-left canvas display, pulses on collect, capped at 4× |
+| Synergy Banner | ✅ | Named emotional synergy popup (affect labeling — see RESEARCH §18) |
+| Game-Over Overlay | ✅ | Compassionate PATTERN INCOMPLETE screen; ENTER restarts in-mode |
+| Quest Notifications | ✅ | RPGMode quest completions surface as timed banner on grid |
 
 ---
 
@@ -171,15 +175,15 @@ Phase 4: Cosmology           [████████████████�
 Phase 5: Boss System         [████████████████████] 100% ✅  (+400 lines)
 Phase 6: Dreamscape Expand   [████████████████████] 100% ✅  (11/11 canonical dreamscapes)
 Phase 7: Upgrade Shop        [████████████████████] 100% ✅  (+700 lines)
-Phase 8: Polish & Testing    [████░░░░░░░░░░░░░░░░]  20% 📋  (transitions, particle caps, tip system)
+Phase 8: Polish & Testing    [██████░░░░░░░░░░░░░░]  30% 📋  (transitions, combo HUD, synergy, game-over)
 Phase Language Learning      [████████████████████] 100% ✅  (16 langs + progressive overload)
 Phase Archetypes             [████████████████████] 100% ✅  (5 archetypes, J key, 11 dreamscapes)
 Phase Matrix A/B             [████████████████████] 100% ✅  (SHIFT toggle, energy)
 Phase Enemy AI               [████████████████████] 100% ✅  (9 behaviors + hallucinations)
 Phase Sigil Database         [████████████████████] 100% ✅  (31 sigils, 6 traditions)
-Phase RPG Mode Scaffold      [████████░░░░░░░░░░░░]  40% 🚧  (stats, quests, dialogue, HUD)
+Phase RPG Mode Scaffold      [████████░░░░░░░░░░░░]  40% 🚧  (stats, quests, dialogue, banner wired)
 ────────────────────────────────────────────────────────────
-Overall:  ~11,100 / 23,500 lines  ≈  48% of full vision complete
+Overall:  ~11,250 / 23,500 lines  ≈  48% of full vision complete
 
 Remaining high-priority:
   - RPG Mode full grid rendering + stat combat (Phase M5)
@@ -268,9 +272,12 @@ GLITCH·PEACE is built on peer-reviewed scientific research. Every mechanic has 
 | 16-language progressive | Linguistic typology (Comrie, 1989); family-based learning transfer |
 | Sigil database | Arnheim (1969) visual psychology; Gimbutas (1991) universal symbols; Leroi-Gourhan (1965) |
 | Adaptive difficulty | Vygotsky ZPD; Csikszentmihalyi (1990) flow channel |
-| Combo multiplier | Dopamine reward timing (Schultz, 1997); variable ratio reinforcement |
+| Combo multiplier | Dopamine reward timing (Schultz, 1997); ethical variable-ratio design (King et al., 2019) |
+| Synergy banner | Affect labeling (Lieberman et al., 2007); emotional intelligence training (Salovey & Mayer, 1990) |
+| Transition overlay | Cognitive consolidation windows (Ericsson, 1995); SDT non-coercive feedback (Deci & Ryan, 1985) |
+| Compassionate game-over | Non-punishment framing (Neff, 2003); relapse compassion (Linehan, 1993); neuroplasticity protection (McEwen, 2007) |
 
-📖 **Full Research**: See [RESEARCH.md](RESEARCH.md) and [DREAM_YOGA.md](DREAM_YOGA.md) for complete citations.
+📖 **Full Research**: See [RESEARCH.md](RESEARCH.md) and [DREAM_YOGA.md](DREAM_YOGA.md) for complete citations (now 18 sections, v1.1).
 
 ---
 

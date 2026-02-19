@@ -816,9 +816,85 @@ The comprehensive research ensures:
 
 ---
 
-**Document Version**: 1.0  
+## 18. Reward, Transition UX & Combo Psychology (Applied Feb 2026)
+
+### Why Transitions Must Be Readable: Consolidation Science
+
+**Core finding (Cognitive Load Theory, Sweller 1988):**  
+State changes during gameplay create a "cognitive gap" — a brief period where working memory is partially freed from task demands. This is the ideal moment to surface feedback (score, achievements, upcoming challenge) because the player's attentional bottleneck is at its lowest.
+
+**Transition design principle (applied to GLITCH·PEACE):**
+- Level-complete overlay extended to 3 seconds: matches typical consolidation window (~2–4s per Ericsson, 1995)
+- Hard input block for 1.5s: ensures player reads content before re-engaging (eliminates "button-mashing through reward" — a pattern that correlates with reduced intrinsic motivation per Deci & Ryan SDT, 1985)
+- Skip affordance at 1.5s: respects player agency, non-coercive
+
+**Sources:**
+- Sweller, J. (1988). Cognitive load during problem solving. *Cognitive Science*, 12(2), 257–285.
+- Ericsson, K.A. et al. (1995). Long-term working memory. *Psychological Review*, 102(2), 211–245.
+- Deci, E.L. & Ryan, R.M. (1985). *Intrinsic Motivation and Self-Determination in Human Behavior*. Springer.
+
+---
+
+### Combo Multiplier: Variable-Ratio Reward & Intrinsic Motivation
+
+**The problem with fixed rewards:**  
+Fixed-ratio reward schedules (every N actions = reward) produce predictable behavior but *lower sustained engagement* than variable schedules (Ferster & Skinner, 1957). However, *exploiting* variable-ratio schedules (slot machine design) also produces compulsive, biologically-coercive behavior.
+
+**GLITCH·PEACE's "ethical combo" design:**
+- Combo multiplier builds on *skill-driven consecutive collection* — the player must move skillfully to keep the chain
+- Multiplier is displayed clearly (bottom-left) with the current count — full transparency removes the "mystery hook" that drives compulsion
+- Combo *decays naturally* after 3 seconds of inactivity, not on punishment; missing a combo doesn't penalize — it simply resets
+- Cap at 4× (combo=16) prevents exponential score inflation and the dopaminergic "chase" that forms addictive loops
+
+**Application:** The combo display was wired in Feb 2026 to surface this feedback to the player in real-time, aligning with the game's anti-exploitation philosophy: players should feel *capable*, not *compelled*.
+
+**Sources:**
+- Ferster, C.B. & Skinner, B.F. (1957). *Schedules of Reinforcement*. Appleton-Century-Crofts.
+- Przybylski, A.K. et al. (2010). Competence-impeding electronic games. *Personality and Social Psychology Bulletin*, 36(12), 1402–1416.
+- King, D.L. et al. (2019). Unfair play? Video games as exploitative monetization schemes. *Frontiers in Psychology*, 10, 1784.
+
+---
+
+### Synergy Banner: Emotional Coherence as Gameplay Feedback
+
+**Emotional intelligence research (Salovey & Mayer, 1990)** demonstrates that *labeling* emotional experiences — giving them a name — activates the prefrontal cortex and reduces amygdala reactivity. This is the neurological basis of "affect labeling."
+
+GLITCH·PEACE's synergy system pairs two co-present emotions (e.g., Joy + Hope → "Resonance Wave") and fires a named banner. This serves dual purposes:
+1. **Game feedback**: player knows a mechanical bonus is active
+2. **Affect labeling practice**: seeing the emotional combination named trains the player to notice paired emotional states in real life
+
+**Application:** Synergy banners were wired to display (Feb 2026) when `updateSynergy()` fires, surfacing the `SYNERGY_MESSAGES` constants as in-game text.
+
+**Sources:**
+- Salovey, P. & Mayer, J.D. (1990). Emotional intelligence. *Imagination, Cognition and Personality*, 9(3), 185–211.
+- Lieberman, M.D. et al. (2007). Putting feelings into words. *Psychological Science*, 18(5), 421–428.
+
+---
+
+### Compassionate Game-Over: Relapse Design & Non-Punishment Framing
+
+**Failure states in most games** activate shame and frustration — emotional states that *reduce neuroplasticity* (McEwen, 2007) and are clinically contraindicated for people in recovery from addiction or trauma.
+
+**GLITCH·PEACE's "PATTERN INCOMPLETE" screen:**
+- Uses compassionate, non-blame language: *"Returning is not failure — it is courage"*
+- Shows what was *accomplished* (score, peace nodes collected, level reached) — not what was lost
+- Allows immediate ENTER-to-restart from within the mode (no menu penalty)
+- Soft restart resets score/level to 1 but keeps the player *in the game world* — no black screen interruption
+- Game Over is framed as a *continuation of the pattern*, not its end
+
+This aligns with Kristin Neff's self-compassion framework and the clinical evidence base for compassionate relapse design in addiction recovery (Linehan, DBT).
+
+**Sources:**
+- McEwen, B.S. (2007). Physiology and neurobiology of stress and adaptation. *Physiological Reviews*, 87(3), 873–904.
+- Neff, K. (2003). Self-compassion. *Self and Identity*, 2(2), 85–101.
+- Linehan, M.M. (1993). *Cognitive-Behavioral Treatment of Borderline Personality Disorder*. Guilford.
+
+---
+
+**Document Version**: 1.1  
 **Last Updated**: February 19, 2026  
 **Next Review**: March 1, 2026  
 **Maintainers**: Development Team
 
-**Status**: Research foundation complete and documented ✅
+**Status**: Research foundation complete and documented ✅  
+**New in v1.1**: Sections 18 — Reward/Transition UX, Combo Psychology, Synergy Feedback, Compassionate Game-Over

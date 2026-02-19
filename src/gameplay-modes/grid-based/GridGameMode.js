@@ -8,7 +8,7 @@ import { generateGrid } from './grid-logic.js';
 import { createPlayer, movePlayer, takeDamage, heal } from './grid-player.js';
 import { createEnemy, updateEnemies } from './grid-enemy.js';
 import { createParticles, updateParticles } from './grid-particles.js';
-import { T, TILE_DEF, PLAYER, DIFF_CFG } from '../../core/constants.js';
+import { T, TILE_DEF, PLAYER, DIFF_CFG, SYNERGY_MESSAGES } from '../../core/constants.js';
 import { applyMode } from '../../systems/play-modes.js';
 import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscapes.js';
 import { updatePowerups, hasPowerup } from '../../systems/powerups.js';
@@ -516,6 +516,12 @@ export class GridGameMode extends GameMode {
     const grid = gameState.grid;
     const tileSize = this.tileSize;
 
+    // ── GAME_OVER: render compassionate overlay without returning to menu ──
+    if (gameState.state === 'GAME_OVER') {
+      this._renderGameOver(gameState, ctx);
+      return;
+    }
+
     if (!grid || !Array.isArray(grid)) {
       console.warn('[GridGameMode] No grid data to render');
       return;
@@ -957,6 +963,81 @@ export class GridGameMode extends GameMode {
         delete gameState._breathingPrompt;
       }
     }
+
+    // ── Combo multiplier indicator (bottom-left) ─────────────────────────
+    const combo = gameState.combo || 0;
+    if (combo >= 2) {
+      const comboMul = (1 + Math.min(3, (combo - 1) * 0.2)).toFixed(1);
+      const w = ctx.canvas.width;
+      const h = ctx.canvas.height;
+      // Cosine pulse on fresh combo hits: scale briefly exceeds 1.0 then settles
+      const COMBO_PULSE_DURATION_MS = 220;  // pulse lasts 220ms after each collect
+      const COMBO_PULSE_AMPLITUDE   = 0.18; // scale goes up to 1.18× at peak
+      const timeSinceLastCombo = gameState.comboTimer ? Date.now() - gameState.comboTimer : 9999;
+      const pulse = timeSinceLastCombo < COMBO_PULSE_DURATION_MS
+        ? 1 + COMBO_PULSE_AMPLITUDE * Math.cos(timeSinceLastCombo / COMBO_PULSE_DURATION_MS * Math.PI / 2)
+        : 1.0;
+      ctx.save();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      const fontSize = Math.floor(w / 22 * pulse);
+      ctx.font = `bold ${fontSize}px monospace`;
+      ctx.shadowColor = '#ffdd44';
+      ctx.shadowBlur = 8 * pulse;
+      ctx.fillStyle = combo >= 10 ? '#ff9900' : '#ffdd44';
+      ctx.fillText(`×${comboMul} COMBO ${combo}`, 10, h - 10);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // ── Synergy banner (center, timed) ──────────────────────────────────
+    if (gameState._synergyBanner) {
+      const { text, shownAtMs, durationMs } = gameState._synergyBanner;
+      const age = Date.now() - shownAtMs;
+      if (age < durationMs) {
+        const fade = Math.min(1, age / 250) * (age > durationMs - 500 ? (durationMs - age) / 500 : 1);
+        const w = ctx.canvas.width;
+        ctx.save();
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = '#ffdd88';
+        ctx.font = `bold ${Math.floor(w / 26)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#ffaa00';
+        ctx.shadowBlur = 12;
+        ctx.fillText(`✦ ${text} ✦`, w / 2, ctx.canvas.height * 0.78);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else {
+        delete gameState._synergyBanner;
+      }
+    }
+
+    // ── Quest completed banner (used by RPGMode, shown on grid too) ──────
+    if (gameState._questCompleted) {
+      const now = Date.now();
+      if (!gameState._questCompletedAt) gameState._questCompletedAt = now;
+      const age = now - gameState._questCompletedAt;
+      const dur = 3000;
+      if (age < dur) {
+        const fade = Math.min(1, age / 300) * (age > dur - 600 ? (dur - age) / 600 : 1);
+        const w = ctx.canvas.width;
+        ctx.save();
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = '#aaffcc';
+        ctx.font = `bold ${Math.floor(w / 26)}px monospace`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.shadowColor = '#00ffcc';
+        ctx.shadowBlur = 10;
+        ctx.fillText(`◇ QUEST: ${gameState._questCompleted}`, w / 2, ctx.canvas.height * 0.85);
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else {
+        delete gameState._questCompleted;
+        delete gameState._questCompletedAt;
+      }
+    }
   }
 
   /**
@@ -991,6 +1072,29 @@ export class GridGameMode extends GameMode {
    */
   handleInput(gameState, input) {
     const now = Date.now();
+
+    // ── GAME_OVER: ENTER restarts the level; ESC is handled by main.js ───
+    if (gameState.state === 'GAME_OVER') {
+      const age = gameState._gameOverAt ? now - gameState._gameOverAt : 9999;
+      if (age > 1200 && (input.isKeyPressed('Enter') || input.isKeyPressed(' '))) {
+        // Soft restart: reset level to 1, fresh player, clear game-over flag
+        gameState.state = 'PLAYING';
+        gameState.level = 1;
+        gameState.score = 0;
+        gameState.combo = 0;
+        gameState.comboTimer = null;
+        gameState.player = createPlayer();
+        gameState.glitchPulseCharge = 0;
+        gameState.energy = 60;
+        gameState.insightTokens = 0;
+        gameState.peaceCollected = 0;
+        gameState.peaceTotal = 0;
+        this._gameOverMsg = null;
+        delete gameState._gameOverAt;
+        this.generateLevel(gameState);
+      }
+      return;
+    }
 
     // ── Level transition: block input until overlay has been readable ──────
     if (this._levelFlashMs > 0) {
@@ -1272,11 +1376,93 @@ export class GridGameMode extends GameMode {
     if (gameState.state === 'GAME_OVER') return; // already handled
     console.log('[GridGameMode] Game Over');
     gameState.state = 'GAME_OVER';
+    gameState._gameOverAt = Date.now();
     
     // Trigger emotion
     if (gameState.emotionalField && typeof gameState.emotionalField.add === 'function') {
       gameState.emotionalField.add('despair', 1.5);
     }
+  }
+
+  /**
+   * Compassionate game-over overlay (rendered in place of the grid).
+   * Non-punishment framing; shows what was accomplished, offers a gentle way forward.
+   * Research basis: relapse compassion design (Sovereign Codex) + polyvagal safety cues.
+   */
+  _renderGameOver(gameState, ctx) {
+    // Pick a compassionate ending message (deterministic based on score mod)
+    const messages = [
+      'Every pattern teaches. You learned.',
+      'The pattern paused. It has not ended.',
+      'Returning is not failure — it is courage.',
+      'You played. That matters.',
+      'The grid remembers your path.',
+      'Rest. The pattern will be here.',
+    ];
+    // Score is divided by this to index into the messages array;
+    // 100 gives variety across a typical score range without cycling too fast.
+    const GAME_OVER_MESSAGE_SCORE_DIVISOR = 100;
+    if (!this._gameOverMsg) {
+      this._gameOverMsg = messages[Math.floor((gameState.score || 0) / GAME_OVER_MESSAGE_SCORE_DIVISOR) % messages.length];
+    }
+    const theme = getDreamscapeTheme(gameState.currentDreamscape || 'RIFT');
+    const w = ctx.canvas.width;
+    const h = ctx.canvas.height;
+    const age = gameState._gameOverAt ? Date.now() - gameState._gameOverAt : 9999;
+
+    // Fade-in (600ms)
+    const fadeIn = Math.min(1, age / 600);
+
+    ctx.save();
+    ctx.globalAlpha = fadeIn * 0.92;
+    ctx.fillStyle = theme.bg || '#040408';
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = fadeIn;
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Dim accent lines
+    ctx.globalAlpha = fadeIn * 0.18;
+    ctx.strokeStyle = '#882244';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(w * 0.1, h * 0.35); ctx.lineTo(w * 0.9, h * 0.35); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w * 0.1, h * 0.68); ctx.lineTo(w * 0.9, h * 0.68); ctx.stroke();
+    ctx.globalAlpha = fadeIn;
+
+    // Header
+    ctx.fillStyle = '#ff4466';
+    ctx.font = `bold ${Math.floor(w / 13)}px monospace`;
+    ctx.shadowColor = '#ff2244';
+    ctx.shadowBlur = 18;
+    ctx.fillText('PATTERN INCOMPLETE', w / 2, h * 0.25);
+    ctx.shadowBlur = 0;
+
+    // Compassionate message
+    ctx.fillStyle = '#aabbcc';
+    ctx.font = `${Math.floor(w / 26)}px monospace`;
+    ctx.fillText(this._gameOverMsg, w / 2, h * 0.40);
+
+    // Stats
+    ctx.fillStyle = '#667799';
+    ctx.font = `${Math.floor(w / 30)}px monospace`;
+    ctx.fillText(`Score: ${(gameState.score || 0).toLocaleString()}  ·  Level ${gameState.level || 1}`, w / 2, h * 0.51);
+    ctx.fillText(`Peace nodes collected: ${gameState.peaceCollected || 0}`, w / 2, h * 0.57);
+
+    // Action prompts (appear after 1.2s)
+    if (age > 1200) {
+      const promptFade = Math.min(1, (age - 1200) / 400);
+      ctx.globalAlpha = fadeIn * promptFade;
+      ctx.fillStyle = '#99aacc';
+      ctx.font = `${Math.floor(w / 28)}px monospace`;
+      ctx.fillText('ENTER  · try again', w / 2, h * 0.70);
+      ctx.fillStyle = '#556677';
+      ctx.font = `${Math.floor(w / 36)}px monospace`;
+      ctx.fillText('ESC  · return to menu', w / 2, h * 0.78);
+      ctx.globalAlpha = fadeIn;
+    }
+
+    ctx.restore();
   }
 
   /**

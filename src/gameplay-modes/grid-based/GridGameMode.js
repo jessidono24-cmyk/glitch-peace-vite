@@ -62,6 +62,10 @@ import {
   getArchetypeForDreamscape,
 } from '../../systems/archetypes.js';
 
+// ── GLITCH tile animation constants ─────────────────────────────────────────
+const GLITCH_FLICKER_PERIOD_MS = 180;  // how fast the GLITCH tile color cycles
+const GLITCH_COLOR_COUNT = 6;          // number of distinct GLITCH colors
+
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
  * This wraps the existing game logic from src/game/* files.
@@ -538,7 +542,8 @@ export class GridGameMode extends GameMode {
       ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     }
 
-    // Render grid tiles
+    // Render grid tiles (with per-tile animations for GLITCH and INSIGHT)
+    const nowTile = Date.now();
     for (let y = 0; y < grid.length; y++) {
       for (let x = 0; x < grid[y].length; x++) {
         const tile = grid[y][x];
@@ -553,7 +558,42 @@ export class GridGameMode extends GameMode {
         ctx.lineWidth = 1;
         ctx.strokeRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
-        // Draw symbol
+        // ── GLITCH tile: random color flicker every GLITCH_FLICKER_PERIOD_MS ─
+        if (tile === T.GLITCH) {
+          const flicker = (Math.floor(nowTile / GLITCH_FLICKER_PERIOD_MS + x * 7 + y * 13) % GLITCH_COLOR_COUNT);
+          const glitchColors = ['#dd00ff','#ff00aa','#00ffdd','#ffdd00','#ff4455','#aa00ff'];
+          ctx.save();
+          ctx.globalAlpha = 0.55 + 0.45 * ((flicker % 2) === 0 ? 1 : 0.4);
+          ctx.fillStyle = glitchColors[flicker];
+          ctx.shadowColor = glitchColors[flicker];
+          ctx.shadowBlur = 6;
+          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('?', x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
+        // ── INSIGHT tile: slow shimmer glow ──────────────────────────────
+        if (tile === T.INSIGHT) {
+          const shimmer = 0.55 + 0.45 * Math.sin(nowTile / 900 + x * 1.1 + y * 0.7);
+          ctx.save();
+          ctx.globalAlpha = shimmer;
+          ctx.shadowColor = '#00ffee';
+          ctx.shadowBlur = 6 + shimmer * 8;
+          ctx.fillStyle = '#00ffee';
+          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('◆', x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
+        // Draw symbol (default)
         if (tileDef.sy) {
           ctx.fillStyle = tileDef.g || tileDef.bd || '#fff';
           ctx.font = `${tileSize * 0.6}px monospace`;

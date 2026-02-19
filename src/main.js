@@ -27,6 +27,8 @@ import './gameplay-modes/ornithology/index.js';    // Auto-registers Ornithology
 import './gameplay-modes/mycology/index.js';       // Auto-registers MycologyMode
 import './gameplay-modes/architecture/index.js';   // Auto-registers ArchitectureMode
 import './gameplay-modes/constellation/index.js';  // Auto-registers ConstellationMode
+import './gameplay-modes/alchemy/index.js';        // Auto-registers AlchemyMode
+import './gameplay-modes/rhythm/index.js';         // Auto-registers RhythmMode
 
 // PHASE 1: Initialize new architecture
 let gameStateManager = null;
@@ -217,11 +219,12 @@ game.temporalSystem = new TemporalSystem(game.settings.timezone);
 
 // PHASE 2: Mode switching function
 function switchGameMode() {
-  const availableModes = ['grid-classic', 'shooter', 'rpg', 'ornithology', 'mycology', 'architecture', 'constellation'];
+  const availableModes = ['grid-classic', 'shooter', 'rpg', 'ornithology', 'mycology', 'architecture', 'constellation', 'alchemy', 'rhythm'];
   const typeToId = {
     'grid': 'grid-classic', 'shooter': 'shooter', 'rpg': 'rpg',
     'ornithology': 'ornithology', 'mycology': 'mycology',
     'architecture': 'architecture', 'constellation': 'constellation',
+    'alchemy': 'alchemy', 'rhythm': 'rhythm',
   };
   const currentModeId = currentMode
     ? (typeToId[currentMode.type] || 'grid-classic')
@@ -444,6 +447,8 @@ function render(deltaMs = 16) {
         'mycology':      'WASD/Arrows: Forage mushrooms · 1-4: Identify toxic species · M: Switch Mode · ESC: Pause',
         'architecture':  'WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · M: Switch Mode · ESC: Pause',
         'constellation': 'WASD/Arrows: Navigate to stars · Activate in sequence · M: Switch Mode · ESC: Pause',
+        'alchemy':       'WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute · M: Switch Mode · ESC: Pause',
+        'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
       };
       hint.textContent = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · ESC: Pause';
     }

@@ -1,8 +1,8 @@
 // ═══════════════════════════════════════════════════════════════════════
-//  Tutorial Content v3 — first-timer friendly, covers all current systems
+//  Tutorial Content v4 — first-timer friendly, covers all current systems
 //  Updated to reflect: archetypes, matrix A/B, glitch pulse, shop, Z-undo,
 //  dreamscapes, play modes, cosmologies, language challenges, sigils,
-//  Ornithology, Mycology, Architecture, and Constellation modes.
+//  Ornithology, Mycology, Architecture, Constellation, Alchemy, Rhythm modes.
 // ═══════════════════════════════════════════════════════════════════════
 
 export const TUTORIAL_PAGES = [
@@ -253,6 +253,38 @@ export const TUTORIAL_PAGES = [
       "",
       "Night-sky gazing as restorative practice (Kaplan 1989).",
       "Cross-cultural mythologies as shared archetypes (Jung 1968)."
+    ]
+  },
+  {
+    title: "⚗ Alchemy Mode — The Great Work",
+    body: [
+      "Press M to switch to Alchemy Mode.",
+      "You are in a Hermetic laboratory. Four elemental tiles are scattered across the floor:",
+      "  🜂 Fire (Sulfur / Will)  ·  🜄 Water (Mercury / Mind)",
+      "  🜃 Earth (Salt / Body)   ·  🜁 Air (Quintessence / Breath)",
+      "Walk over elements to collect them (up to 4 in your inventory).",
+      "Walk to the ⚗ Athanor (crucible) to combine — the best available reaction fires.",
+      "8 reactions: Solutio · Calcinatio · Coagulatio · Sublimatio · Sol · Luna · Mercury · Philosopher's Stone",
+      "Rare reactions show full Jungian/Hermetic lore.",
+      "",
+      "Research: Jung (1944) Psychology and Alchemy; Principe (2013) The Secrets of Alchemy.",
+      "Alchemy = projection of psychic transformation processes."
+    ]
+  },
+  {
+    title: "♩ Rhythm Mode — Beat Synchrony",
+    body: [
+      "Press M to switch to Rhythm Mode.",
+      "The grid pulses to a drum machine beat (kick, snare, hihat, accent).",
+      "When tiles flash/glow — MOVE ONTO THEM to score an on-beat hit!",
+      "Land on beat: +points with combo multiplier (up to ×4).",
+      "Off beat: no penalty — just the streak resets. Keep trying.",
+      "BPM increases with level: 60 (Resting Pulse) → 80 → 100 → 120 (Activation).",
+      "The beat visualizer bar at the bottom shows the 16-step sequence.",
+      "Aim for high accuracy % — awarded as bonus at level complete.",
+      "",
+      "Research: Thaut et al. (1997) Rhythmic Auditory Stimulation (RAS);",
+      "Bittman et al. (2001) drumming reduces cortisol, increases NK-cell activity."
     ]
   }
 ];

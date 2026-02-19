@@ -2,12 +2,12 @@
 
 **A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
 
-[![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
+[![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
-[![LOC](https://img.shields.io/badge/lines-~14%2C200-purple.svg)](src/)
-[![Modules](https://img.shields.io/badge/modules-52-blueviolet.svg)](src/)
+[![LOC](https://img.shields.io/badge/lines-~17%2C000-purple.svg)](src/)
+[![Modules](https://img.shields.io/badge/modules-56-blueviolet.svg)](src/)
 
 > *Begin in stillness. Emerge through pattern recognition. Transform through play.*
 
@@ -38,7 +38,7 @@ GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than e
 
 ---
 
-## ✨ What's Working Right Now (v2.3)
+## ✨ What's Working Right Now (v2.4)
 
 ### 🎮 Two Complete Gameplay Modes
 
@@ -147,7 +147,10 @@ The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness ·
 | Mycology Mode | ✅ | Mushroom foraging: 12 species, 5 substrates, toxic ID challenges, mycelium networks |
 | Architecture Mode | ✅ | Spatial construction: 10 tile types, 4 sacred-geometry blueprints, pattern matching |
 | Constellation Mode | ✅ | Connect-the-stars meditation: 6 constellations, sequential activation, mythological lore |
-| Audio Engine | ✅ | 12 synthesized SFX: peace, damage, combo, level_complete, archetype, insight, bird, spore, build + more |
+| Alchemy Mode | ✅ | Hermetic lab: collect Fire/Water/Earth/Air, 8 transmutation reactions, Jungian lore overlays, particle effects |
+| Rhythm Mode | ✅ | Beat-sync grid: drum machine (kick/snare/hihat), tiles pulse on beat, 4 BPM patterns, accuracy scoring |
+| Audio Engine | ✅ | 13 synthesized SFX: peace, damage, combo, level_complete, archetype, insight, bird, spore, build, heal + more |
+| Visual Polish | ✅ | GLITCH tile random color flicker, INSIGHT tile shimmer, peace node pulse glow, combo HUD |
 
 ---
 
@@ -180,7 +183,7 @@ Phase 4: Cosmology           [████████████████�
 Phase 5: Boss System         [████████████████████] 100% ✅  (+400 lines)
 Phase 6: Dreamscape Expand   [████████████████████] 100% ✅  (11/11 canonical dreamscapes)
 Phase 7: Upgrade Shop        [████████████████████] 100% ✅  (+700 lines)
-Phase 8: Polish & Testing    [████████░░░░░░░░░░░░]  40% 📋  (transitions, combo, synergy, audio SFX, visual glow)
+Phase 8: Polish & Testing    [████████████░░░░░░░░]  60% 📋  (transitions, combo, synergy, audio, tile anims, GLITCH/INSIGHT, heal SFX)
 Phase Language Learning      [████████████████████] 100% ✅  (16 langs + progressive overload)
 Phase Archetypes             [████████████████████] 100% ✅  (5 archetypes, J key, 11 dreamscapes)
 Phase Matrix A/B             [████████████████████] 100% ✅  (SHIFT toggle, energy)
@@ -191,8 +194,10 @@ Phase Ornithology Mode       [████████████████�
 Phase Mycology Mode          [████████████████████] 100% ✅  (12 species, substrates, mycelium networks)
 Phase Architecture Mode      [████████████████████] 100% ✅  (10 tiles, 4 blueprints, pattern matching)
 Phase Constellation Mode     [████████████████████] 100% ✅  (6 constellations, lore, star-path activation)
+Phase Alchemy Mode           [████████████████████] 100% ✅  (4 elements, 8 reactions, particle FX, Jungian lore)
+Phase Rhythm Mode            [████████████████████] 100% ✅  (4 BPM patterns, drum machine, beat-sync tiles)
 ────────────────────────────────────────────────────────────
-Overall:  ~14,200 / 23,500 lines  ≈  60% of full vision complete
+Overall:  ~17,000 / 23,500 lines  ≈  72% of full vision complete
 
 Remaining high-priority:
   - RPG Mode full grid rendering + stat combat (Phase M5)
@@ -212,6 +217,9 @@ Remaining high-priority:
 - [x] **Ornithology Mode** — bird-watching with species ID challenges ✅
 - [x] **Mycology Mode** — mushroom foraging with toxic ID challenges ✅
 - [x] **Architecture Mode** — spatial construction with blueprints ✅
+- [x] **Alchemy Mode** — Hermetic laboratory, 8 transmutation reactions ✅
+- [x] **Rhythm Mode** — beat-synchronized grid, drum machine entrainment ✅
+- [x] **Phase 8 Polish** — GLITCH flicker, INSIGHT shimmer, heal SFX ✅
 - [ ] **RPG Mode full grid rendering** — wire grid renderer into RPGMode, stat combat (Phase M5)
 - [ ] **Full test suite** — 80%+ coverage for core systems (Phase 8)
 - [ ] **Performance audit** — memory leak checks, particle pooling, canvas optimization
@@ -219,7 +227,6 @@ Remaining high-priority:
 ### Medium Term
 - [ ] **Co-op Mode** — shared emotional field, 2 players (Phase 4 from original roadmap)
 - [ ] **Integration Dashboard** — unified metrics: lucidity score, language progress, session analytics
-- [ ] **Rhythm Mode** — music-based flow states
 - [ ] **Multiplayer** — network infrastructure, lobby
 
 ### Steam Release Path (see section below)
@@ -470,12 +477,12 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 
 | Metric | Value |
 |--------|-------|
-| Version | 2.3.0 |
-| Lines of Code | ~14,200 |
+| Version | 2.4.0 |
+| Lines of Code | ~17,000 |
 | Target LOC | 23,500+ |
-| Blueprint Completion | ~60% |
-| Source Modules | 52 |
-| Gameplay Modes (running) | 7 (Grid + Shooter + RPG + Ornithology + Mycology + Architecture + Constellation) |
+| Blueprint Completion | ~72% |
+| Source Modules | 56 |
+| Gameplay Modes (running) | 9 (Grid + Shooter + RPG + Ornithology + Mycology + Architecture + Constellation + Alchemy + Rhythm) |
 | Gameplay Modes (designed) | 31+ |
 | Languages | 16 |
 | Dreamscapes | 11 |
@@ -484,13 +491,15 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 | Enemy AI Behaviors | 9 |
 | Archetypes | 5 |
 | Sigils in Database | 31 |
-| Audio SFX (synthesized) | 12 |
+| Audio SFX (synthesized) | 13 |
+| Alchemical Reactions | 8 |
+| Drum Beat Patterns | 4 |
 | Bird Species | 16 |
 | Mushroom Species | 12 |
 | Blueprints | 4 |
 | Constellations | 6 |
-| Build Time | ~630ms |
-| Bundle Size | 227KB (72KB gzip) |
+| Build Time | ~680ms |
+| Bundle Size | 258KB (81KB gzip) |
 | Vulnerabilities | 0 |
 
 ---

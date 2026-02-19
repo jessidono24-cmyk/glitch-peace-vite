@@ -112,6 +112,14 @@ export class AudioEngine {
         const t = i / sr;
         data[i] = Math.sin(2 * Math.PI * (300 + 600 * t) * t) * Math.exp(-t * 2.0);
       }
+    } else if (name === 'heal') {
+      // Gentle upward glissando — soft, reassuring healing sound
+      for (let i = 0; i < len; i++) {
+        const t = i / sr;
+        const f = 330 + 220 * t / 0.4; // 330→550Hz over 400ms
+        data[i] = 0.45 * Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 2.5)
+                + 0.20 * Math.sin(2 * Math.PI * f * 1.5 * t) * Math.exp(-t * 3.0);
+      }
     } else if (name === 'level_complete') {
       // Major chord arpeggio sweep (C-E-G-C') — victory feeling
       const notes = [261.6, 329.6, 392.0, 523.3];
@@ -241,6 +249,9 @@ export class AudioEngine {
         break;
       case 'teleport':
         this._playBuffer('teleport', 0.06, false);
+        break;
+      case 'heal':
+        this._playBuffer('heal', 0.07, false);
         break;
       case 'level_complete':
         this._playBuffer('level_complete', 0.10, false);

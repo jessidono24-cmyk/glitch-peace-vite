@@ -133,9 +133,10 @@ function initUI() {
       game.player = createPlayer();
       startGame();
     },
-    onSelectDreamscape: (dreamscapeId) => {
+    onSelectDreamscape: (dreamscapeId, playModeId) => {
       // Fresh start — reset run state
       game.currentDreamscape = dreamscapeId;
+      game.playMode = playModeId || 'ARCADE';
       game.level = 1;
       game.score = 0;
       game.player = createPlayer();
@@ -203,7 +204,7 @@ function startGame() {
   // PHASE 1: Create and initialize game mode
   if (!currentMode) {
     currentMode = modeRegistry.createMode('grid-classic', {
-      playMode: 'ARCADE' // Default play mode
+      playMode: game.playMode || 'ARCADE'
     });
     
     if (currentMode) {

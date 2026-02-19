@@ -9,6 +9,12 @@ import { random, randomChoice, distance, fibonacci } from '../core/utils.js';
 export function generateGrid(gameState) {
   const sz = gameState.gridSize;
   const diff = DIFF_CFG[gameState.settings.difficulty] || DIFF_CFG.normal;
+
+  // Play-mode multipliers (set by applyMode) override difficulty defaults when present
+  const hazardMulBase = diff.hazardMul !== undefined ? diff.hazardMul : 1.0;
+  const peaceMulBase = diff.peaceMul !== undefined ? diff.peaceMul : 1.0;
+  const hazardMul = (gameState.hazardMul !== undefined ? gameState.hazardMul : hazardMulBase);
+  const peaceMul  = (gameState.peaceMul  !== undefined ? gameState.peaceMul  : peaceMulBase);
   
   // Initialize empty grid
   gameState.grid = Array(sz).fill(null).map(() => 
@@ -31,8 +37,6 @@ export function generateGrid(gameState) {
     T.TERROR, 
     T.PAIN
   ];
-  const cfg = DIFF_CFG[gameState.settings.difficulty] || DIFF_CFG.normal;
-  const hazardMul = (cfg.hazardMul !== undefined) ? cfg.hazardMul : 1.0;
   const hazardCount = Math.floor(sz * sz * 0.08 * hazardMul);
   
   for (let i = 0; i < hazardCount; i++) {
@@ -47,10 +51,9 @@ export function generateGrid(gameState) {
   gameState.player.x = 1;
   gameState.player.y = 1;
   
-  // Place peace nodes (Fibonacci scaling)
-  // Use fibonacci(level+2) to get a reasonable count (avoid 0/1)
+  // Place peace nodes (Fibonacci scaling, scaled by peaceMul)
   const fibSeq = fibonacci(gameState.level + 2);
-  gameState.peaceTotal = Math.floor(fibSeq[fibSeq.length - 1] * diff.peaceMul);
+  gameState.peaceTotal = Math.max(1, Math.floor(fibSeq[fibSeq.length - 1] * peaceMul));
   gameState.peaceCollected = 0;
   gameState.peaceNodes = [];
   
@@ -70,8 +73,9 @@ export function generateGrid(gameState) {
     }
   }
 
-  // Place power-ups (1-2 per level, can scale as needed)
-  const powerupCount = Math.max(1, Math.floor(gameState.level / 2) + 1);
+  // Place power-ups (1-2 per level; disabled if play mode says no powerups)
+  const powerupsEnabled = gameState.mechanics?.powerupsEnabled !== false;
+  const powerupCount = powerupsEnabled ? Math.max(1, Math.floor(gameState.level / 2) + 1) : 0;
   gameState.powerupNodes = [];
   const powerupTypes = ['SHIELD', 'SPEED', 'FREEZE', 'REGEN'];
   for (let i = 0; i < powerupCount; i++) {
@@ -83,7 +87,6 @@ export function generateGrid(gameState) {
       const dist = distance(x, y, gameState.player.x, gameState.player.y);
       if (gameState.grid[y][x] === T.VOID && dist > 3) {
         gameState.grid[y][x] = T.POWERUP;
-        // Assign a random powerup type for this node
         const type = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
         gameState.powerupNodes.push({x, y, type});
         placed = true;

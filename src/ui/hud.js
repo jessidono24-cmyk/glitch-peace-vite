@@ -15,11 +15,15 @@ export function updateHUD(game) {
   const score = document.getElementById('score');
   const objective = document.getElementById('objective');
 
-  if (hpText) hpText.textContent = `${game.player.hp}/${game.player.maxHp || 100}`;
-  if (hpFill) hpFill.style.width = `${(game.player.hp / (game.player.maxHp || 100)) * 100}%`;
+  if (hpText) hpText.textContent = `${Math.ceil(game.player.hp || 0)}/${game.player.maxHp || 100}`;
+  if (hpFill) hpFill.style.width = `${(Math.max(0, game.player.hp || 0) / (game.player.maxHp || 100)) * 100}%`;
   if (level) level.textContent = String(game.level || 1);
   if (score) score.textContent = String(game.score || 0);
-  if (objective) objective.textContent = `◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}`;
+  // Objective: remaining peace nodes, or moves left for PUZZLE mode
+  const objText = game.movesRemaining !== undefined
+    ? `◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))} · ${game.movesRemaining}↕`
+    : `◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}`;
+  if (objective) objective.textContent = objText;
 
   // Emotional Field indicator (compact)
   const ef = game.emotionalField;
@@ -99,7 +103,8 @@ export function updateHUD(game) {
 
   const temporalMods = game.temporalSystem?.getModifiers?.();
   const dreamscape = game.currentDreamscape ? ` · ${game.currentDreamscape}` : '';
-  realmRow.textContent = `${realm.name}${dreamscape} · ${temporalMods?.phaseName || ''} ${temporalMods?.dayName || ''}`;
+  const playMode = game.playMode && game.playMode !== 'ARCADE' ? ` · ${game.playMode}` : '';
+  realmRow.textContent = `${realm.name}${dreamscape}${playMode} · ${temporalMods?.phaseName || ''} ${temporalMods?.dayName || ''}`;
   realmRow.style.color = realm.col;
 }
 

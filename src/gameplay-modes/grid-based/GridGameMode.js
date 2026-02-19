@@ -127,6 +127,14 @@ export class GridGameMode extends GameMode {
       this._levelFlashMs -= deltaTime;
     }
 
+    // ZEN_GARDEN auto-heal
+    if (gameState.mechanics?.autoHeal && gameState.player) {
+      gameState.player.hp = Math.min(
+        gameState.player.maxHp || 100,
+        (gameState.player.hp || 0) + gameState.mechanics.autoHeal * (deltaTime / 1000)
+      );
+    }
+
     // Update enemies (use gameState directly — enemy.js updateEnemies(gameState))
     if (gameState.enemies && gameState.enemies.length > 0) {
       updateEnemies(gameState);
@@ -144,6 +152,11 @@ export class GridGameMode extends GameMode {
 
     // Check lose condition
     if (gameState.player && gameState.player.hp <= 0) {
+      this.onGameOver(gameState);
+    }
+
+    // PUZZLE mode: lose if moves exhausted
+    if (gameState.movesRemaining !== undefined && gameState.movesRemaining <= 0) {
       this.onGameOver(gameState);
     }
   }
@@ -267,6 +280,11 @@ export class GridGameMode extends GameMode {
       );
     }
 
+    // Limited vision (fog of war) — SURVIVAL_HORROR mode
+    if (gameState.visionRadius && gameState.player) {
+      this._renderFogOfWar(gameState, ctx, tileSize);
+    }
+
     // Render particles (use gameState.particles)
     const particles = gameState.particles;
     if (particles && particles.length) {
@@ -310,6 +328,33 @@ export class GridGameMode extends GameMode {
   }
 
   /**
+   * Render fog-of-war overlay for limited-vision modes (e.g. SURVIVAL_HORROR)
+   */
+  _renderFogOfWar(gameState, ctx, tileSize) {
+    const radius = gameState.visionRadius; // in tiles
+    const px = (gameState.player.x + 0.5) * tileSize;
+    const py = (gameState.player.y + 0.5) * tileSize;
+    const pixelRadius = radius * tileSize;
+
+    // Fill entire canvas with darkness then cut out a radial gradient around the player
+    const grad = ctx.createRadialGradient(px, py, pixelRadius * 0.4, px, py, pixelRadius);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(0.6, 'rgba(0,0,0,0.55)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.96)');
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.96)';
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(px, py, pixelRadius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.restore();
+  }
+
+  /**
    * Handle input for grid-based gameplay
    */
   handleInput(gameState, input) {
@@ -330,6 +375,10 @@ export class GridGameMode extends GameMode {
       
       if (moved) {
         this.lastMoveTime = now;
+        // PUZZLE mode: decrement move counter
+        if (gameState.movesRemaining !== undefined) {
+          gameState.movesRemaining = Math.max(0, gameState.movesRemaining - 1);
+        }
         // Trigger move sound if audio available
         try { window.AudioManager?.play('move'); } catch (e) { console.warn('[GridGameMode] Audio error:', e); }
       }

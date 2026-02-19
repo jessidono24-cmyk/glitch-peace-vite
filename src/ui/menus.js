@@ -6,6 +6,7 @@
 import { GRID_SIZES, DIFF_CFG } from '../core/constants.js';
 import { TUTORIAL_PAGES } from './tutorial-content.js';
 import { listDreamscapes } from '../systems/dreamscapes.js';
+import { getAvailableModes } from '../systems/play-modes.js';
 
 function listFromObjKeys(obj) { return Object.keys(obj); }
 function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
@@ -20,10 +21,12 @@ export class MenuSystem {
     this.onRestart = onRestart;
     this.onSelectDreamscape = onSelectDreamscape;
 
-    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape'
+    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode'
     this.sel = 0;
     this.tutPage = 0;
     this.dreamscapeSel = 0;
+    this.playmodeSel = 0;
+    this._pendingDreamscape = null; // dreamscape id chosen before play mode
 
     this.hasSave = false;
     this.saveMeta = null;
@@ -45,6 +48,7 @@ export class MenuSystem {
     this.sel = 0;
     if (screen === 'tutorial') this.tutPage = 0;
     if (screen === 'dreamscape') this.dreamscapeSel = 0;
+    if (screen === 'playmode') this.playmodeSel = 0;
     console.log(`[DEBUG] MenuSystem.open('${screen}') called`);
     // Note: Canvas-based rendering happens in draw() method, not _render()
   }
@@ -60,6 +64,10 @@ export class MenuSystem {
     if (k === 'Escape') {
       if (this.screen === 'options' || this.screen === 'tutorial' || this.screen === 'credits' || this.screen === 'dreamscape') {
         this.open('title');
+        return { consumed: true };
+      }
+      if (this.screen === 'playmode') {
+        this.open('dreamscape');
         return { consumed: true };
       }
       return { consumed: false };
@@ -79,6 +87,10 @@ export class MenuSystem {
 
     if (this.screen === 'dreamscape') {
       return this._handleDreamscape(k);
+    }
+
+    if (this.screen === 'playmode') {
+      return this._handlePlaymode(k);
     }
 
     if (this.screen === 'credits') {
@@ -182,8 +194,9 @@ export class MenuSystem {
     }
     if (k === 'Enter' || k === ' ') {
       const dream = dreams[this.dreamscapeSel];
-      if (dream && this.onSelectDreamscape) {
-        this.onSelectDreamscape(dream.id);
+      if (dream) {
+        this._pendingDreamscape = dream.id;
+        this.open('playmode');
       }
       return { consumed: true };
     }
@@ -194,9 +207,29 @@ export class MenuSystem {
     return { consumed: false };
   }
 
-  // ────────────────────────────────────────────────────────────────────
-  //  MENU CONTENT
-  // ────────────────────────────────────────────────────────────────────
+  _handlePlaymode(k) {
+    const modes = this.getPlaymodeOptions();
+    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
+      this.playmodeSel = (this.playmodeSel - 1 + modes.length) % modes.length;
+      return { consumed: true };
+    }
+    if (k === 'ArrowDown' || k === 's' || k === 'S') {
+      this.playmodeSel = (this.playmodeSel + 1) % modes.length;
+      return { consumed: true };
+    }
+    if (k === 'Enter' || k === ' ') {
+      const mode = modes[this.playmodeSel];
+      if (mode && this.onSelectDreamscape) {
+        this.onSelectDreamscape(this._pendingDreamscape || 'RIFT', mode.id.toUpperCase());
+      }
+      return { consumed: true };
+    }
+    if (k === 'Backspace') {
+      this.open('dreamscape');
+      return { consumed: true };
+    }
+    return { consumed: false };
+  }
 
   getItems() {
     const isPause = this.screen === 'pause';
@@ -310,6 +343,10 @@ export class MenuSystem {
     return listDreamscapes();
   }
 
+  getPlaymodeOptions() {
+    return getAvailableModes().filter(m => m.id !== 'coop'); // exclude co-op (future)
+  }
+
   // ────────────────────────────────────────────────────────────────────
   //  DRAWING
   // ────────────────────────────────────────────────────────────────────
@@ -331,6 +368,7 @@ export class MenuSystem {
     if (this.screen === 'options') return this._drawOptions(ctx, w, h);
     if (this.screen === 'tutorial') return this._drawTutorial(ctx, w, h);
     if (this.screen === 'dreamscape') return this._drawDreamscape(ctx, w, h);
+    if (this.screen === 'playmode') return this._drawPlaymode(ctx, w, h);
     if (this.screen === 'credits') return this._drawCredits(ctx, w, h);
   }
 
@@ -536,6 +574,59 @@ export class MenuSystem {
       ctx.font = '9px Courier New';
       ctx.textAlign = 'right';
       ctx.fillText(flavorLine, bx + boxW - 20, rowY + rowH / 2 - 3);
+      ctx.textAlign = 'left';
+    }
+
+    ctx.fillStyle = '#445566';
+    ctx.font = '8px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('↑/↓ choose · ENTER confirm · ESC back', w / 2, by + boxH + 22);
+    ctx.textAlign = 'left';
+  }
+
+  _drawPlaymode(ctx, w, h) {
+    const dreamId = this._pendingDreamscape || 'RIFT';
+    this._drawHeader(ctx, w, h, `SELECT PLAY MODE · ${dreamId}`);
+
+    const modes = this.getPlaymodeOptions();
+    const boxW = 480;
+    const rowH = 40;
+    const paddingV = 14;
+    const boxH = modes.length * rowH + paddingV * 2;
+    const bx = (w - boxW) / 2;
+    const by = h / 2 - boxH / 2 + 10;
+
+    ctx.fillStyle = 'rgba(7,7,20,0.92)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
+
+    for (let i = 0; i < modes.length; i++) {
+      const mode = modes[i];
+      const isSel = i === this.playmodeSel;
+      const rowY = by + paddingV + i * rowH;
+
+      if (isSel) {
+        ctx.fillStyle = `rgba(0,229,255,${0.07 + pulse * 0.10})`;
+        ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
+        ctx.strokeStyle = `rgba(0,229,255,${0.28 + pulse * 0.20})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
+      }
+
+      ctx.fillStyle = isSel ? '#00e5ff' : '#b8b8d0';
+      ctx.font = isSel ? 'bold 12px Courier New' : '11px Courier New';
+      ctx.textAlign = 'left';
+      ctx.fillText((isSel ? '▶ ' : '  ') + mode.name, bx + 26, rowY + rowH / 2 - 2);
+
+      const descLine = mode.desc.length > 42 ? mode.desc.slice(0, 40) + '…' : mode.desc;
+      ctx.fillStyle = isSel ? '#88ffcc' : '#445566';
+      ctx.font = '9px Courier New';
+      ctx.textAlign = 'right';
+      ctx.fillText(descLine, bx + boxW - 20, rowY + rowH / 2 - 2);
       ctx.textAlign = 'left';
     }
 

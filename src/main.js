@@ -175,6 +175,20 @@ try {
     AudioManager.settings = game.settings || {};
     AudioManager.settings.reducedMotion = game.settings.reducedMotion;
     AudioManager.setEnabled(!!game.settings.audio);
+
+    // Initialize AudioContext and preload synthesized samples on first user interaction
+    const _initAudioOnce = () => {
+      try {
+        if (!AudioManager.ctx) {
+          AudioManager.init();
+          AudioManager.loadSamples(['move', 'peace', 'damage', 'nav', 'select', 'teleport', 'ambient']);
+        }
+      } catch (e) {}
+      document.removeEventListener('keydown', _initAudioOnce);
+      document.removeEventListener('click', _initAudioOnce);
+    };
+    document.addEventListener('keydown', _initAudioOnce, { once: true });
+    document.addEventListener('click', _initAudioOnce, { once: true });
   }
 } catch (e) {}
 

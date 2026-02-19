@@ -231,6 +231,24 @@ export class GridGameMode extends GameMode {
       );
     }
 
+    // Wu Wei / Taoist flowBonus: score trickles while player stands still
+    if (gameState.mechanics?.flowBonus && gameState.player) {
+      if (!this._lastMovePos) this._lastMovePos = { x: gameState.player.x, y: gameState.player.y };
+      if (gameState.player.x === this._lastMovePos.x && gameState.player.y === this._lastMovePos.y) {
+        if (!this._stillMs) this._stillMs = 0;
+        this._stillMs += deltaTime;
+        if (this._stillMs >= 2000) { // award flow score every 2s of stillness
+          this._stillMs = 0;
+          const flowScore = Math.round(25 * (gameState.scoreMul || 1.0));
+          gameState.score = (gameState.score || 0) + flowScore;
+          if (gameState.emotionalField?.add) gameState.emotionalField.add('tender', 0.2);
+        }
+      } else {
+        this._stillMs = 0;
+        this._lastMovePos = { x: gameState.player.x, y: gameState.player.y };
+      }
+    }
+
     // Update active powerups (expiry + REGEN effect)
     updatePowerups(gameState);
 
@@ -322,6 +340,17 @@ export class GridGameMode extends GameMode {
 
     for (const enemy of gameState.enemies) {
       if (enemy.x === px && enemy.y === py) {
+        // PACIFIST / noCombat mode: no damage, but score bonus for "stealth" (being close)
+        if (gameState.mechanics?.noCombat) {
+          // Stealth score: reward being adjacent without dying
+          if (!gameState._lastStealthScoreMs || now - gameState._lastStealthScoreMs > 3000) {
+            const stealthBonus = 50 * (gameState.scoreMul || 1.0);
+            gameState.score = (gameState.score || 0) + Math.round(stealthBonus);
+            gameState._lastStealthScoreMs = now;
+            createParticles(gameState, px, py, '#88ff44', 6);
+          }
+          break;
+        }
         // SHIELD powerup: absorb hit without damage
         if (hasPowerup(gameState, 'absorb_damage')) {
           this._lastEnemyDamageMs = now;

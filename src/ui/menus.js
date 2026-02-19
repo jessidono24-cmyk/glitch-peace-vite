@@ -332,6 +332,26 @@ export class MenuSystem {
         },
       },
       {
+        label: 'IMPULSE BUFFER',
+        value: cfg.impulseBuffer ? 'ON' : 'OFF',
+        toggle: () => (cfg.impulseBuffer = !cfg.impulseBuffer),
+      },
+      {
+        label: 'PATTERN TRAIL',
+        value: cfg.patternEcho ? 'ON' : 'OFF',
+        toggle: () => (cfg.patternEcho = !cfg.patternEcho),
+      },
+      {
+        label: 'AHEAD PREVIEW',
+        value: cfg.consequencePreview ? 'ON' : 'OFF',
+        toggle: () => (cfg.consequencePreview = !cfg.consequencePreview),
+      },
+      {
+        label: 'SESSION REMINDERS',
+        value: cfg.sessionReminders !== false ? 'ON' : 'OFF',
+        toggle: () => (cfg.sessionReminders = cfg.sessionReminders === false ? true : false),
+      },
+      {
         label: 'BACK',
         value: '',
         action: () => this.open('title'),

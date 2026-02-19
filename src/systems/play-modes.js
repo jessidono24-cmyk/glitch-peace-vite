@@ -52,6 +52,8 @@ export const PLAY_MODES = {
       bossEnabled: false,
       autoHeal: 1, // HP per second
       infinitePeace: true,
+      patternEcho: true,         // show movement trail
+      realityChecks: true,       // gentle awareness prompts
     }
   },
 
@@ -191,6 +193,8 @@ export const PLAY_MODES = {
       patternEcho: true,
       routeAlternatives: true,
       compassionateRelapse: true,
+      thresholdMonitor: true,
+      realityChecks: true,
       sessionBreaks: [15, 30],
     }
   },

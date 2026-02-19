@@ -13,6 +13,19 @@ import { applyMode } from '../../systems/play-modes.js';
 import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscapes.js';
 import { updatePowerups, hasPowerup } from '../../systems/powerups.js';
 import { undoGameMove } from '../../systems/undo.js';
+import {
+  checkImpulseBuffer,
+  cancelImpulseBuffer,
+  recordEchoPosition,
+  getConsequencePreview,
+  getRouteAlternatives,
+  checkThresholdMonitor,
+  updateSessionManager,
+  applyRelapsCompassion,
+  resetRelapsCompassion,
+  checkRealityCheck,
+  renderRecoveryOverlays,
+} from '../../systems/recovery-tools.js';
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -61,6 +74,15 @@ export class GridGameMode extends GameMode {
 
     // Apply play mode configuration
     applyMode(gameState, this.playMode);
+
+    // Merge user-level recovery tool preferences from settings (override mode defaults)
+    if (!gameState.mechanics) gameState.mechanics = {};
+    const s = gameState.settings || {};
+    if (s.impulseBuffer !== undefined)       gameState.mechanics.impulseBuffer       = s.impulseBuffer;
+    if (s.patternEcho !== undefined)         gameState.mechanics.patternEcho         = s.patternEcho;
+    if (s.consequencePreview !== undefined)  gameState.mechanics.consequencePreview  = s.consequencePreview;
+    // Session reminders: controlled by settings.sessionReminders (default ON)
+    if (s.sessionReminders === false)        gameState._sessionRemindersDisabled = true;
 
     // Initialize timer for timed modes (SPEEDRUN, PATTERN_TRAINING, DAILY, etc.)
     if (gameState.mechanics?.timeLimit && typeof gameState.mechanics.timeLimit === 'number') {
@@ -161,6 +183,22 @@ export class GridGameMode extends GameMode {
     // Update active powerups (expiry + REGEN effect)
     updatePowerups(gameState);
 
+    // ── Recovery Tools: session, threshold, reality check ──────────────
+    updateSessionManager(gameState, deltaTime);
+    checkThresholdMonitor(gameState);
+    checkRealityCheck(gameState);
+
+    // Route alternatives + consequence preview (refreshed each frame)
+    gameState._routeAlternatives = getRouteAlternatives(gameState);
+    // Consequence preview uses last-stored direction (updated in handleInput)
+    if (gameState._lastDir && (gameState._lastDir.x || gameState._lastDir.y)) {
+      gameState._consequencePreview = getConsequencePreview(
+        gameState, gameState._lastDir.x, gameState._lastDir.y
+      );
+    } else {
+      gameState._consequencePreview = [];
+    }
+
     // Apply SPEED powerup or SPEEDRUN mode boost to movement delay
     const speedBoost = hasPowerup(gameState, 'movement_boost') ? 2.0 : (gameState.moveSpeedBoost || 1.0);
     this.moveDelay = Math.max(50, Math.round(150 / speedBoost));
@@ -184,7 +222,10 @@ export class GridGameMode extends GameMode {
 
     // Check lose condition
     if (gameState.player && gameState.player.hp <= 0) {
-      this.onGameOver(gameState);
+      // Relapse compassion: give a second chance before game over
+      if (!applyRelapsCompassion(gameState)) {
+        this.onGameOver(gameState);
+      }
     }
 
     // PUZZLE mode: lose if moves exhausted and peace not all collected
@@ -384,6 +425,9 @@ export class GridGameMode extends GameMode {
       });
     }
 
+    // Recovery tool overlays (echo trail, consequence preview, impulse buffer, alerts)
+    renderRecoveryOverlays(gameState, ctx, tileSize);
+
     // World distortion overlay (emotional engine effect)
     const distortion = gameState.worldDistortion || 0;
     if (distortion > 0.1) {
@@ -485,6 +529,19 @@ export class GridGameMode extends GameMode {
     const dir = input.getDirectionalInput();
     
     if (dir.x !== 0 || dir.y !== 0) {
+      // Store last direction for consequence preview
+      gameState._lastDir = { x: dir.x, y: dir.y };
+
+      // Compute target tile
+      const targetX = gameState.player.x + dir.x;
+      const targetY = gameState.player.y + dir.y;
+
+      // Impulse Buffer: mandatory pause before hazard tiles
+      if (checkImpulseBuffer(gameState, targetX, targetY, now)) {
+        // Move blocked — countdown is running, don't advance lastMoveTime
+        return;
+      }
+
       // Save undo snapshot for PUZZLE mode before moving
       if (gameState.mechanics?.undoEnabled) {
         if (!gameState.history) gameState.history = [];
@@ -506,6 +563,8 @@ export class GridGameMode extends GameMode {
       
       if (moved) {
         this.lastMoveTime = now;
+        // Record echo position (pattern trail)
+        recordEchoPosition(gameState);
         // PUZZLE mode: decrement move counter
         if (gameState.movesRemaining !== undefined) {
           gameState.movesRemaining = Math.max(0, gameState.movesRemaining - 1);
@@ -513,6 +572,10 @@ export class GridGameMode extends GameMode {
         // Trigger move sound if audio available
         try { window.AudioManager?.play('move'); } catch (e) { console.warn('[GridGameMode] Audio error:', e); }
       }
+    }
+    // Clear last direction when no input (impulse buffer reset on direction change)
+    if (dir.x === 0 && dir.y === 0) {
+      cancelImpulseBuffer(gameState);
     }
   }
 
@@ -526,6 +589,9 @@ export class GridGameMode extends GameMode {
     
     // Award bonus points
     gameState.score += 500 * gameState.level;
+    
+    // Reset per-level state
+    resetRelapsCompassion(gameState);
     
     // Advance level
     gameState.level++;

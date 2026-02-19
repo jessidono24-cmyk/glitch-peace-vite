@@ -58,7 +58,12 @@ const game = {
     particles: true,
     intensityMul: 1.0,
     audio: false,
-    timezone: 'AUTO'
+    timezone: 'AUTO',
+    // Recovery tools (optional global overrides — mode defaults apply when undefined)
+    impulseBuffer: undefined,
+    patternEcho: undefined,
+    consequencePreview: undefined,
+    sessionReminders: true,
   }
 };
 

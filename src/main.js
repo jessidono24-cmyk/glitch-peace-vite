@@ -21,6 +21,7 @@ import GameStateManager from './core/game-engine/GameStateManager.js';
 import InputManager from './core/game-engine/InputManager.js';
 import { modeRegistry } from './gameplay-modes/ModeRegistry.js';
 import './gameplay-modes/grid-based/index.js'; // Auto-registers GridGameMode
+import './gameplay-modes/shooter/index.js'; // Auto-registers ShooterMode (Phase 2)
 
 // PHASE 1: Initialize new architecture
 let gameStateManager = null;

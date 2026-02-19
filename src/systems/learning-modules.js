@@ -100,6 +100,7 @@ export function handleChallengeInput(gameState, key) {
       gameState.score = (gameState.score || 0) + Math.round(bonus);
       gameState.combo = (gameState.combo || 0) + 1;
       gameState.comboTimer = Date.now();
+      gameState._challengeCorrect = true; // trigger lucidity gain in GridGameMode
       if (gameState.emotionalField?.add) gameState.emotionalField.add('curiosity', 1.0);
     } else {
       if (gameState.emotionalField?.add) gameState.emotionalField.add('grief', 0.4);

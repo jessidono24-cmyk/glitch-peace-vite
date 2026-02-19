@@ -56,6 +56,9 @@ export function movePlayer(gameState, dx, dy) {
   const stepped = tile;
   const def = tileDef;
 
+  // Record dream sign for tile type (across sessions)
+  gameState._lastTileType = stepped; // GridGameMode will record it
+
   // Peace: heal + collect
   if (stepped === T.PEACE) {
     // REVERSE mode: peace tiles deal damage instead of healing!
@@ -270,6 +273,8 @@ export function movePlayer(gameState, dx, dy) {
     if (gameState.emotionalField?.add) gameState.emotionalField.add('tender', 0.9); // safety → tender
     createParticles(gameState, newX, newY, '#446688', 12);
     try { window.AudioManager?.play('select'); } catch (e) {}
+    // COVER tile triggers a body scan reminder (dream yoga)
+    gameState._triggerBodyScan = true;
     return true;
   }
 

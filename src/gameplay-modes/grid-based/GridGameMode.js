@@ -22,6 +22,15 @@ import {
   renderLearningChallenge,
 } from '../../systems/learning-modules.js';
 import {
+  recordDreamSign,
+  gainLucidity,
+  loseLucidity,
+  triggerBodyScan,
+  onGamePaused,
+  onGameResumed,
+  renderDreamYogaOverlays,
+} from '../../systems/dream-yoga.js';
+import {
   checkImpulseBuffer,
   cancelImpulseBuffer,
   recordEchoPosition,
@@ -269,10 +278,31 @@ export class GridGameMode extends GameMode {
     // Update active learning challenge (timeout check)
     updateLearningChallenge(gameState, deltaTime);
 
+    // Learning challenge correct answer → lucidity gain (handled in handleChallengeInput via flag)
+    if (gameState._challengeCorrect) {
+      delete gameState._challengeCorrect;
+      gainLucidity(gameState, 'challenge');
+    }
+
     // Handle INSIGHT tile → learning challenge trigger signal
     if (gameState._triggerLearningChallenge) {
       delete gameState._triggerLearningChallenge;
       triggerLearningChallenge(gameState);
+      gainLucidity(gameState, 'insight');
+    }
+
+    // Handle COVER tile → body scan (dream yoga embodiment practice)
+    if (gameState._triggerBodyScan) {
+      delete gameState._triggerBodyScan;
+      triggerBodyScan(gameState);
+    }
+
+    // Record dream sign when player steps on a new tile type
+    if (gameState._lastTileType !== undefined) {
+      const tileType = gameState._lastTileType;
+      delete gameState._lastTileType;
+      const domEmo = gameState.emotionalField?.getDominant?.();
+      recordDreamSign(tileType, domEmo || null);
     }
 
     // Route alternatives + consequence preview (refreshed each frame)
@@ -376,6 +406,7 @@ export class GridGameMode extends GameMode {
         } else {
           const dmg = enemy.dmg || 10; // boss deals more damage
           gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
+          loseLucidity(gameState, enemy.isBoss ? 15 : 8);
           this._lastEnemyDamageMs = now;
           if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', enemy.isBoss ? 1.0 : 0.5);
           createParticles(gameState, px, py, enemy.isBoss ? '#ff44aa' : 'damage', enemy.isBoss ? 16 : 8);
@@ -648,6 +679,9 @@ export class GridGameMode extends GameMode {
 
     // Learning challenge overlay (rendered last — on top of everything)
     renderLearningChallenge(gameState, ctx);
+
+    // Dream yoga overlays (lucidity meter, body scan, lucid event)
+    renderDreamYogaOverlays(gameState, ctx);
 
     // Breathing pause prompt (RITUAL mode, shown between levels)
     if (gameState._breathingPrompt) {

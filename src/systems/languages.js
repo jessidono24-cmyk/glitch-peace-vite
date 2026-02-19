@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 //  LANGUAGE SYSTEM — Phase 3 Language Learning
-//  14 supported languages with progressive overload chains.
+//  16 supported languages with progressive overload chains.
+//  Includes Modern Greek (el) and Egyptian Hieroglyphs (egy, via transliteration).
 //  Vocab challenges are drawn from game-relevant concept words so
 //  the language practice reinforces the consciousness theme.
 // ═══════════════════════════════════════════════════════════════════════
@@ -24,31 +25,46 @@ export const LANGUAGES = [
   { id: 'ja', name: 'Japanese',   nativeName: '日本語',      family: 'japonic',   script: 'kana' },
   { id: 'ko', name: 'Korean',     nativeName: '한국어',      family: 'koreanic',  script: 'hangul' },
   { id: 'ar', name: 'Arabic',     nativeName: 'العربية',    family: 'semitic',   script: 'arabic' },
+  { id: 'el', name: 'Greek',      nativeName: 'Ελληνικά',   family: 'hellenic',  script: 'greek' },
+  // Egyptian Hieroglyphs: taught as pictographic script reading via Egyptological transliteration.
+  // Afroasiatic language family (Gardiner sign list). Source: Allen, "Middle Egyptian" (2000).
+  { id: 'egy', name: 'Hieroglyphs', nativeName: '𓇋𓏤 mdw-nṯr', family: 'afroasiatic', script: 'hieroglyphic' },
 ];
 
 // ─── LANGUAGE FAMILY SIMILARITY ─────────────────────────────────────────
 // Languages in the same family are "easier" when you already know one.
 // The progression table defines the recommended learning order per native.
 
-const FAMILY_ORDER = ['germanic', 'romance', 'slavic', 'sinitic', 'japonic', 'koreanic', 'semitic'];
+const FAMILY_ORDER = ['germanic', 'romance', 'hellenic', 'slavic', 'afroasiatic', 'sinitic', 'japonic', 'koreanic', 'semitic'];
 
 // For each native language: sorted list of target language IDs by similarity.
 // Same family → first group; shared features → second; most distinct → last.
+// Progressive overload chains: same family first, then adjacent families, most distant last.
+// Evidence: Krashen (1985) Natural Order Hypothesis; Common European Framework of Reference (CEFR)
+// Greek sits between Romance and Slavic in accessibility for Latin-script learners.
+// Egyptian (egy) is last for most natives — it's a prestige/advanced script track.
 const PROGRESSION = {
-  en: ['de', 'no', 'nl', 'fr', 'es', 'pt', 'it', 'la', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  de: ['no', 'nl', 'en', 'fr', 'it', 'es', 'pt', 'la', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  no: ['de', 'nl', 'en', 'fr', 'es', 'it', 'pt', 'la', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  nl: ['de', 'no', 'en', 'fr', 'es', 'pt', 'it', 'la', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  fr: ['es', 'pt', 'it', 'la', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  es: ['pt', 'it', 'fr', 'la', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  pt: ['es', 'it', 'fr', 'la', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  it: ['es', 'pt', 'fr', 'la', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  la: ['it', 'fr', 'es', 'pt', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar'],
-  ru: ['de', 'nl', 'no', 'fr', 'es', 'pt', 'it', 'la', 'en', 'zh', 'ja', 'ko', 'ar'],
-  zh: ['ja', 'ko', 'de', 'no', 'nl', 'en', 'fr', 'es', 'pt', 'it', 'la', 'ru', 'ar'],
-  ja: ['zh', 'ko', 'de', 'no', 'nl', 'en', 'fr', 'es', 'pt', 'it', 'la', 'ru', 'ar'],
-  ko: ['ja', 'zh', 'de', 'no', 'nl', 'en', 'fr', 'es', 'pt', 'it', 'la', 'ru', 'ar'],
-  ar: ['ru', 'fr', 'es', 'pt', 'it', 'la', 'de', 'no', 'nl', 'en', 'zh', 'ja', 'ko'],
+  en:  ['de', 'no', 'nl', 'fr', 'es', 'pt', 'it', 'la', 'el', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  de:  ['no', 'nl', 'en', 'fr', 'it', 'es', 'pt', 'la', 'el', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  no:  ['de', 'nl', 'en', 'fr', 'es', 'it', 'pt', 'la', 'el', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  nl:  ['de', 'no', 'en', 'fr', 'es', 'pt', 'it', 'la', 'el', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  fr:  ['es', 'pt', 'it', 'la', 'el', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  es:  ['pt', 'it', 'fr', 'la', 'el', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  pt:  ['es', 'it', 'fr', 'la', 'el', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  it:  ['es', 'pt', 'fr', 'la', 'el', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  // Latin → Greek very early: both Classical languages, shared vocabulary (logos, polis, etc.)
+  la:  ['el', 'it', 'fr', 'es', 'pt', 'de', 'nl', 'no', 'en', 'ru', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  // Russian → Greek early: Cyrillic script derived from Greek uncial (9th c., Sts Cyril & Methodius)
+  ru:  ['el', 'de', 'nl', 'no', 'fr', 'es', 'pt', 'it', 'la', 'en', 'zh', 'ja', 'ko', 'ar', 'egy'],
+  zh:  ['ja', 'ko', 'de', 'no', 'nl', 'en', 'fr', 'es', 'pt', 'it', 'la', 'el', 'ru', 'ar', 'egy'],
+  ja:  ['zh', 'ko', 'de', 'no', 'nl', 'en', 'fr', 'es', 'pt', 'it', 'la', 'el', 'ru', 'ar', 'egy'],
+  ko:  ['ja', 'zh', 'de', 'no', 'nl', 'en', 'fr', 'es', 'pt', 'it', 'la', 'el', 'ru', 'ar', 'egy'],
+  // Arabic → Egyptian early: both Afroasiatic family; Arabic script descended from Aramaic/Phoenician
+  ar:  ['egy', 'ru', 'el', 'fr', 'es', 'pt', 'it', 'la', 'de', 'no', 'nl', 'en', 'zh', 'ja', 'ko'],
+  // Greek → Latin first (most similar), then Romance, Slavic, then Germanic, then distant
+  el:  ['la', 'it', 'fr', 'es', 'pt', 'ru', 'de', 'nl', 'no', 'en', 'ar', 'zh', 'ja', 'ko', 'egy'],
+  // Egyptian Hieroglyphs → Arabic closest (Afroasiatic), then Greek (Hellenistic period contact)
+  egy: ['ar', 'el', 'la', 'it', 'fr', 'es', 'pt', 'ru', 'de', 'nl', 'no', 'en', 'zh', 'ja', 'ko'],
 };
 
 /**
@@ -69,8 +85,10 @@ export function getLanguage(id) {
 }
 
 // ─── VOCABULARY BANK ────────────────────────────────────────────────────
-//  Each entry: game-relevant concept word translated to all 14 languages.
-//  Shape: { concept, en, de, no, nl, fr, es, pt, it, la, ru, zh, ja, ko, ar }
+//  Each entry: game-relevant concept word translated to all 16 languages.
+//  Shape: { concept, en, de, no, nl, fr, es, pt, it, la, ru, zh, ja, ko, ar, el, egy }
+//  Egyptian (egy) uses Egyptological transliterations (Gardiner sign list, Allen 2000).
+//  Greek (el) uses Modern Greek.
 //  Used to generate multi-lingual challenges dynamically.
 
 const VOCAB_BANK = [
@@ -80,6 +98,7 @@ const VOCAB_BANK = [
     fr: 'paix',      es: 'paz',          pt: 'paz',        it: 'pace',
     la: 'pax',       ru: 'мир',          zh: '和平',        ja: '平和',
     ko: '평화',       ar: 'سلام',
+    el: 'ειρήνη',      egy: 'ḥtp (hotep)',
   },
   {
     concept: 'calm',
@@ -87,6 +106,7 @@ const VOCAB_BANK = [
     fr: 'calme',     es: 'calma',        pt: 'calma',      it: 'calma',
     la: 'tranquillitas', ru: 'спокойствие', zh: '平静',    ja: '穏やか',
     ko: '평온',       ar: 'هدوء',
+    el: 'γαλήνη',      egy: 'nḏm (nedjem)',
   },
   {
     concept: 'hope',
@@ -94,6 +114,7 @@ const VOCAB_BANK = [
     fr: 'espoir',    es: 'esperanza',    pt: 'esperança',  it: 'speranza',
     la: 'spes',      ru: 'надежда',      zh: '希望',        ja: '希望',
     ko: '희망',       ar: 'أمل',
+    el: 'ελπίδα',      egy: 'ꜣḫ (akh)',
   },
   {
     concept: 'fear',
@@ -101,6 +122,7 @@ const VOCAB_BANK = [
     fr: 'peur',      es: 'miedo',        pt: 'medo',       it: 'paura',
     la: 'timor',     ru: 'страх',        zh: '恐惧',        ja: '恐れ',
     ko: '두려움',     ar: 'خوف',
+    el: 'φόβος',      egy: 'snḏ (sened)',
   },
   {
     concept: 'pattern',
@@ -108,6 +130,7 @@ const VOCAB_BANK = [
     fr: 'modèle',    es: 'patrón',       pt: 'padrão',     it: 'modello',
     la: 'exemplar',  ru: 'узор',         zh: '模式',        ja: 'パターン',
     ko: '패턴',       ar: 'نمط',
+    el: 'πρότυπο',      egy: 'mdw-nṯr',
   },
   {
     concept: 'insight',
@@ -115,6 +138,7 @@ const VOCAB_BANK = [
     fr: 'perspicacité', es: 'perspicacia', pt: 'perspicácia', it: 'perspicacia',
     la: 'perspicacia', ru: 'понимание',  zh: '洞察',        ja: '洞察',
     ko: '통찰',       ar: 'بصيرة',
+    el: 'νόηση',      egy: 'sꜣ (sa)',
   },
   {
     concept: 'courage',
@@ -122,6 +146,7 @@ const VOCAB_BANK = [
     fr: 'courage',   es: 'valor',        pt: 'coragem',    it: 'coraggio',
     la: 'virtus',    ru: 'храбрость',    zh: '勇气',        ja: '勇気',
     ko: '용기',       ar: 'شجاعة',
+    el: 'θάρρος',      egy: 'qni (qeni)',
   },
   {
     concept: 'harmony',
@@ -129,6 +154,7 @@ const VOCAB_BANK = [
     fr: 'harmonie',  es: 'armonía',      pt: 'harmonia',   it: 'armonia',
     la: 'harmonia',  ru: 'гармония',     zh: '和谐',        ja: '調和',
     ko: '조화',       ar: 'انسجام',
+    el: 'αρμονία',      egy: 'mꜣꜥt (maat)',
   },
   {
     concept: 'light',
@@ -136,6 +162,7 @@ const VOCAB_BANK = [
     fr: 'lumière',   es: 'luz',          pt: 'luz',        it: 'luce',
     la: 'lux',       ru: 'свет',         zh: '光',          ja: '光',
     ko: '빛',         ar: 'نور',
+    el: 'φως',      egy: 'rꜥ (ra)',
   },
   {
     concept: 'dream',
@@ -143,6 +170,7 @@ const VOCAB_BANK = [
     fr: 'rêve',      es: 'sueño',        pt: 'sonho',      it: 'sogno',
     la: 'somnium',   ru: 'мечта',        zh: '梦',          ja: '夢',
     ko: '꿈',         ar: 'حلم',
+    el: 'όνειρο',      egy: 'rswt (rswt)',
   },
   {
     concept: 'mind',
@@ -150,6 +178,7 @@ const VOCAB_BANK = [
     fr: 'esprit',    es: 'mente',        pt: 'mente',      it: 'mente',
     la: 'mens',      ru: 'разум',        zh: '心灵',        ja: '心',
     ko: '마음',       ar: 'عقل',
+    el: 'νους',      egy: 'ib (ib)',
   },
   {
     concept: 'path',
@@ -157,6 +186,7 @@ const VOCAB_BANK = [
     fr: 'chemin',    es: 'camino',       pt: 'caminho',    it: 'cammino',
     la: 'via',       ru: 'путь',         zh: '道路',        ja: '道',
     ko: '길',         ar: 'طريق',
+    el: 'μονοπάτι',      egy: 'wꜣt (waat)',
   },
 ];
 

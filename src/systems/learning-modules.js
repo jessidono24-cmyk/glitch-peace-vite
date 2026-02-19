@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 import { getLangChallenge } from './languages.js';
+import { getSigilChallenge } from './sigils.js';
 
 // ─── VOCABULARY CHALLENGES ──────────────────────────────────────────────
 //  Pairs: { prompt, answer, hint } — player presses 1/2/3/4 to choose
@@ -51,17 +52,24 @@ const MEMORY_SEQUENCES = [
 export function getChallenge(type = 'auto', targetLangId = null) {
   if (type === 'auto') {
     const r = Math.random();
-    // If a target language is set, 40% chance of language challenge
-    if (targetLangId && r < 0.40) type = 'language';
-    else if (r < 0.55) type = 'vocab';
-    else if (r < 0.80) type = 'math';
-    else type = 'memory';
+    // If a target language is set, 35% chance of language challenge
+    if (targetLangId && r < 0.35) type = 'language';
+    else if (r < 0.50) type = 'vocab';
+    else if (r < 0.70) type = 'math';
+    else if (r < 0.85) type = 'memory';
+    else type = 'sigil'; // 15% sigil pattern reading
   }
 
   if (type === 'language') {
     const ch = getLangChallenge(targetLangId || 'en');
     if (ch) return ch;
     type = 'vocab'; // fallback if lang challenge fails
+  }
+
+  if (type === 'sigil') {
+    const ch = getSigilChallenge();
+    if (ch) return ch;
+    type = 'vocab'; // fallback
   }
 
   let pool;
@@ -186,6 +194,7 @@ export function renderLearningChallenge(gameState, ctx) {
   const typeLabel = ch.type === 'vocab' ? 'VOCABULARY'
     : ch.type === 'math' ? 'PATTERN'
     : ch.type === 'language' ? `LANGUAGE · ${(ch.langName || '').toUpperCase()}`
+    : ch.type === 'sigil' ? 'SIGIL · PATTERN GRAMMAR'
     : 'MEMORY';
   ctx.fillStyle = '#667799';
   ctx.font = '8px Courier New';
@@ -248,6 +257,13 @@ export function renderLearningChallenge(gameState, ctx) {
     ctx.shadowBlur = 16;
     ctx.fillText(resText, w / 2, h * 0.775);
     ctx.shadowBlur = 0;
+
+    // For sigil challenges: show primitives breakdown after answer
+    if (ch.type === 'sigil' && ch.primitives) {
+      ctx.fillStyle = '#667799';
+      ctx.font = '8px Courier New';
+      ctx.fillText(`Primitives: ${ch.primitives.join(' + ')}`, w / 2, h * 0.800);
+    }
   } else {
     ctx.fillStyle = '#334';
     ctx.font = '9px Courier New';

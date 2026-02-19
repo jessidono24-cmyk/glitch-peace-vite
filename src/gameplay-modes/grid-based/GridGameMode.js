@@ -61,6 +61,11 @@ import {
   renderArchetypeOverlay,
   getArchetypeForDreamscape,
 } from '../../systems/archetypes.js';
+import { logicPuzzles }        from '../../intelligence/logic-puzzles.js';
+import { emotionRecognition }  from '../../intelligence/emotion-recognition.js';
+import { empathyTraining }     from '../../intelligence/empathy-training.js';
+import { strategicThinking }   from '../../intelligence/strategic-thinking.js';
+import { achievementSystem }   from '../../systems/achievements.js';
 
 // ── GLITCH tile animation constants ─────────────────────────────────────────
 const GLITCH_FLICKER_PERIOD_MS = 180;  // how fast the GLITCH tile color cycles
@@ -403,6 +408,31 @@ export class GridGameMode extends GameMode {
     // Update archetype system (reveal-hidden timer, etc.)
     updateArchetypes(gameState, deltaTime);
 
+    // ── Phase 9: Intelligence systems tick every frame ─────────────────────
+    logicPuzzles.tick();
+    emotionRecognition.tick();
+    empathyTraining.tick();
+    // Observe dominant emotion for EQ labeling
+    const domEmo = gameState.emotionalField?.getDominant?.();
+    if (domEmo) {
+      const domVal = gameState.emotionalField?.emotions?.[domEmo] || 0;
+      emotionRecognition.observe(domEmo, domVal, gameState.matrixActive);
+    }
+    // Track max combo for achievements
+    const curCombo = gameState.combo || 0;
+    if (curCombo > (gameState._maxComboThisSession || 0)) {
+      gameState._maxComboThisSession = curCombo;
+    }
+    // Track dreamscapes visited for achievements
+    if (gameState.currentDreamscape) {
+      if (!gameState._dreamscapesVisited) gameState._dreamscapesVisited = new Set();
+      gameState._dreamscapesVisited.add(gameState.currentDreamscape);
+    }
+    // Expose empathy behaviors witnessed count for achievements
+    gameState._empathyBehaviorsWitnessed = empathyTraining.behaviorsWitnessed;
+    // Check achievements
+    achievementSystem.check(gameState);
+
     // Matrix A/B: energy drain (Matrix A) or regen (Matrix B)
     if (gameState.matrixActive === 'A') {
       gameState.energy = Math.max(0, (gameState.energy || 0) - 0.8 * (deltaTime / 16));
@@ -483,6 +513,10 @@ export class GridGameMode extends GameMode {
 
     for (const enemy of gameState.enemies) {
       if (enemy.x === px && enemy.y === py) {
+        // Empathy training: register this encounter (surface emotional context for new behaviors)
+        const behavior = enemy.behavior || (enemy.isBoss ? 'boss' : 'chase');
+        empathyTraining.onEnemyEncounter(behavior);
+
         // PACIFIST / noCombat mode: no damage, but score bonus for "stealth" (being close)
         if (gameState.mechanics?.noCombat) {
           // Stealth score: reward being adjacent without dying
@@ -506,6 +540,10 @@ export class GridGameMode extends GameMode {
           if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', enemy.isBoss ? 1.0 : 0.5);
           createParticles(gameState, px, py, enemy.isBoss ? '#ff44aa' : 'damage', enemy.isBoss ? 16 : 8);
           try { window.AudioManager?.play('damage'); } catch (e) {}
+          // Strategic thinking: record damage and which matrix was active
+          strategicThinking.onDamage(gameState.matrixActive || 'B');
+          // Reset no-damage tracking for pacifist achievement
+          gameState._noDamageThisLevel = false;
         }
         break;
       }
@@ -1088,6 +1126,126 @@ export class GridGameMode extends GameMode {
         delete gameState._questCompletedAt;
       }
     }
+
+    // ── Phase 9: Intelligence overlays ─────────────────────────────────────
+
+    // Logic Puzzle: sequence challenge (shown after each dreamscape completion)
+    const challenge = logicPuzzles.activeChallenge;
+    if (challenge) {
+      const a    = logicPuzzles.challengeAlpha;
+      const cw   = ctx.canvas.width;
+      const ch   = ctx.canvas.height;
+      const PW   = Math.min(380, Math.floor(cw * 0.72));
+      const PH   = 110;
+      const cpx  = Math.floor((cw - PW) / 2);
+      const cpy  = Math.floor(ch * 0.18);
+      ctx.save();
+      ctx.globalAlpha = a * 0.96;
+      ctx.fillStyle   = 'rgba(4,6,20,0.96)';
+      ctx.fillRect(cpx, cpy, PW, PH);
+      ctx.strokeStyle = '#00ffee';
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(cpx, cpy, PW, PH);
+      ctx.globalAlpha = a;
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle   = '#00ffee';
+      ctx.font        = `bold ${Math.floor(cw / 32)}px monospace`;
+      ctx.shadowColor = '#00ffee';
+      ctx.shadowBlur  = 8;
+      ctx.fillText(`◆ ${challenge.name}`, cw / 2, cpy + 20);
+      ctx.shadowBlur  = 0;
+      // Sequence display
+      ctx.fillStyle = '#ccddff';
+      ctx.font      = `${Math.floor(cw / 28)}px monospace`;
+      ctx.fillText(`${challenge.seq.join('  ·  ')}  ·  ?`, cw / 2, cpy + 50);
+      // Next answer
+      ctx.fillStyle = '#ffdd44';
+      ctx.font      = `bold ${Math.floor(cw / 30)}px monospace`;
+      ctx.fillText(`Next: ${challenge.next}`, cw / 2, cpy + 75);
+      // Fact below
+      ctx.fillStyle = '#667788';
+      ctx.font      = `${Math.floor(cw / 44)}px monospace`;
+      // Truncate fact to canvas width
+      const maxChars = Math.floor(PW / 6.5);
+      const fact = challenge.fact.length > maxChars ? challenge.fact.slice(0, maxChars - 1) + '…' : challenge.fact;
+      ctx.fillText(fact, cw / 2, cpy + 96);
+      ctx.restore();
+    }
+
+    // Emotion Recognition: dominant emotion label flash (right-side HUD)
+    const emotionFlash = emotionRecognition.flashLabel;
+    if (emotionFlash) {
+      const ea  = emotionRecognition.flashAlpha;
+      const ew  = ctx.canvas.width;
+      const eh  = ctx.canvas.height;
+      const EW  = Math.min(180, Math.floor(ew * 0.32));
+      const efx = ew - EW - 8;
+      const efy = Math.floor(eh * 0.52);
+      ctx.save();
+      ctx.globalAlpha = ea * 0.92;
+      ctx.fillStyle   = 'rgba(4,6,20,0.88)';
+      ctx.fillRect(efx, efy, EW, 52);
+      ctx.strokeStyle = emotionFlash.color;
+      ctx.lineWidth   = 1;
+      ctx.strokeRect(efx, efy, EW, 52);
+      ctx.globalAlpha = ea;
+      ctx.textAlign   = 'left';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle   = emotionFlash.color;
+      ctx.font        = `bold ${Math.floor(ew / 34)}px monospace`;
+      ctx.fillText(emotionFlash.label, efx + 8, efy + 8);
+      ctx.fillStyle = '#778899';
+      ctx.font      = `${Math.floor(ew / 52)}px monospace`;
+      // Word-wrap tip to EW width
+      const tipMax = Math.floor((EW - 16) / 5.5);
+      const tip = emotionFlash.tip.length > tipMax ? emotionFlash.tip.slice(0, tipMax) + '…' : emotionFlash.tip;
+      ctx.fillText(tip, efx + 8, efy + 28);
+      ctx.restore();
+    }
+
+    // Empathy Training: compassion phrase (bottom-center) when enemy stunned
+    const compassPhrase = empathyTraining.compassPhrase;
+    if (compassPhrase) {
+      const cpAlpha = Math.min(1, compassPhrase.timer / 20);
+      const ew = ctx.canvas.width;
+      ctx.save();
+      ctx.globalAlpha = cpAlpha * 0.88;
+      ctx.fillStyle   = '#aaddff';
+      ctx.font        = `${Math.floor(ew / 36)}px monospace`;
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(compassPhrase.text, ew / 2, ctx.canvas.height - 16);
+      ctx.restore();
+    }
+
+    // Empathy emotion flash (top-left context label when first encountering new behavior)
+    const empathyFlash = empathyTraining.flashEmotion;
+    if (empathyFlash) {
+      const epa = empathyTraining.flashAlpha;
+      const ew  = ctx.canvas.width;
+      ctx.save();
+      ctx.globalAlpha = epa * 0.9;
+      ctx.fillStyle   = empathyFlash.color;
+      ctx.font        = `${Math.floor(ew / 38)}px monospace`;
+      ctx.textAlign   = 'left';
+      ctx.textBaseline = 'top';
+      ctx.shadowColor = empathyFlash.color;
+      ctx.shadowBlur  = 6;
+      ctx.fillText(`⟳ ${empathyFlash.label}`, 8, ctx.canvas.height * 0.6);
+      ctx.shadowBlur  = 0;
+      ctx.fillStyle   = '#778899';
+      ctx.font        = `${Math.floor(ew / 52)}px monospace`;
+      const insightMax = Math.floor((ctx.canvas.width * 0.35) / 5.5);
+      const ins = empathyFlash.insight.length > insightMax
+        ? empathyFlash.insight.slice(0, insightMax) + '…'
+        : empathyFlash.insight;
+      ctx.fillText(ins, 8, ctx.canvas.height * 0.6 + 16);
+      ctx.restore();
+    }
+
+    // Achievement badge (top-right)
+    achievementSystem.renderBadge(ctx, ctx.canvas.width, ctx.canvas.height);
   }
 
   /**
@@ -1169,6 +1327,7 @@ export class GridGameMode extends GameMode {
         color: gameState.matrixActive === 'A' ? '#ff3344' : '#00ff88',
         expiresMs: now + 1800,
       };
+      logicPuzzles.onMatrixSwitch();
     }
 
     // J key: activate archetype power
@@ -1304,6 +1463,12 @@ export class GridGameMode extends GameMode {
         this.lastMoveTime = now;
         // Record echo position (pattern trail)
         recordEchoPosition(gameState);
+        // Phase 9: track mindful vs. reactive move
+        const usedPreview = (gameState._consequencePreview?.length > 0);
+        const impulseActive = !!gameState._impulseBuffer;
+        logicPuzzles.onMove(usedPreview, impulseActive);
+        if (usedPreview || impulseActive) strategicThinking.onMindfulMove();
+        else strategicThinking.onImpulsiveMove();
         // Phase walk: decrement move counter
         if (gameState._phaseWalkMoves > 0) {
           gameState._phaseWalkMoves--;
@@ -1359,6 +1524,11 @@ export class GridGameMode extends GameMode {
     // Start the readable transition overlay (3s total — blocks input for first 1.5s)
     this._levelFlashMs = this._LEVEL_FLASH_TOTAL;
     try { window.AudioManager?.play('level_complete'); } catch(e) {}
+    
+    // Phase 9: signal dreamscape completion to logic puzzles (surfaces sequence challenge)
+    logicPuzzles.onDreamscapeComplete();
+    // Reset no-damage tracking for pacifist achievement
+    gameState._noDamageThisLevel = true;
     
     // Reset per-level state
     resetRelapseCompassion(gameState);

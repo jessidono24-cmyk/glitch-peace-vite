@@ -16,6 +16,22 @@ import { TemporalSystem } from './core/temporal-system.js';
 import { updateHUD } from './ui/hud.js';
 import AudioManager from './systems/audio.js';
 import { renderStatsDashboard } from './ui/stats-dashboard.js';
+import { logicPuzzles }        from './intelligence/logic-puzzles.js';
+import { emotionRecognition }  from './intelligence/emotion-recognition.js';
+import { empathyTraining }     from './intelligence/empathy-training.js';
+import { strategicThinking }   from './intelligence/strategic-thinking.js';
+
+// Expose intelligence singletons for stats dashboard (avoids circular imports)
+try {
+  if (typeof window !== 'undefined') {
+    window.__glitchPeaceIntelligence = {
+      get iq()       { return logicPuzzles.iqScore; },
+      get eq()       { return emotionRecognition.eqScore; },
+      get empathy()  { return empathyTraining.empathyScore; },
+      get strategy() { return strategicThinking.strategicScore; },
+    };
+  }
+} catch (_) {}
 
 // PHASE 1: New modular architecture imports
 import GameStateManager from './core/game-engine/GameStateManager.js';
@@ -103,6 +119,13 @@ function initUI() {
   // Re-get canvas reference after creating it and expose globally
   canvas = document.getElementById('canvas');
   ctx = canvas?.getContext('2d');
+
+  // Accessibility: make canvas keyboard-focusable and describe it for screen readers
+  if (canvas) {
+    canvas.setAttribute('tabindex', '0');
+    canvas.setAttribute('role', 'application');
+    canvas.setAttribute('aria-label', 'GLITCH·PEACE game canvas. Use arrow keys or WASD to move. Press H for help.');
+  }
 
   // Responsive canvas: fit viewport while keeping square aspect ratio
   function _resizeCanvas() {

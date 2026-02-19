@@ -898,3 +898,115 @@ This aligns with Kristin Neff's self-compassion framework and the clinical evide
 
 **Status**: Research foundation complete and documented ✅  
 **New in v1.1**: Sections 18 — Reward/Transition UX, Combo Psychology, Synergy Feedback, Compassionate Game-Over
+
+---
+
+## 19. Phase 9: Intelligence Enhancement Systems (Applied Feb 2026)
+
+### Logic Puzzles & IQ Proxy (LogicPuzzles module)
+
+**Fluid intelligence** — the ability to reason with novel problems without relying on prior knowledge — is measurable through tasks requiring pattern completion and abstraction (Cattell, 1963). Mathematical sequences (Fibonacci, prime numbers, triangle numbers) are canonical fluid intelligence tasks used in standardized assessments (Raven's Progressive Matrices; Jaeggi et al., 2008).
+
+**GLITCH·PEACE's LogicPuzzles system:**
+- Surfaces a number-sequence challenge overlay after each dreamscape completion
+- Shows the sequence (e.g., 2 · 3 · 5 · 7 · 11 · ?) and the answer (13)
+- Provides a brief "fact" linking the mathematical pattern to the game world
+- Tracks three strategic behaviors as IQ-proxy inputs:
+  - **Consequence preview use ratio** (planning before acting)
+  - **Impulse buffer completions** (executive inhibition under pressure)
+  - **Pattern mappings** (recognizing recurring environmental patterns)
+- Produces an IQ proxy score (0–100) reflecting *in-game cognitive behavior*, not raw intelligence
+- A coaching tip rotates each time the player switches matrix modes
+
+**Research basis:**
+- Cattell, R.B. (1963). Theory of fluid and crystallized intelligence. *Journal of Educational Psychology*, 54(1), 1–22.
+- Jaeggi, S.M. et al. (2008). Improving fluid intelligence with training on working memory. *PNAS*, 105(19), 6829–6833.
+- Raven, J.C. (1938). *Progressive Matrices*. H.K. Lewis.
+- Dehaene, S. (1999). *The Number Sense*. Oxford University Press.
+
+---
+
+### Emotion Recognition & EQ (EmotionRecognition module)
+
+**Emotional granularity** — the ability to distinguish and label specific emotional states rather than experiencing undifferentiated arousal — is a strong predictor of wellbeing, resilience, and regulation quality (Barrett, 2017; Kashdan et al., 2015).
+
+**Affect labeling research** (Lieberman et al., 2007) demonstrates that *naming an emotion* in the moment reduces amygdala reactivity and emotional intensity by approximately 50% — a measurable neurological effect from a simple labeling act.
+
+**GLITCH·PEACE's EmotionRecognition system:**
+- Observes the dominant emotion in the emotional field each frame
+- When a dominant emotion exceeds a labeling threshold (20%), displays a flash label: "Fear" / "Joy" / "Awe" with a brief psychological tip
+- Tracks whether the player's matrix choice (A=Erasure, B=Coherence) aligned with the emotionally regulating response — e.g., Matrix B for fear, anxiety, shame
+- Produces an EQ score reflecting *emotional regulation quality during gameplay*
+- 10 EQ insights on the dashboard from Lieberman, Barrett, and Neff
+
+**Research basis:**
+- Barrett, L.F. (2017). *How Emotions Are Made*. Houghton Mifflin.
+- Lieberman, M.D. et al. (2007). Putting feelings into words. *Psychological Science*, 18(5), 421–428.
+- Kashdan, T.B. et al. (2015). Unpacking emotion differentiation. *Perspectives on Psychological Science*, 10(3), 283–291.
+- Neff, K. (2003). Self-compassion. *Self and Identity*, 2(2), 85–101.
+
+---
+
+### Empathy Training (EmpathyTraining module)
+
+**Perspective-taking** — actively imagining the inner state of another entity — is one of the most robust interventions for reducing dehumanization and increasing prosocial behavior (Batson et al., 1997; Eisenberg, 2000). Internal Family Systems theory (Schwartz, 1995) holds that "no bad parts" — all behaviors, even harmful ones, originally served a protective function.
+
+**GLITCH·PEACE's EmpathyTraining system:**
+- Each enemy has a behavior type (rush, patrol, orbit, adaptive, phantom…)
+- On first encounter with each behavior, and on each enemy stun, an emotion-context flash appears: "Driven by Fear" / "Following Structure" / "Not Fully Present"
+- Accompanying insight: "Fear can look exactly like aggression." / "Some behaviors are learned, not chosen."
+- On stun: a compassion phrase appears: "A pause in the chase." / "In stillness, both can breathe."
+- Produces an empathy score based on: behaviors witnessed (diversity of encounters) + compassion ratio (stun-to-encounter rate)
+- This reframes the player's relationship with adversarial entities as *recognition* rather than defeat
+
+**Research basis:**
+- Batson, C.D. et al. (1997). Empathy and the collective good. *Journal of Personality and Social Psychology*, 72(6), 1380–1391.
+- Klimecki, O.M. et al. (2014). Differential pattern of functional brain plasticity after compassion and empathy training. *Social Cognitive and Affective Neuroscience*, 9(6), 873–879.
+- Schwartz, R.C. (1995). *Internal Family Systems Model*. Guilford Press.
+- Eisenberg, N. (2000). Empathy and sympathy. In *Handbook of Emotions* (2nd ed., pp. 677–691). Guilford.
+
+---
+
+### Strategic Thinking (StrategicThinking module)
+
+**Deliberate practice** — effortful, conscious engagement with challenge above current automaticity — is the key mechanism behind expertise development (Ericsson, 1993). In the context of action games, training toward mindful decision-making (using planning tools before acting) has been shown to transfer to real-world executive function (Green & Bavelier, 2012; Diamond & Ling, 2016).
+
+**GLITCH·PEACE's StrategicThinking system:**
+- Classifies each player move as **mindful** (consequence preview active OR impulse buffer used) or **impulsive** (neither)
+- Tracks matrix discipline: damage taken in Matrix A vs. Matrix B — lower A-damage ratio indicates better matrix situational awareness
+- Tracks tool usage: freeze/stun activations, impulse buffer cancellations (choosing not to act)
+- Produces a strategic score (0–100) with an adaptive coaching tip calibrated to the player's current strategic level
+- Informs the IQ proxy score via the `logicPuzzles.onMatrixSwitch()` coupling
+
+**Research basis:**
+- Ericsson, K.A. et al. (1993). The role of deliberate practice. *Psychological Review*, 100(3), 363–406.
+- Green, C.S. & Bavelier, D. (2012). Learning, attentional control, and action video games. *Current Biology*, 22(6), R197–R206.
+- Diamond, A. & Ling, D.S. (2016). Conclusions about interventions, programs, and approaches for improving executive functions. *Developmental Cognitive Neuroscience*, 18, 34–48.
+
+---
+
+### Achievement System Design (Non-Exploitative Milestones)
+
+**Self-determination theory** (Deci & Ryan, 1985) identifies three core psychological needs: **competence**, **autonomy**, and **relatedness**. Game achievements that align with these needs (mastery milestones, player-chosen paths, connection to larger meaning) support intrinsic motivation and psychological wellbeing. Achievements that exploit variable-ratio schedules (loot boxes, grind requirements) undermine intrinsic motivation over time (Rigby & Ryan, 2011).
+
+**GLITCH·PEACE's 15 achievements:**
+- All milestone-based, not time-pressure or pay-to-unlock
+- No FOMO mechanics: achievements can be earned at any pace across any session
+- Achievements correspond to genuine consciousness milestones: first peace tile, lucidity 50%+, first archetype activation, 5 language challenges, encountering 5 enemy behaviors
+- Badge overlay renders with a compassionate, non-competitive framing (no rank, no leaderboard requirement)
+- **Bandura (1997)** — mastery experiences are the #1 source of self-efficacy; the achievement system provides exactly that
+
+**Research basis:**
+- Deci, E.L. & Ryan, R.M. (1985). *Intrinsic Motivation and Self-Determination in Human Behavior*. Plenum.
+- Rigby, C.S. & Ryan, R.M. (2011). *Glued to Games*. ABC-CLIO.
+- Bandura, A. (1997). *Self-Efficacy: The Exercise of Control*. W.H. Freeman.
+
+---
+
+**Document Version**: 1.2  
+**Last Updated**: February 19, 2026  
+**Next Review**: March 1, 2026  
+**Maintainers**: Development Team
+
+**Status**: Research foundation complete and documented ✅  
+**New in v1.2**: Section 19 — Phase 9 Intelligence Enhancement (Logic Puzzles, Emotion Recognition, Empathy Training, Strategic Thinking, Achievement Design)

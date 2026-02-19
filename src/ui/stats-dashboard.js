@@ -166,6 +166,43 @@ export function renderStatsDashboard(gameState, ctx, w, h) {
   ctx.font        = '10px Courier New';
   ctx.fillText(`${modeName}  ·  ${playMode}  ·  ${dreamsc}${archetype}`, bx + 16, modeY + 20);
 
+  // ── Intelligence scores (Phase 9) ──────────────────────────────────
+  const iqY = modeY + 42;
+  _hline(ctx, bx + 12, bx + BOX_W - 12, iqY - 8);
+  _sectionLabel(ctx, 'INTELLIGENCE SCORES  (Phase 9)', bx + 16, iqY + 4);
+
+  // Lazy-import to avoid circular dependencies at module init time
+  let iq = 50, eq = 50, empathy = 0, strategy = 0;
+  try {
+    // These modules are singletons — just read their scores if available via window
+    const lp = window.__glitchPeaceIntelligence;
+    if (lp) { iq = lp.iq; eq = lp.eq; empathy = lp.empathy; strategy = lp.strategy; }
+  } catch (_) {}
+
+  const SCORE_COLS = [
+    { label: 'IQ Proxy',  value: iq,       color: '#00ccff' },
+    { label: 'EQ',        value: eq,       color: '#ffdd44' },
+    { label: 'Empathy',   value: empathy,  color: '#ffaacc' },
+    { label: 'Strategy',  value: strategy, color: '#88ffaa' },
+  ];
+  const colW = Math.floor(BOX_W / 4);
+  SCORE_COLS.forEach(({ label, value, color }, i) => {
+    const sx = bx + 16 + i * colW;
+    const sy = iqY + 18;
+    _label(ctx, label, sx, sy - 4);
+    // Score bar (mini)
+    const barW = colW - 24;
+    ctx.fillStyle = '#0e1a2a';
+    ctx.fillRect(sx, sy, barW, 6);
+    ctx.fillStyle = color;
+    ctx.fillRect(sx, sy, Math.round(barW * Math.min(1, value / 100)), 6);
+    // Numeric value
+    ctx.fillStyle = color;
+    ctx.font      = 'bold 11px Courier New';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${Math.round(value)}`, sx, sy + 18);
+  });
+
   ctx.restore();
 }
 

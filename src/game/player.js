@@ -109,7 +109,8 @@ export function movePlayer(gameState, dx, dy) {
 
   // Damage tiles (despair, terror, rage, trap, pain, harm)
   if (def && def.d > 0) {
-    const dmg = Math.max(1, def.d);
+    const hazardMod = gameState.hazardMul !== undefined ? gameState.hazardMul : 1.0;
+    const dmg = Math.max(1, Math.round(def.d * hazardMod));
     gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
     if (gameState.emotionalField?.add) {
       gameState.emotionalField.add('fear', 0.6);
@@ -117,13 +118,6 @@ export function movePlayer(gameState, dx, dy) {
       if (stepped === T.RAGE) gameState.emotionalField.add('anger', 1.2);
     }
     createParticles(gameState, newX, newY, 'damage', 12);
-            // Combo system: increment combo on successful peace collection
-            gameState.combo = (gameState.combo || 0) + 1;
-            gameState.comboTimer = Date.now();
-            // Optional: grant bonus for high combos
-            if (gameState.combo > 1) {
-              gameState.score += gameState.combo * 10;
-            }
     try { window.AudioManager?.play('damage'); } catch (e) {}
     return true;
   }
@@ -142,12 +136,6 @@ export function movePlayer(gameState, dx, dy) {
         break;
       }
     }
-                // Combo system: increment combo on power-up collection
-                gameState.combo = (gameState.combo || 0) + 1;
-                gameState.comboTimer = Date.now();
-                if (gameState.combo > 1) {
-                  gameState.score += gameState.combo * 10;
-                }
     return true;
   }
 

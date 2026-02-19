@@ -138,6 +138,8 @@ export class GridGameMode extends GameMode {
     // Update enemies (use gameState directly — enemy.js updateEnemies(gameState))
     if (gameState.enemies && gameState.enemies.length > 0) {
       updateEnemies(gameState);
+      // Enemy-player collision: deal damage when an enemy occupies the player's tile
+      this._checkEnemyCollisions(gameState);
     }
 
     // Update particles (particles.js updateParticles(gameState))
@@ -155,9 +157,35 @@ export class GridGameMode extends GameMode {
       this.onGameOver(gameState);
     }
 
-    // PUZZLE mode: lose if moves exhausted
-    if (gameState.movesRemaining !== undefined && gameState.movesRemaining <= 0) {
+    // PUZZLE mode: lose if moves exhausted and peace not all collected
+    if (gameState.movesRemaining !== undefined && gameState.movesRemaining <= 0
+        && gameState.peaceCollected < gameState.peaceTotal) {
       this.onGameOver(gameState);
+    }
+  }
+
+  /**
+   * Check if any enemy occupies the player's tile and deal damage.
+   * Enemy is pushed back on contact.
+   */
+  _checkEnemyCollisions(gameState) {
+    if (!gameState.player || !gameState.enemies) return;
+    const px = gameState.player.x;
+    const py = gameState.player.y;
+    const now = Date.now();
+    if (!this._lastEnemyDamageMs) this._lastEnemyDamageMs = 0;
+    if (now - this._lastEnemyDamageMs < 600) return; // max 1 hit per 600ms
+
+    for (const enemy of gameState.enemies) {
+      if (enemy.x === px && enemy.y === py) {
+        const dmg = 10;
+        gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
+        this._lastEnemyDamageMs = now;
+        if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', 0.5);
+        createParticles(gameState, px, py, 'damage', 8);
+        try { window.AudioManager?.play('damage'); } catch (e) {}
+        break;
+      }
     }
   }
 
@@ -362,6 +390,13 @@ export class GridGameMode extends GameMode {
     
     // Throttle movement
     if (now - this.lastMoveTime < this.moveDelay) {
+      return;
+    }
+
+    // Stun check (trap tiles set stunTurns)
+    if (gameState.player?.stunTurns > 0) {
+      gameState.player.stunTurns--;
+      this.lastMoveTime = now; // consumes a "turn"
       return;
     }
 

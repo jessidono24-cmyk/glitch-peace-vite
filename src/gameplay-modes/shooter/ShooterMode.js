@@ -130,6 +130,13 @@ export default class ShooterMode extends GameMode {
       score: this.score,
       combo: this.comboMultiplier
     };
+
+    // Transition to GAME_OVER when player dies (only once)
+    if (this.player.health <= 0 && gameState.state !== 'GAME_OVER') {
+      gameState.state = 'GAME_OVER';
+      gameState.score = this.score;
+      gameState.level = this.waveNumber;
+    }
   }
   
   /**
@@ -231,6 +238,9 @@ export default class ShooterMode extends GameMode {
         lifetime: 2
       });
     }
+    
+    // Shoot sound (every other shot to avoid spam)
+    try { window.AudioManager?.play('select'); } catch (e) {}
   }
   
   /**

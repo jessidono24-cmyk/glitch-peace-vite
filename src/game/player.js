@@ -94,7 +94,9 @@ export function movePlayer(gameState, dx, dy) {
 
   // Insight
   if (stepped === T.INSIGHT) {
-    const mul = gameState.synergyMultiplier || 1.0;
+    const mul = (gameState.synergyMultiplier || 1.0)
+              * (gameState.scoreMul || 1.0)
+              * (gameState.currentTemporalMods?.insightMul || 1.0);
     gameState.score = (gameState.score || 0) + Math.round(300 * mul);
     gameState.grid[newY][newX] = T.VOID;
     if (gameState.emotionalField?.add) gameState.emotionalField.add('curiosity', 2.0);

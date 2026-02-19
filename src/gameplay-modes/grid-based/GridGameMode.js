@@ -100,14 +100,20 @@ export class GridGameMode extends GameMode {
   }
 
   /**
-   * Get enemy count based on level and play mode
+   * Get enemy count based on level, play mode, and temporal modifiers
    */
   getEnemyCount(gameState) {
-    // Get from play mode mechanics if specified
+    // ZEN/PUZZLE: no enemies
     if (gameState.mechanics?.enemyBehavior === 'none') return 0;
     
-    // Default: scale with level
-    return Math.floor(2 + gameState.level * 0.5);
+    // Base count scaled by level and difficulty
+    const diff = gameState.settings?.difficulty || 'normal';
+    const diffEnemyMap = { easy: 0, normal: 1, hard: 2, nightmare: 4 };
+    const base = (diffEnemyMap[diff] ?? 1) + Math.floor(gameState.level * 0.5);
+
+    // Apply temporal enemy multiplier (lunar phase)
+    const temporalMod = gameState.currentTemporalMods?.enemyMul ?? 1.0;
+    return Math.max(0, Math.round(base * temporalMod));
   }
 
   /**

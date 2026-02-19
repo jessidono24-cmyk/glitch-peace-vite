@@ -16,6 +16,12 @@ import { undoGameMove } from '../../systems/undo.js';
 import { updateCombo } from '../../game/player.js';
 import { getCosmoModifiers } from '../../systems/cosmologies.js';
 import {
+  triggerLearningChallenge,
+  handleChallengeInput,
+  updateLearningChallenge,
+  renderLearningChallenge,
+} from '../../systems/learning-modules.js';
+import {
   checkImpulseBuffer,
   cancelImpulseBuffer,
   recordEchoPosition,
@@ -260,6 +266,15 @@ export class GridGameMode extends GameMode {
     checkThresholdMonitor(gameState);
     checkRealityCheck(gameState);
 
+    // Update active learning challenge (timeout check)
+    updateLearningChallenge(gameState, deltaTime);
+
+    // Handle INSIGHT tile → learning challenge trigger signal
+    if (gameState._triggerLearningChallenge) {
+      delete gameState._triggerLearningChallenge;
+      triggerLearningChallenge(gameState);
+    }
+
     // Route alternatives + consequence preview (refreshed each frame)
     gameState._routeAlternatives = getRouteAlternatives(gameState);
     // Consequence preview uses last-stored direction (updated in handleInput)
@@ -272,7 +287,8 @@ export class GridGameMode extends GameMode {
     }
 
     // Apply SPEED powerup or SPEEDRUN mode boost to movement delay
-    // Also apply RITUAL slowMotion modifier
+    // Also apply RITUAL slowMotion modifier:
+    //   slowMotion: 0.7 means 70% of max speed → divide by 0.7 → more delay (slower).
     const slowMul = gameState.mechanics?.slowMotion || 1.0;
     const speedBoost = hasPowerup(gameState, 'movement_boost') ? 2.0 : (gameState.moveSpeedBoost || 1.0);
     this.moveDelay = Math.max(50, Math.round(150 / speedBoost / slowMul));
@@ -630,6 +646,9 @@ export class GridGameMode extends GameMode {
       }
     }
 
+    // Learning challenge overlay (rendered last — on top of everything)
+    renderLearningChallenge(gameState, ctx);
+
     // Breathing pause prompt (RITUAL mode, shown between levels)
     if (gameState._breathingPrompt) {
       const { text, subtext, shownAtMs, durationMs, color } = gameState._breathingPrompt;
@@ -695,6 +714,18 @@ export class GridGameMode extends GameMode {
    */
   handleInput(gameState, input) {
     const now = Date.now();
+
+    // Learning challenge: consume all input while active
+    if (gameState._learningChallenge) {
+      const pressedKeys = ['1','2','3','4','Enter',' ','ArrowUp','ArrowDown','w','W','s','S'];
+      for (const k of pressedKeys) {
+        if (input.isKeyPressed(k)) {
+          handleChallengeInput(gameState, k);
+          break;
+        }
+      }
+      return; // block movement while challenge is active
+    }
     
     // Throttle movement
     if (now - this.lastMoveTime < this.moveDelay) {

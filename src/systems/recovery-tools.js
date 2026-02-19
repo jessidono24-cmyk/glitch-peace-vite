@@ -185,7 +185,7 @@ export function checkThresholdMonitor(gameState) {
 //  Gentle wellness reminders and fatigue system.
 
 const SESSION_MILESTONES = [
-  { minutes: 20, message: 'You\'ve played 20 minutes · Take a breath 🌬', color: '#88ddff', severity: 'gentle' },
+  { minutes: 20, message: "You've played 20 minutes · Take a breath 🌬", color: '#88ddff', severity: 'gentle' },
   { minutes: 45, message: '45 minutes played · Rest your eyes for a moment 👁', color: '#ffcc88', severity: 'moderate' },
   { minutes: 90, message: '90 minutes · Consider a real break 🌿', color: '#ff8888', severity: 'strong' },
 ];

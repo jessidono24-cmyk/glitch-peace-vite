@@ -17,6 +17,8 @@ import { T, TILE_DEF, PLAYER } from '../core/constants.js';
 import { createParticles } from './particles.js';
 import { createPowerup, applyPowerup } from '../systems/powerups.js';
 
+const MEMORY_SCORE_BONUS = 200; // pts awarded for stepping on a T.MEM tile
+
 export function createPlayer() {
   return {
     x: 0,
@@ -72,6 +74,7 @@ export function movePlayer(gameState, dx, dy) {
     const healAmt = 10;
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
     // Build combo on peace collection: multiplier grows with streak (up to 4×)
+    // Formula: 1 + min(3, (combo-1) × 0.2) → reaches 4× at combo×16
     gameState.combo = (gameState.combo || 0) + 1;
     gameState.comboTimer = Date.now();
     const comboMul = 1 + Math.min(3, (gameState.combo - 1) * 0.2);
@@ -109,7 +112,7 @@ export function movePlayer(gameState, dx, dy) {
     }
   }
 
-  // Insight
+  // Insight: bonus score + trigger learning challenge (Phase 3)
   if (stepped === T.INSIGHT) {
     const mul = (gameState.synergyMultiplier || 1.0)
               * (gameState.scoreMul || 1.0)
@@ -119,6 +122,8 @@ export function movePlayer(gameState, dx, dy) {
     if (gameState.emotionalField?.add) gameState.emotionalField.add('curiosity', 2.0);
     createParticles(gameState, newX, newY, '#00eeff', 16);
     try { window.AudioManager?.play('select'); } catch (e) {}
+    // Signal the mode to trigger a learning challenge (handled by GridGameMode)
+    if (Math.random() < 0.6) gameState._triggerLearningChallenge = true;
     return true;
   }
 
@@ -250,8 +255,8 @@ export function movePlayer(gameState, dx, dy) {
         }
       }
     }
-    // Award memory score bonus (200 pts) immediately
-    gameState.score = (gameState.score || 0) + 200;
+    // Award memory score bonus immediately
+    gameState.score = (gameState.score || 0) + MEMORY_SCORE_BONUS;
     gameState.memoryFlash = { x: newX, y: newY, radius, expiresMs: Date.now() + 800 };
     createParticles(gameState, newX, newY, '#66ccff', 14);
     try { window.AudioManager?.play('peace'); } catch (e) {}

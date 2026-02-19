@@ -373,17 +373,17 @@ export class MenuSystem {
         },
       },
       {
-        label: 'IMPULSE BUFFER',
+        label: 'HAZARD DELAY',
         value: cfg.impulseBuffer ? 'ON' : 'OFF',
         toggle: () => (cfg.impulseBuffer = !cfg.impulseBuffer),
       },
       {
-        label: 'PATTERN TRAIL',
+        label: 'PATTERN ECHO',
         value: cfg.patternEcho ? 'ON' : 'OFF',
         toggle: () => (cfg.patternEcho = !cfg.patternEcho),
       },
       {
-        label: 'AHEAD PREVIEW',
+        label: 'PATH PREVIEW',
         value: cfg.consequencePreview ? 'ON' : 'OFF',
         toggle: () => (cfg.consequencePreview = !cfg.consequencePreview),
       },

@@ -377,6 +377,25 @@ export class GridGameMode extends GameMode {
       });
     }
 
+    // World distortion overlay (emotional engine effect)
+    const distortion = gameState.worldDistortion || 0;
+    if (distortion > 0.1) {
+      const alpha = Math.min(0.35, distortion * 0.45);
+      ctx.fillStyle = distortion > 0.7 ? `rgba(180,0,40,${alpha})` : `rgba(80,0,160,${alpha})`;
+      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      // Vignette effect at extreme distortion
+      if (distortion > 0.6) {
+        const grad = ctx.createRadialGradient(
+          ctx.canvas.width / 2, ctx.canvas.height / 2, 0,
+          ctx.canvas.width / 2, ctx.canvas.height / 2, ctx.canvas.width * 0.7
+        );
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, `rgba(0,0,0,${Math.min(0.6, (distortion - 0.6) * 1.5)})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      }
+    }
+
     // Level-complete overlay flash
     if (this._levelFlashMs > 0) {
       const completed = this._completedLevel || (gameState.level - 1);

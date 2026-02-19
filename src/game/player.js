@@ -105,7 +105,8 @@ export function movePlayer(gameState, dx, dy) {
 
   // Damage tiles (despair, terror, rage, trap, pain, harm)
   if (def && def.d > 0) {
-    const hazardMod = gameState.hazardMul !== undefined ? gameState.hazardMul : 1.0;
+    const hazardMod = (gameState.hazardMul !== undefined ? gameState.hazardMul : 1.0)
+                    * (gameState.emotionHazardMod || 1.0);
     const dmg = Math.max(1, Math.round(def.d * hazardMod));
     gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
     if (gameState.emotionalField?.add) {

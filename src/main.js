@@ -501,11 +501,26 @@ function updateConsciousnessEngine(deltaMs) {
   
   // Check and update synergies
   const synergy = game.emotionalField.updateSynergy(deltaMs);
-  if (synergy && game.emotionDecayRate > 0) {
-    console.log(`🌟 ${synergy.message}`);
-    // TODO: Apply synergy effect to gameplay (Phase 2B)
+  if (synergy) {
+    // Apply synergy effects to gameplay
+    if (synergy.effect.scoreMultiplier) {
+      game.synergyMultiplier = synergy.effect.scoreMultiplier;
+      game._synergyMulTimer = 3000;
+    }
+    if (synergy.effect.shieldBonus && game.player) {
+      game.player.hp = Math.min(game.player.maxHp, (game.player.hp || 0) + synergy.effect.shieldBonus);
+    }
   }
-  
+
+  // Decay synergy multiplier after duration expires
+  if (game._synergyMulTimer > 0) {
+    game._synergyMulTimer -= deltaMs;
+    if (game._synergyMulTimer <= 0) {
+      game.synergyMultiplier = 1.0;
+      game._synergyMulTimer = 0;
+    }
+  }
+
   // Get current emotional and temporal modifiers
   const emotionalMods = getEmotionalModifiers(game.emotionalField);
   const temporalMods = game.temporalSystem.getModifiers();
@@ -513,6 +528,15 @@ function updateConsciousnessEngine(deltaMs) {
   // Apply modifiers to game globals (will affect all systems)
   game.currentEmotionalMods = emotionalMods;
   game.currentTemporalMods = temporalMods;
+  
+  // Apply emotional move speed modifier — combines with play-mode speed boost
+  if (emotionalMods.moveSpeedMod && currentMode?.moveDelay !== undefined) {
+    // Lower = faster; emotional distortion slows movement by up to 20%
+    game.emotionMoveSpeedMod = emotionalMods.moveSpeedMod;
+  }
+
+  // Apply emotional hazard damage modifier to game state
+  game.emotionHazardMod = emotionalMods.hazardDamageMod || 1.0;
   
   // Visual feedback: world gets darker/more distorted with high distortion
   const distortion = game.emotionalField.calcDistortion();

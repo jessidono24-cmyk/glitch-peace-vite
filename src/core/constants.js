@@ -68,6 +68,31 @@ export const GRID_SIZES = {
 
 // Difficulty Configurations
 export const DIFF_CFG = {
+  sprout: {
+    // Age 5+: No enemies, no hazard damage, lots of peace nodes — fully safe, joyful discovery
+    name: 'Sprout ✿',
+    eSpeedBase: 9999,
+    eSpeedMin: 9999,
+    dmgMul: 0.0,
+    hazMul: 0.0,
+    enemyCount: 0,
+    hazardMul: 0.0,
+    peaceMul: 2.5,
+    autoCollect: true,   // collect peace node when adjacent
+    showHints: true,     // always show route alternatives
+  },
+  seedling: {
+    // Age 8-12: 1 very slow enemy, halved damage, extra peace
+    name: 'Seedling ◇',
+    eSpeedBase: 1800,
+    eSpeedMin: 900,
+    dmgMul: 0.3,
+    hazMul: 0.3,
+    enemyCount: 1,
+    hazardMul: 0.3,
+    peaceMul: 1.8,
+    showHints: true,
+  },
   easy: {
     name: 'Stillness',
     eSpeedBase: 1000,

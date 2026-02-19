@@ -4,6 +4,8 @@
 //  Tiles present quick challenges; correct responses award extra points.
 // ═══════════════════════════════════════════════════════════════════════
 
+import { getLangChallenge } from './languages.js';
+
 // ─── VOCABULARY CHALLENGES ──────────────────────────────────────────────
 //  Pairs: { prompt, answer, hint } — player presses 1/2/3/4 to choose
 
@@ -46,12 +48,20 @@ const MEMORY_SEQUENCES = [
  * Get a random challenge appropriate for a given tile/context.
  * type: 'vocab' | 'math' | 'memory' | 'auto'
  */
-export function getChallenge(type = 'auto') {
+export function getChallenge(type = 'auto', targetLangId = null) {
   if (type === 'auto') {
     const r = Math.random();
-    if (r < 0.4) type = 'vocab';
-    else if (r < 0.75) type = 'math';
+    // If a target language is set, 40% chance of language challenge
+    if (targetLangId && r < 0.40) type = 'language';
+    else if (r < 0.55) type = 'vocab';
+    else if (r < 0.80) type = 'math';
     else type = 'memory';
+  }
+
+  if (type === 'language') {
+    const ch = getLangChallenge(targetLangId || 'en');
+    if (ch) return ch;
+    type = 'vocab'; // fallback if lang challenge fails
   }
 
   let pool;
@@ -69,7 +79,8 @@ export function getChallenge(type = 'auto') {
  */
 export function triggerLearningChallenge(gameState, type = 'auto') {
   if (gameState._learningChallenge) return; // already active
-  const challenge = getChallenge(type);
+  const targetLang = gameState.settings?.targetLanguage || null;
+  const challenge = getChallenge(type, targetLang);
   gameState._learningChallenge = {
     ...challenge,
     selected: 0,
@@ -172,7 +183,10 @@ export function renderLearningChallenge(gameState, ctx) {
   ctx.globalAlpha = 1.0;
 
   // Title row
-  const typeLabel = ch.type === 'vocab' ? 'VOCABULARY' : ch.type === 'math' ? 'PATTERN' : 'MEMORY';
+  const typeLabel = ch.type === 'vocab' ? 'VOCABULARY'
+    : ch.type === 'math' ? 'PATTERN'
+    : ch.type === 'language' ? `LANGUAGE · ${(ch.langName || '').toUpperCase()}`
+    : 'MEMORY';
   ctx.fillStyle = '#667799';
   ctx.font = '8px Courier New';
   ctx.textAlign = 'left';

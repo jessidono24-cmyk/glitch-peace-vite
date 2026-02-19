@@ -8,7 +8,7 @@ import { generateGrid } from './grid-logic.js';
 import { createPlayer, movePlayer, takeDamage, heal } from './grid-player.js';
 import { createEnemy, updateEnemies } from './grid-enemy.js';
 import { createParticles, updateParticles } from './grid-particles.js';
-import { T, TILE_DEF, PLAYER } from '../../core/constants.js';
+import { T, TILE_DEF, PLAYER, DIFF_CFG } from '../../core/constants.js';
 import { applyMode } from '../../systems/play-modes.js';
 import { getDreamscapeTheme, applyDreamscapeBias } from '../../systems/dreamscapes.js';
 import { updatePowerups, hasPowerup } from '../../systems/powerups.js';
@@ -111,6 +111,14 @@ export class GridGameMode extends GameMode {
     if (s.consequencePreview !== undefined)  gameState.mechanics.consequencePreview  = s.consequencePreview;
     // Session reminders: controlled by settings.sessionReminders (default ON)
     if (s.sessionReminders === false)        gameState._sessionRemindersDisabled = true;
+
+    // Apply difficulty-level flags (SPROUT / SEEDLING add autoCollect + showHints)
+    const diffCfg = DIFF_CFG[s.difficulty || 'normal'] || {};
+    if (diffCfg.autoCollect) gameState.mechanics.autoCollect = true;
+    if (diffCfg.showHints)   gameState.mechanics.routeAlternatives = true;
+    // Propagate hazard/damage multipliers from difficulty into gameState
+    if (diffCfg.hazardMul !== undefined) gameState.hazardMul = diffCfg.hazardMul;
+    if (diffCfg.peaceMul  !== undefined) gameState.peaceMul  = diffCfg.peaceMul;
 
     // Apply cosmology modifiers (if a cosmology was selected in the menu)
     if (gameState.currentCosmology) {
@@ -265,6 +273,24 @@ export class GridGameMode extends GameMode {
         gameState.player.maxHp || 100,
         (gameState.player.hp || 0) + gameState.mechanics.autoHeal * (deltaTime / 1000)
       );
+    }
+
+    // SPROUT: auto-collect any peace node within 1 step of player (adjacent)
+    if (gameState.mechanics?.autoCollect && gameState.player && gameState.grid) {
+      const px = gameState.player.x;
+      const py = gameState.player.y;
+      for (const node of (gameState.peaceNodes || [])) {
+        if (!node.collected && Math.abs(node.x - px) <= 1 && Math.abs(node.y - py) <= 1) {
+          node.collected = true;
+          gameState.peaceCollected = Math.min(
+            (gameState.peaceTotal || 0),
+            (gameState.peaceCollected || 0) + 1
+          );
+          gameState.score = (gameState.score || 0) + Math.round(100 * (gameState.scoreMul || 1.0));
+          if (gameState.emotionalField?.add) gameState.emotionalField.add('joy', 0.6);
+          try { window.AudioManager?.play('peace'); } catch (e) {}
+        }
+      }
     }
 
     // Wu Wei / Taoist flowBonus: score trickles while player stands still

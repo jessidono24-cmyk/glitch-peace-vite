@@ -160,6 +160,21 @@ function initUI() {
 
   // Check for existing save
   menuSystem.setSaveState({ hasSave: hasSaveData(), meta: null });
+
+  // Load previously saved language preferences into settings
+  try {
+    const savedNative = localStorage.getItem('glitchpeace.nativeLang');
+    const savedTarget = localStorage.getItem('glitchpeace.targetLang');
+    const savedDiff   = localStorage.getItem('glitchpeace.difficulty');
+    if (savedNative) game.settings.nativeLanguage = savedNative;
+    if (savedTarget) game.settings.targetLanguage = savedTarget || null;
+    if (savedDiff && !hasSaveData()) game.settings.difficulty = savedDiff;
+  } catch (e) {}
+
+  // Show first-run onboarding if this is the player's first visit
+  if (MenuSystem.isFirstRun()) {
+    menuSystem.open('onboarding');
+  }
   
   console.log('[Phase 1] Modular architecture initialized');
   console.log('[ModeRegistry] Available modes:', modeRegistry.getAllModes());

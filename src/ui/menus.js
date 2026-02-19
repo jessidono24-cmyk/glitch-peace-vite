@@ -8,6 +8,7 @@ import { TUTORIAL_PAGES } from './tutorial-content.js';
 import { listDreamscapes } from '../systems/dreamscapes.js';
 import { getAvailableModes } from '../systems/play-modes.js';
 import { getAvailableCosmologies } from '../systems/cosmologies.js';
+import { LANGUAGES, getLanguageProgression, getLearnableLanguages } from '../systems/languages.js';
 
 function listFromObjKeys(obj) { return Object.keys(obj); }
 function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
@@ -22,7 +23,7 @@ export class MenuSystem {
     this.onRestart = onRestart;
     this.onSelectDreamscape = onSelectDreamscape;
 
-    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology'
+    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology' | 'onboarding'
     this.sel = 0;
     this.tutPage = 0;
     this.dreamscapeSel = 0;
@@ -30,6 +31,13 @@ export class MenuSystem {
     this.cosmologySel = 0;
     this._pendingDreamscape = null; // dreamscape id chosen before play mode
     this._pendingPlaymode = null;   // play mode id chosen before cosmology
+
+    // Onboarding state
+    this._onboardingStep = 0;      // 0=welcome 1=age 2=nativeLang 3=targetLang
+    this._onboardingAge = 1;       // index into AGE_GROUPS
+    this._nativeLangSel = 0;       // index into LANGUAGES
+    this._targetLangSel = 0;       // index into learnable languages
+    this._learnableLangs = [];     // filled when native is chosen
 
     this.hasSave = false;
     this.saveMeta = null;
@@ -53,6 +61,7 @@ export class MenuSystem {
     if (screen === 'dreamscape') this.dreamscapeSel = 0;
     if (screen === 'playmode') this.playmodeSel = 0;
     if (screen === 'cosmology') this.cosmologySel = 0;
+    if (screen === 'onboarding') { this._onboardingStep = 0; this._onboardingAge = 1; this._nativeLangSel = 0; this._targetLangSel = 0; }
     console.log(`[DEBUG] MenuSystem.open('${screen}') called`);
     // Note: Canvas-based rendering happens in draw() method, not _render()
   }
@@ -108,6 +117,10 @@ export class MenuSystem {
     if (this.screen === 'credits') {
       if (k === 'Enter' || k === ' ') this.open('title');
       return { consumed: true };
+    }
+
+    if (this.screen === 'onboarding') {
+      return this._handleOnboarding(k);
     }
 
     return { consumed: false };
@@ -272,6 +285,102 @@ export class MenuSystem {
     return { consumed: false };
   }
 
+  // ─── AGE GROUP DEFINITIONS ──────────────────────────────────────────
+  static get AGE_GROUPS() {
+    return [
+      { label: 'Little Explorer  (age 5–7)',  difficulty: 'sprout',   emoji: '🌱' },
+      { label: 'Young Adventurer (age 8–12)', difficulty: 'seedling', emoji: '🌿' },
+      { label: 'Teen Explorer    (age 13–17)', difficulty: 'easy',     emoji: '✦' },
+      { label: 'Adult            (age 18+)',   difficulty: 'normal',   emoji: '◆' },
+    ];
+  }
+
+  /**
+   * Handle the first-run onboarding flow.
+   * Steps: 0=welcome, 1=age group, 2=native language, 3=target language
+   */
+  _handleOnboarding(k) {
+    const up    = k === 'ArrowUp'   || k === 'w' || k === 'W';
+    const down  = k === 'ArrowDown' || k === 's' || k === 'S';
+    const ok    = k === 'Enter'     || k === ' ';
+    const skip  = k === 'Escape'    || k === 'Backspace';
+
+    const ageGroups = MenuSystem.AGE_GROUPS;
+
+    if (skip) {
+      // Skip remaining onboarding and go straight to title
+      this._finaliseOnboarding();
+      return { consumed: true };
+    }
+
+    if (this._onboardingStep === 0) {
+      // Welcome — any key advances
+      if (ok || down) { this._onboardingStep = 1; return { consumed: true }; }
+      return { consumed: true };
+    }
+
+    if (this._onboardingStep === 1) {
+      // Age group
+      if (up)   this._onboardingAge = (this._onboardingAge - 1 + ageGroups.length) % ageGroups.length;
+      if (down) this._onboardingAge = (this._onboardingAge + 1) % ageGroups.length;
+      if (ok) {
+        // Apply difficulty from age group
+        const chosen = ageGroups[this._onboardingAge];
+        this.CFG.difficulty = chosen.difficulty;
+        this._onboardingStep = 2;
+      }
+      return { consumed: true };
+    }
+
+    if (this._onboardingStep === 2) {
+      // Native language
+      if (up)   this._nativeLangSel = (this._nativeLangSel - 1 + LANGUAGES.length) % LANGUAGES.length;
+      if (down) this._nativeLangSel = (this._nativeLangSel + 1) % LANGUAGES.length;
+      if (ok) {
+        const native = LANGUAGES[this._nativeLangSel];
+        this.CFG.nativeLanguage = native.id;
+        // Pre-compute recommended learning order, filter to our 14
+        this._learnableLangs = getLanguageProgression(native.id)
+          .map(id => LANGUAGES.find(l => l.id === id))
+          .filter(Boolean);
+        this._targetLangSel = 0;
+        this._onboardingStep = 3;
+      }
+      return { consumed: true };
+    }
+
+    if (this._onboardingStep === 3) {
+      // Target language
+      const langs = this._learnableLangs;
+      if (up)   this._targetLangSel = (this._targetLangSel - 1 + langs.length) % langs.length;
+      if (down) this._targetLangSel = (this._targetLangSel + 1) % langs.length;
+      if (ok) {
+        const target = langs[this._targetLangSel];
+        this.CFG.targetLanguage = target.id;
+        this._finaliseOnboarding();
+      }
+      return { consumed: true };
+    }
+
+    return { consumed: true };
+  }
+
+  /** Save onboarding selections to localStorage and navigate to title */
+  _finaliseOnboarding() {
+    try {
+      localStorage.setItem('glitchpeace.firstRun', 'done');
+      if (this.CFG.nativeLanguage) localStorage.setItem('glitchpeace.nativeLang', this.CFG.nativeLanguage);
+      if (this.CFG.targetLanguage) localStorage.setItem('glitchpeace.targetLang', this.CFG.targetLanguage);
+      if (this.CFG.difficulty) localStorage.setItem('glitchpeace.difficulty', this.CFG.difficulty);
+    } catch (e) {}
+    this.open('title');
+  }
+
+  /** Returns true if first-run onboarding has never been completed */
+  static isFirstRun() {
+    try { return !localStorage.getItem('glitchpeace.firstRun'); } catch (e) { return false; }
+  }
+
   getItems() {
     const isPause = this.screen === 'pause';
 
@@ -307,6 +416,9 @@ export class MenuSystem {
       const ni = (idx + dir + arr.length) % arr.length;
       return arr[ni];
     };
+
+    // Cache language map for O(1) lookups inside option row value getters
+    const langMap = new Map(LANGUAGES.map(l => [l.id, l]));
 
     return [
       {
@@ -392,6 +504,39 @@ export class MenuSystem {
         value: cfg.sessionReminders !== false ? 'ON' : 'OFF',
         toggle: () => (cfg.sessionReminders = cfg.sessionReminders === false ? true : false),
       },
+      // ── LANGUAGE SETTINGS ────────────────────────────────────────
+      {
+        label: 'NATIVE LANGUAGE',
+        value: (langMap.get(cfg.nativeLanguage) || { name: 'English' }).name,
+        left: () => {
+          const idx = Math.max(0, LANGUAGES.findIndex(l => l.id === (cfg.nativeLanguage || 'en')));
+          cfg.nativeLanguage = LANGUAGES[(idx - 1 + LANGUAGES.length) % LANGUAGES.length].id;
+          try { localStorage.setItem('glitchpeace.nativeLang', cfg.nativeLanguage); } catch (e) {}
+        },
+        right: () => {
+          const idx = Math.max(0, LANGUAGES.findIndex(l => l.id === (cfg.nativeLanguage || 'en')));
+          cfg.nativeLanguage = LANGUAGES[(idx + 1) % LANGUAGES.length].id;
+          try { localStorage.setItem('glitchpeace.nativeLang', cfg.nativeLanguage); } catch (e) {}
+        },
+      },
+      {
+        label: 'LEARNING LANGUAGE',
+        value: (langMap.get(cfg.targetLanguage) || { name: 'NONE' }).name,
+        left: () => {
+          const learnable = getLearnableLanguages(cfg.nativeLanguage || 'en');
+          const languageOptions = [{ id: null, name: 'NONE' }, ...learnable];
+          const idx = Math.max(0, languageOptions.findIndex(l => l.id === (cfg.targetLanguage || null)));
+          cfg.targetLanguage = languageOptions[(idx - 1 + languageOptions.length) % languageOptions.length].id;
+          try { localStorage.setItem('glitchpeace.targetLang', cfg.targetLanguage || ''); } catch (e) {}
+        },
+        right: () => {
+          const learnable = getLearnableLanguages(cfg.nativeLanguage || 'en');
+          const languageOptions = [{ id: null, name: 'NONE' }, ...learnable];
+          const idx = Math.max(0, languageOptions.findIndex(l => l.id === (cfg.targetLanguage || null)));
+          cfg.targetLanguage = languageOptions[(idx + 1) % languageOptions.length].id;
+          try { localStorage.setItem('glitchpeace.targetLang', cfg.targetLanguage || ''); } catch (e) {}
+        },
+      },
       {
         label: 'BACK',
         value: '',
@@ -441,6 +586,7 @@ export class MenuSystem {
     if (this.screen === 'playmode') return this._drawPlaymode(ctx, w, h);
     if (this.screen === 'cosmology') return this._drawCosmology(ctx, w, h);
     if (this.screen === 'credits') return this._drawCredits(ctx, w, h);
+    if (this.screen === 'onboarding') return this._drawOnboarding(ctx, w, h);
   }
 
   _drawHeader(ctx, w, h, subtitle) {
@@ -800,6 +946,155 @@ export class MenuSystem {
     ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.fillText('ENTER to return', w / 2, h / 2 + 75);
+    ctx.textAlign = 'left';
+  }
+
+  _drawOnboarding(ctx, w, h) {
+    const step = this._onboardingStep;
+    const ageGroups = MenuSystem.AGE_GROUPS;
+
+    // Background
+    ctx.fillStyle = '#030312';
+    ctx.fillRect(0, 0, w, h);
+
+    // Title
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#00e5ff';
+    ctx.font = `bold ${Math.floor(w / 12)}px Courier New`;
+    ctx.shadowColor = '#00e5ff';
+    ctx.shadowBlur = 20;
+    ctx.fillText('GLITCH·PEACE', w / 2, h * 0.12);
+    ctx.shadowBlur = 0;
+
+    const stepLabels = ['WELCOME', 'YOUR AGE', 'YOUR LANGUAGE', 'LEARN LANGUAGE'];
+    ctx.fillStyle = '#334466';
+    ctx.font = '8px Courier New';
+    ctx.fillText(`SETUP  ${step + 1} / 4  ·  ${stepLabels[step]}`, w / 2, h * 0.18);
+
+    // Step dots
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = i === step ? '#00e5ff' : i < step ? '#226644' : '#223344';
+      ctx.fillRect(w / 2 - 28 + i * 18, h * 0.21, 10, 3);
+    }
+
+    if (step === 0) {
+      // Welcome
+      ctx.fillStyle = '#8899bb';
+      ctx.font = `${Math.floor(w / 30)}px Courier New`;
+      ctx.fillText('Welcome, explorer.', w / 2, h * 0.35);
+      ctx.font = `${Math.floor(w / 36)}px Courier New`;
+      ctx.fillStyle = '#556677';
+      const lines = [
+        'GLITCH·PEACE is a consciousness game about',
+        'pattern recognition, learning, and peace.',
+        '',
+        'We\'ll set up the game for you in 3 quick steps.',
+      ];
+      lines.forEach((line, i) => ctx.fillText(line, w / 2, h * 0.45 + i * (h * 0.065)));
+      ctx.fillStyle = '#00cc88';
+      ctx.font = `bold ${Math.floor(w / 34)}px Courier New`;
+      ctx.fillText('Press ENTER to begin  ·  ESC to skip', w / 2, h * 0.80);
+
+    } else if (step === 1) {
+      // Age group
+      ctx.fillStyle = '#aabbcc';
+      ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
+      ctx.fillText('How old are you?', w / 2, h * 0.30);
+      ctx.fillStyle = '#556677';
+      ctx.font = `${Math.floor(w / 38)}px Courier New`;
+      ctx.fillText('(this sets a starting difficulty — you can change it later)', w / 2, h * 0.36);
+
+      for (let i = 0; i < ageGroups.length; i++) {
+        const ag = ageGroups[i];
+        const y = h * 0.46 + i * (h * 0.105);
+        const sel = i === this._onboardingAge;
+        ctx.fillStyle = sel ? '#001a33' : 'transparent';
+        ctx.fillRect(w * 0.18, y - 14, w * 0.64, 26);
+        ctx.strokeStyle = sel ? '#00aaff' : '#223344';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(w * 0.18, y - 14, w * 0.64, 26);
+        ctx.fillStyle = sel ? '#00e5ff' : '#667788';
+        ctx.font = `${sel ? 'bold ' : ''}${Math.floor(w / 32)}px Courier New`;
+        ctx.fillText(`${ag.emoji}  ${ag.label}`, w / 2, y + 4);
+      }
+      ctx.fillStyle = '#445566';
+      ctx.font = '8px Courier New';
+      ctx.fillText('↑/↓ to choose  ·  ENTER to confirm  ·  ESC to skip', w / 2, h * 0.90);
+
+    } else if (step === 2) {
+      // Native language
+      ctx.fillStyle = '#aabbcc';
+      ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
+      ctx.fillText('What is your native language?', w / 2, h * 0.28);
+
+      const visCount = 6;
+      const startIdx = Math.max(0, Math.min(this._nativeLangSel - Math.floor(visCount / 2), LANGUAGES.length - visCount));
+      for (let i = 0; i < visCount; i++) {
+        const idx = startIdx + i;
+        if (idx >= LANGUAGES.length) break;
+        const lang = LANGUAGES[idx];
+        const y = h * 0.38 + i * (h * 0.085);
+        const sel = idx === this._nativeLangSel;
+        ctx.fillStyle = sel ? '#001a33' : 'transparent';
+        ctx.fillRect(w * 0.15, y - 12, w * 0.70, 24);
+        ctx.strokeStyle = sel ? '#00aaff' : '#1a2233';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(w * 0.15, y - 12, w * 0.70, 24);
+        ctx.fillStyle = sel ? '#00e5ff' : '#667788';
+        ctx.font = `${sel ? 'bold ' : ''}${Math.floor(w / 34)}px Courier New`;
+        ctx.textAlign = 'left';
+        ctx.fillText(lang.name, w * 0.22, y + 4);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = sel ? '#aaccee' : '#445566';
+        ctx.font = `${Math.floor(w / 38)}px Courier New`;
+        ctx.fillText(lang.nativeName, w * 0.83, y + 4);
+        ctx.textAlign = 'center';
+      }
+      ctx.fillStyle = '#445566';
+      ctx.font = '8px Courier New';
+      ctx.fillText('↑/↓ to scroll  ·  ENTER to confirm  ·  ESC to skip', w / 2, h * 0.90);
+
+    } else if (step === 3) {
+      // Target language
+      const langs = this._learnableLangs;
+      ctx.fillStyle = '#aabbcc';
+      ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
+      ctx.fillText('Which language would you like to learn?', w / 2, h * 0.27);
+      ctx.fillStyle = '#445566';
+      ctx.font = `${Math.floor(w / 38)}px Courier New`;
+      ctx.fillText('(ordered by how similar they are to your native language)', w / 2, h * 0.33);
+
+      const visCount = 6;
+      const startIdx = Math.max(0, Math.min(this._targetLangSel - Math.floor(visCount / 2), langs.length - visCount));
+      for (let i = 0; i < visCount; i++) {
+        const idx = startIdx + i;
+        if (idx >= langs.length) break;
+        const lang = langs[idx];
+        const y = h * 0.41 + i * (h * 0.085);
+        const sel = idx === this._targetLangSel;
+        ctx.fillStyle = sel ? '#001a33' : 'transparent';
+        ctx.fillRect(w * 0.15, y - 12, w * 0.70, 24);
+        ctx.strokeStyle = sel ? '#00aaff' : '#1a2233';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(w * 0.15, y - 12, w * 0.70, 24);
+        ctx.fillStyle = sel ? '#00e5ff' : '#667788';
+        ctx.font = `${sel ? 'bold ' : ''}${Math.floor(w / 34)}px Courier New`;
+        ctx.textAlign = 'left';
+        ctx.fillText(lang.name, w * 0.22, y + 4);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = sel ? '#aaccee' : '#445566';
+        ctx.font = `${Math.floor(w / 38)}px Courier New`;
+        ctx.fillText(lang.nativeName, w * 0.83, y + 4);
+        ctx.textAlign = 'center';
+      }
+      ctx.fillStyle = '#00cc88';
+      ctx.font = `bold ${Math.floor(w / 36)}px Courier New`;
+      ctx.fillText('Vocabulary challenges will appear in this language!', w / 2, h * 0.84);
+      ctx.fillStyle = '#445566';
+      ctx.font = '8px Courier New';
+      ctx.fillText('↑/↓ to scroll  ·  ENTER to confirm  ·  ESC to skip', w / 2, h * 0.90);
+    }
+
     ctx.textAlign = 'left';
   }
 

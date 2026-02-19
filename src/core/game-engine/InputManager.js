@@ -1,0 +1,199 @@
+// ═══════════════════════════════════════════════════════════════════════
+//  INPUT MANAGER - Abstraction layer for input handling
+//  Phase 1: Foundation Enhancement
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * InputManager provides a mode-agnostic input handling system.
+ * Modes can query input state without directly handling events.
+ */
+export class InputManager {
+  constructor() {
+    this.keys = new Set();
+    this.keysPressed = new Set(); // Keys pressed this frame
+    this.keysReleased = new Set(); // Keys released this frame
+    this.mousePos = { x: 0, y: 0 };
+    this.mouseButtons = new Set();
+    this.mousePressed = new Set();
+    this.mouseReleased = new Set();
+    
+    this.setupListeners();
+  }
+
+  setupListeners() {
+    // Keyboard
+    window.addEventListener('keydown', (e) => {
+      if (!this.keys.has(e.key)) {
+        this.keysPressed.add(e.key);
+      }
+      this.keys.add(e.key);
+    });
+
+    window.addEventListener('keyup', (e) => {
+      this.keys.delete(e.key);
+      this.keysReleased.add(e.key);
+    });
+
+    // Mouse
+    window.addEventListener('mousemove', (e) => {
+      this.mousePos.x = e.clientX;
+      this.mousePos.y = e.clientY;
+    });
+
+    window.addEventListener('mousedown', (e) => {
+      if (!this.mouseButtons.has(e.button)) {
+        this.mousePressed.add(e.button);
+      }
+      this.mouseButtons.add(e.button);
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      this.mouseButtons.delete(e.button);
+      this.mouseReleased.add(e.button);
+    });
+
+    // Touch (for mobile)
+    window.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        this.mousePos.x = touch.clientX;
+        this.mousePos.y = touch.clientY;
+        this.mousePressed.add(0); // Treat as left mouse button
+        this.mouseButtons.add(0);
+      }
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        this.mousePos.x = touch.clientX;
+        this.mousePos.y = touch.clientY;
+      }
+    });
+
+    window.addEventListener('touchend', () => {
+      this.mouseButtons.delete(0);
+      this.mouseReleased.add(0);
+    });
+  }
+
+  /**
+   * Check if a key is currently held down
+   * @param {string} key - The key to check
+   * @returns {boolean}
+   */
+  isKeyDown(key) {
+    return this.keys.has(key);
+  }
+
+  /**
+   * Check if a key was just pressed this frame
+   * @param {string} key - The key to check
+   * @returns {boolean}
+   */
+  isKeyPressed(key) {
+    return this.keysPressed.has(key);
+  }
+
+  /**
+   * Check if a key was just released this frame
+   * @param {string} key - The key to check
+   * @returns {boolean}
+   */
+  isKeyReleased(key) {
+    return this.keysReleased.has(key);
+  }
+
+  /**
+   * Check if any of the given keys are down
+   * @param {Array<string>} keys - Array of keys to check
+   * @returns {boolean}
+   */
+  isAnyKeyDown(keys) {
+    return keys.some(key => this.keys.has(key));
+  }
+
+  /**
+   * Check if mouse button is down (0=left, 1=middle, 2=right)
+   * @param {number} button - Mouse button number
+   * @returns {boolean}
+   */
+  isMouseDown(button = 0) {
+    return this.mouseButtons.has(button);
+  }
+
+  /**
+   * Check if mouse button was just pressed
+   * @param {number} button - Mouse button number
+   * @returns {boolean}
+   */
+  isMousePressed(button = 0) {
+    return this.mousePressed.has(button);
+  }
+
+  /**
+   * Get current mouse position
+   * @returns {{x: number, y: number}}
+   */
+  getMousePos() {
+    return { ...this.mousePos };
+  }
+
+  /**
+   * Get mouse position relative to canvas
+   * @param {HTMLCanvasElement} canvas
+   * @returns {{x: number, y: number}}
+   */
+  getCanvasMousePos(canvas) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: this.mousePos.x - rect.left,
+      y: this.mousePos.y - rect.top,
+    };
+  }
+
+  /**
+   * Clear frame-specific input (call at end of frame)
+   */
+  clearFrameInput() {
+    this.keysPressed.clear();
+    this.keysReleased.clear();
+    this.mousePressed.clear();
+    this.mouseReleased.clear();
+  }
+
+  /**
+   * Get directional input (-1, 0, or 1 for x and y)
+   * Supports WASD and Arrow keys
+   * @returns {{x: number, y: number}}
+   */
+  getDirectionalInput() {
+    let x = 0;
+    let y = 0;
+
+    // Horizontal
+    if (this.isAnyKeyDown(['ArrowLeft', 'a', 'A'])) x -= 1;
+    if (this.isAnyKeyDown(['ArrowRight', 'd', 'D'])) x += 1;
+
+    // Vertical
+    if (this.isAnyKeyDown(['ArrowUp', 'w', 'W'])) y -= 1;
+    if (this.isAnyKeyDown(['ArrowDown', 's', 'S'])) y += 1;
+
+    return { x, y };
+  }
+
+  /**
+   * Check for common actions
+   * @returns {Object} Object with action flags
+   */
+  getActions() {
+    return {
+      pause: this.isKeyPressed('Escape'),
+      help: this.isKeyPressed('h') || this.isKeyPressed('H'),
+      confirm: this.isKeyPressed('Enter') || this.isKeyPressed(' '),
+      cancel: this.isKeyPressed('Escape'),
+    };
+  }
+}
+
+export default InputManager;

@@ -154,7 +154,7 @@ export function movePlayer(gameState, dx, dy) {
   // Trap: immobilize for 3 turns
   if (stepped === T.TRAP) {
     gameState.player.stunTurns = 3;
-    if (gameState.emotionalField?.add) gameState.emotionalField.add('anxiety', 0.8);
+    if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', 0.8); // anxiety → fear
     createParticles(gameState, newX, newY, '#ff8800', 10);
     try { window.AudioManager?.play('damage'); } catch (e) {}
     return true;
@@ -168,11 +168,11 @@ export function movePlayer(gameState, dx, dy) {
     return true;
   }
 
-  // Pain: small damage + pain emotion
+  // Pain: small damage + shame/grief emotion
   if (stepped === T.PAIN) {
     const dmg = (def && def.d) ? def.d : 4;
     gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
-    if (gameState.emotionalField?.add) gameState.emotionalField.add('pain', 1.0);
+    if (gameState.emotionalField?.add) gameState.emotionalField.add('grief', 0.8); // pain → grief
     createParticles(gameState, newX, newY, '#880000', 10);
     return true;
   }
@@ -193,19 +193,21 @@ export function movePlayer(gameState, dx, dy) {
     gameState.score = (gameState.score || 0) + Math.round(500 * mul);
     gameState.grid[newY][newX] = T.VOID;
     if (gameState.emotionalField?.add) gameState.emotionalField.add('awe', 1.5);
-    // grant a small token representing archetype discovery
     gameState.insightTokens = (gameState.insightTokens || 0) + 1;
     createParticles(gameState, newX, newY, '#ffee44', 20);
     try { window.AudioManager?.play('select'); } catch (e) {}
     return true;
   }
 
-  // Memory: restores small HP and adds a nostalgia ping
+  // Memory: restores small HP and adds grief/hope (bittersweet nostalgia)
   if (stepped === T.MEM) {
     const healAmt = 6;
     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + healAmt);
     gameState.grid[newY][newX] = T.VOID;
-    if (gameState.emotionalField?.add) gameState.emotionalField.add('nostalgia', 1.0);
+    if (gameState.emotionalField?.add) {
+      gameState.emotionalField.add('grief', 0.6); // nostalgia → grief (bittersweet)
+      gameState.emotionalField.add('hope', 0.4);
+    }
     createParticles(gameState, newX, newY, '#66ccff', 10);
     try { window.AudioManager?.play('peace'); } catch (e) {}
     return true;
@@ -215,7 +217,7 @@ export function movePlayer(gameState, dx, dy) {
   if (stepped === T.COVER) {
     gameState.player.coverTurns = Math.max(gameState.player.coverTurns || 0, 3);
     gameState.grid[newY][newX] = T.VOID;
-    if (gameState.emotionalField?.add) gameState.emotionalField.add('safety', 0.9);
+    if (gameState.emotionalField?.add) gameState.emotionalField.add('tender', 0.9); // safety → tender
     createParticles(gameState, newX, newY, '#446688', 12);
     try { window.AudioManager?.play('select'); } catch (e) {}
     return true;

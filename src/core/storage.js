@@ -13,6 +13,10 @@ export function saveGame(gameState) {
       hp: gameState.player.hp,
       maxHp: gameState.player.maxHp
     },
+    currentDreamscape: gameState.currentDreamscape || 'RIFT',
+    playMode: gameState.playMode || 'ARCADE',
+    peaceCollected: gameState.peaceCollected || 0,
+    peaceTotal: gameState.peaceTotal || 0,
     settings: {...gameState.settings},
     timestamp: Date.now()
   };

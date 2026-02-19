@@ -148,7 +148,7 @@ export class GameStateManager {
       score: this.state.score,
       modeType: this.state.modeType,
       settings: { ...this.state.settings },
-      emotionalField: this.state.emotionalField.serialize(),
+      emotionalField: this.state.emotionalField.export(),
       timestamp: Date.now(),
     };
 
@@ -176,7 +176,7 @@ export class GameStateManager {
     }
 
     if (saveData.emotionalField) {
-      this.state.emotionalField.deserialize(saveData.emotionalField);
+      this.state.emotionalField.import(saveData.emotionalField);
     }
 
     return true;
@@ -189,7 +189,7 @@ export class GameStateManager {
    */
   triggerEmotion(emotion, intensity = 0.5) {
     if (this.state.emotionalField) {
-      this.state.emotionalField.trigger(emotion, intensity);
+      this.state.emotionalField.add(emotion, intensity); // EmotionalField uses add(), not trigger()
     }
   }
 
@@ -201,9 +201,9 @@ export class GameStateManager {
     if (!this.state.emotionalField) return null;
     return {
       dominant: this.state.emotionalField.getDominant(),
-      synergies: this.state.emotionalField.checkSynergies(),
-      distortion: this.state.emotionalField.distortion,
-      coherence: this.state.emotionalField.coherence,
+      synergy: this.state.emotionalField.checkSynergy(), // singular: checkSynergy()
+      distortion: this.state.emotionalField.calcDistortion(),
+      coherence: this.state.emotionalField.calcCoherence(),
     };
   }
 

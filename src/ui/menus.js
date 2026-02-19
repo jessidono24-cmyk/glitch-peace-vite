@@ -220,7 +220,7 @@ export class MenuSystem {
     if (k === 'Enter' || k === ' ') {
       const mode = modes[this.playmodeSel];
       if (mode && this.onSelectDreamscape) {
-        this.onSelectDreamscape(this._pendingDreamscape || 'RIFT', mode.id.toUpperCase());
+        this.onSelectDreamscape(this._pendingDreamscape || 'RIFT', mode.id); // use id as-is (already uppercase)
       }
       return { consumed: true };
     }

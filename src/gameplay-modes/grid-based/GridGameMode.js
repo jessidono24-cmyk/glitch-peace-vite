@@ -30,6 +30,7 @@ export class GridGameMode extends GameMode {
     this.lastMoveTime = 0;
     this.moveDelay = 150; // ms between moves
     this._levelFlashMs = 0; // countdown ms for "LEVEL COMPLETE" overlay
+    this._ENEMY_HIT_COOLDOWN = 600; // ms between enemy collision hits
   }
 
   /**
@@ -142,9 +143,9 @@ export class GridGameMode extends GameMode {
     // Apply SPEED powerup to movement delay
     this.moveDelay = hasPowerup(gameState, 'movement_boost') ? 75 : 150;
 
-    // Update enemies (use gameState directly — enemy.js updateEnemies(gameState))
+    // Update enemies
     if (gameState.enemies && gameState.enemies.length > 0) {
-      updateEnemies(gameState);
+      updateEnemies(gameState); // enemy.js: single-arg signature updateEnemies(gameState)
       // Enemy-player collision: deal damage when an enemy occupies the player's tile
       this._checkEnemyCollisions(gameState);
     }
@@ -181,7 +182,7 @@ export class GridGameMode extends GameMode {
     const py = gameState.player.y;
     const now = Date.now();
     if (!this._lastEnemyDamageMs) this._lastEnemyDamageMs = 0;
-    if (now - this._lastEnemyDamageMs < 600) return; // max 1 hit per 600ms
+    if (now - this._lastEnemyDamageMs < this._ENEMY_HIT_COOLDOWN) return; // cooldown between hits
 
     for (const enemy of gameState.enemies) {
       if (enemy.x === px && enemy.y === py) {

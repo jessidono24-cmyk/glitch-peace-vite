@@ -15,7 +15,7 @@ export function updateHUD(game) {
   const score = document.getElementById('score');
   const objective = document.getElementById('objective');
 
-  if (hpText) hpText.textContent = `${Math.ceil(game.player.hp || 0)}/${game.player.maxHp || 100}`;
+  if (hpText) hpText.textContent = `${Math.round(Math.max(0, game.player.hp || 0))}/${game.player.maxHp || 100}`;
   if (hpFill) hpFill.style.width = `${(Math.max(0, game.player.hp || 0) / (game.player.maxHp || 100)) * 100}%`;
   if (level) level.textContent = String(game.level || 1);
   if (score) score.textContent = String(game.score || 0);

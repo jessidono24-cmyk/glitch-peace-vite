@@ -112,6 +112,11 @@ function initUI() {
       const save = loadGame();
       if (save) {
         Object.assign(game, save);
+        // Restore player from save
+        if (save.player) {
+          game.player = { ...createPlayer(), ...save.player };
+        }
+        currentMode = null; // force fresh mode on continue
         startGame();
       } else {
         game.state = 'MENU_DREAMSCAPE';

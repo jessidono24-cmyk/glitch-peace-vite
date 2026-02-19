@@ -1031,8 +1031,8 @@ export class GridGameMode extends GameMode {
       return;
     }
 
-    // PUZZLE mode undo: U key
-    if (gameState.mechanics?.undoEnabled && input.isKeyPressed('u') || input.isKeyPressed('U')) {
+    // PUZZLE mode undo: Z key (U is reserved for upgrade shop)
+    if (gameState.mechanics?.undoEnabled && (input.isKeyPressed('z') || input.isKeyPressed('Z'))) {
       undoGameMove(gameState);
       this.lastMoveTime = now;
       return;

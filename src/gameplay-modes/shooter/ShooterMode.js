@@ -58,9 +58,14 @@ export default class ShooterMode extends GameMode {
     // Center player
     this.player.x = canvas.width / 2;
     this.player.y = canvas.height / 2;
+    this.player.health = this.player.maxHealth;
     
-    // Start first wave
-    this.startWave(1);
+    // Carry over level/score from the shared gameState for mode continuity
+    this.waveNumber = gameState.level || 1;
+    this.score = gameState.score || 0;
+    
+    // Start wave matching current level
+    this.startWave(this.waveNumber);
     
     // Set mode-specific state
     gameState.modeState = {

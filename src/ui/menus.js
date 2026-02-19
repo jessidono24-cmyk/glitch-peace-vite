@@ -62,7 +62,6 @@ export class MenuSystem {
     if (screen === 'playmode') this.playmodeSel = 0;
     if (screen === 'cosmology') this.cosmologySel = 0;
     if (screen === 'onboarding') { this._onboardingStep = 0; this._onboardingAge = 1; this._nativeLangSel = 0; this._targetLangSel = 0; }
-    console.log(`[DEBUG] MenuSystem.open('${screen}') called`);
     // Note: Canvas-based rendering happens in draw() method, not _render()
   }
 
@@ -75,8 +74,15 @@ export class MenuSystem {
 
     // Global escapes
     if (k === 'Escape') {
-      if (this.screen === 'options' || this.screen === 'tutorial' || this.screen === 'credits' || this.screen === 'dreamscape') {
+      if (this.screen === 'options' || this.screen === 'credits' || this.screen === 'dreamscape') {
         this.open('title');
+        return { consumed: true };
+      }
+      if (this.screen === 'tutorial') {
+        // Return to wherever tutorial was opened from ('title' normally, 'pause' when H pressed in-game)
+        const ret = this._tutorialReturnScreen || 'title';
+        this._tutorialReturnScreen = null;
+        this.open(ret);
         return { consumed: true };
       }
       if (this.screen === 'playmode') {
@@ -85,6 +91,11 @@ export class MenuSystem {
       }
       if (this.screen === 'cosmology') {
         this.open('playmode');
+        return { consumed: true };
+      }
+      if (this.screen === 'onboarding') {
+        // ESC during onboarding = skip setup and go to title
+        this._finaliseOnboarding();
         return { consumed: true };
       }
       return { consumed: false };
@@ -1101,7 +1112,6 @@ export class MenuSystem {
   _render() {
     const overlay = document.getElementById('menu-overlay');
     if (!overlay) {
-      console.log('[DEBUG] #menu-overlay not found in DOM');
       return;
     }
     // Always clear overlay before rendering to prevent stacking
@@ -1125,9 +1135,7 @@ export class MenuSystem {
     } else if (this.screen === 'credits') {
       html = this._renderCredits();
     }
-    console.log(`[DEBUG] Menu HTML generated for state: ${this.screen}`, html);
     overlay.innerHTML = html;
-    console.log('[DEBUG] Menu HTML injected into #menu-overlay');
   }
 
   _renderTitle() {

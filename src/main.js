@@ -21,7 +21,8 @@ import GameStateManager from './core/game-engine/GameStateManager.js';
 import InputManager from './core/game-engine/InputManager.js';
 import { modeRegistry } from './gameplay-modes/ModeRegistry.js';
 import './gameplay-modes/grid-based/index.js'; // Auto-registers GridGameMode
-import './gameplay-modes/shooter/index.js'; // Auto-registers ShooterMode (Phase 2)
+import './gameplay-modes/shooter/index.js';    // Auto-registers ShooterMode (Phase 2)
+import './gameplay-modes/rpg/index.js';         // Auto-registers RPGMode skeleton (Phase M5)
 
 // PHASE 1: Initialize new architecture
 let gameStateManager = null;
@@ -212,13 +213,13 @@ game.temporalSystem = new TemporalSystem(game.settings.timezone);
 
 // PHASE 2: Mode switching function
 function switchGameMode() {
-  const availableModes = ['grid-classic', 'shooter'];
-  const currentModeId = currentMode ? (currentMode.type === 'shooter' ? 'shooter' : 'grid-classic') : 'grid-classic';
+  const availableModes = ['grid-classic', 'shooter', 'rpg'];
+  const currentModeId = currentMode
+    ? (currentMode.type === 'shooter' ? 'shooter' : currentMode.type === 'rpg' ? 'rpg' : 'grid-classic')
+    : 'grid-classic';
   const currentIndex = availableModes.indexOf(currentModeId);
   const nextIndex = (currentIndex + 1) % availableModes.length;
   const nextModeId = availableModes[nextIndex];
-  
-  console.log(`[Phase 2] Switching mode from ${currentModeId} to ${nextModeId}`);
   
   // Cleanup current mode
   if (currentMode && currentMode.cleanup) {
@@ -229,7 +230,6 @@ function switchGameMode() {
   currentMode = modeRegistry.createMode(nextModeId);
   if (currentMode) {
     currentMode.init(game, canvas, ctx);
-    console.log(`[Phase 2] Switched to ${currentMode.name}`);
   } else {
     console.error(`[Phase 2] Failed to create mode: ${nextModeId}`);
   }
@@ -264,7 +264,11 @@ function startGame() {
     }
   }
   
-  spawnEnemies();
+  // Only use legacy spawnEnemies() when no mode is active (fallback path).
+  // GridGameMode.generateLevel() handles enemy spawning internally.
+  if (!currentMode) {
+    spawnEnemies();
+  }
   updateHUD(game);
 }
 
@@ -326,7 +330,16 @@ document.addEventListener('keydown', e => {
       return;
     }
     
-    // PHASE 2: Mode switching with M key (for testing)
+    // H key: open in-game help / tutorial (returns to pause menu on ESC)
+    if (e.key === 'h' || e.key === 'H') {
+      game.state = 'PAUSED';
+      menuSystem._tutorialReturnScreen = 'pause'; // ESC from tutorial → pause menu
+      menuSystem.open('tutorial');
+      e.preventDefault();
+      return;
+    }
+    
+    // PHASE 2: Mode switching with M key
     if (e.key === 'm' || e.key === 'M') {
       switchGameMode();
       e.preventDefault();
@@ -395,7 +408,9 @@ function render(deltaMs = 16) {
       hint.style.display = 'block';
       hint.textContent = currentMode?.type === 'shooter'
         ? 'WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Grid Mode · ESC: Pause'
-        : 'WASD/Arrows: Move · J: Archetype · R: Glitch Pulse · SHIFT: Matrix A/B · U: Shop · ESC: Pause';
+        : currentMode?.type === 'rpg'
+          ? '↑/↓: Dialogue · ENTER: Confirm · M: Grid Mode · ESC: Pause'
+          : 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · ESC: Pause';
     }
   }
 

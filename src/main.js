@@ -162,6 +162,31 @@ try {
 // Instantiate TemporalSystem now that settings exist
 game.temporalSystem = new TemporalSystem(game.settings.timezone);
 
+// PHASE 2: Mode switching function
+function switchGameMode() {
+  const availableModes = ['grid-classic', 'shooter'];
+  const currentModeId = currentMode ? (currentMode.type === 'shooter' ? 'shooter' : 'grid-classic') : 'grid-classic';
+  const currentIndex = availableModes.indexOf(currentModeId);
+  const nextIndex = (currentIndex + 1) % availableModes.length;
+  const nextModeId = availableModes[nextIndex];
+  
+  console.log(`[Phase 2] Switching mode from ${currentModeId} to ${nextModeId}`);
+  
+  // Cleanup current mode
+  if (currentMode && currentMode.cleanup) {
+    currentMode.cleanup();
+  }
+  
+  // Create new mode
+  currentMode = modeRegistry.createMode(nextModeId);
+  if (currentMode) {
+    currentMode.init(game, canvas, ctx);
+    console.log(`[Phase 2] Switched to ${currentMode.name}`);
+  } else {
+    console.error(`[Phase 2] Failed to create mode: ${nextModeId}`);
+  }
+}
+
 function startGame() {
   game.state = 'PLAYING';
   if (game.level === 1) {
@@ -238,6 +263,13 @@ document.addEventListener('keydown', e => {
       game.state = 'PAUSED';
       menuSystem.open('pause');
       saveGame(game);
+      e.preventDefault();
+      return;
+    }
+    
+    // PHASE 2: Mode switching with M key (for testing)
+    if (e.key === 'm' || e.key === 'M') {
+      switchGameMode();
       e.preventDefault();
       return;
     }

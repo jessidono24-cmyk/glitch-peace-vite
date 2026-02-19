@@ -15,10 +15,16 @@ export function saveGame(gameState) {
     },
     currentDreamscape: gameState.currentDreamscape || 'RIFT',
     playMode: gameState.playMode || 'ARCADE',
+    currentCosmology: gameState.currentCosmology || null,
     peaceCollected: gameState.peaceCollected || 0,
     peaceTotal: gameState.peaceTotal || 0,
     settings: {...gameState.settings},
-    timestamp: Date.now()
+    // Extended state for Phase 3+
+    insightTokens: gameState.insightTokens || 0,
+    combo: gameState.combo || 0,
+    _nearMissCount: gameState._nearMissCount || 0,
+    _lucidity: gameState._lucidity || 0,
+    timestamp: Date.now(),
   };
   
   localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));

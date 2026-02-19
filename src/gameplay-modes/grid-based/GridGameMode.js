@@ -48,6 +48,12 @@ import {
   applyCampaignLevel,
   renderCampaignNarrative,
 } from '../../systems/campaign.js';
+import {
+  openUpgradeShop,
+  closeUpgradeShop,
+  handleShopInput,
+  renderUpgradeShop,
+} from '../../systems/upgrade-shop.js';
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -698,8 +704,11 @@ export class GridGameMode extends GameMode {
     // Dream yoga overlays (lucidity meter, body scan, lucid event)
     renderDreamYogaOverlays(gameState, ctx);
 
-    // Campaign narrative (Act title + story text between levels)
+    // Campaign narrative
     renderCampaignNarrative(gameState, ctx);
+
+    // Upgrade shop (if open)
+    renderUpgradeShop(gameState, ctx);
 
     // Breathing pause prompt (RITUAL mode, shown between levels)
     if (gameState._breathingPrompt) {
@@ -766,6 +775,27 @@ export class GridGameMode extends GameMode {
    */
   handleInput(gameState, input) {
     const now = Date.now();
+
+    // U key: toggle upgrade shop (if player has insight tokens)
+    if (input.isKeyPressed('u') || input.isKeyPressed('U')) {
+      if (gameState._shopOpen) {
+        closeUpgradeShop(gameState);
+      } else if ((gameState.insightTokens || 0) > 0) {
+        openUpgradeShop(gameState);
+      }
+    }
+
+    // Upgrade shop input
+    if (gameState._shopOpen) {
+      const pressedKeys = ['ArrowUp', 'ArrowDown', 'w', 'W', 's', 'S', 'Enter', ' ', 'Escape', 'q', 'Q'];
+      for (const k of pressedKeys) {
+        if (input.isKeyPressed(k)) {
+          handleShopInput(gameState, k);
+          break;
+        }
+      }
+      return; // block movement while shop open
+    }
 
     // Learning challenge: consume all input while active
     if (gameState._learningChallenge) {
@@ -884,6 +914,11 @@ export class GridGameMode extends GameMode {
         durationMs: 3500,
         color: '#aaccff',
       };
+    }
+
+    // Upgrade shop: open automatically every 5 levels as reward
+    if (gameState.level % 5 === 1 && gameState.level > 1 && (gameState.insightTokens || 0) > 0) {
+      openUpgradeShop(gameState);
     }
     
     // Generate new level

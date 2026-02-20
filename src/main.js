@@ -175,6 +175,8 @@ window._achievementQueue = [];
 window._achievementSystem = achievementSystem;
 window._alchemySystem = alchemySystem;
 window._empathyTraining = empathyTraining;
+window._logicPuzzles = logicPuzzles;
+window._strategicThinking = strategicThinking;
 
 let glitchFrames = 0, glitchTimer = 500;
 let anomalyActive = false, anomalyData = { row:-1, col:-1, t:0 };
@@ -446,6 +448,8 @@ function nextDreamscape() {
   if (vocabularyEngine.sessionCount >= 8) emergenceIndicators.record('vocabulary_growth');
   // Phase 9: surface sequence challenge + empathy reflection
   logicPuzzles.onDreamscapeComplete(CFG.dreamIdx);
+  // Log current IQ score for verification
+  console.log('[I3] IQ score:', logicPuzzles?.iqScore, '| Strategic:', strategicThinking?.strategicScore);
   const empathyReflection = empathyTraining.getReflection();
   // Phase M3: campaign completion
   const milestone = campaignManager.onDreamscapeComplete(g.ds.id % DREAMSCAPES.length, g.score);
@@ -1017,6 +1021,7 @@ function loop(ts) {
 
   // ── Phase 9: Intelligence Enhancement tick ──────────────────────────
   logicPuzzles.tick();
+  strategicThinking.tick?.(dt);
   empathyTraining.tick?.(dt);
   emotionRecognition.tick();
   // EQ observation: feed dominant emotion to emotion-recognition
@@ -1484,6 +1489,7 @@ window.addEventListener('keydown', e => {
       achievementSystem.onMatrixToggle();
       emergenceIndicators.record('matrix_mastery');
       logicPuzzles.onMatrixSwitch();  // Phase 9
+      strategicThinking.onMatrixSwitch?.();
       dreamYoga.onMatrixSwitch();     // Phase 2.5
       const lbl = next==='A'?'MATRIX·A  ⟨ERASURE⟩':'MATRIX·B  ⟨COHERENCE⟩';
       const col = next==='A'?'#ff0055':'#00ff88';

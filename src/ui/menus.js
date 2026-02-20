@@ -8,7 +8,7 @@ import { TUTORIAL_PAGES } from './tutorial-content.js';
 import { listDreamscapes } from '../systems/dreamscapes.js';
 import { getAvailableModes } from '../systems/play-modes.js';
 import { getAvailableCosmologies } from '../systems/cosmologies.js';
-import { LANGUAGES, getLanguageProgression, getLearnableLanguages } from '../systems/languages.js';
+import { LANGUAGES, CEFR_LEVELS, getLanguageProgression, getLearnableLanguages, getLangProgress, setLangLevel } from '../systems/languages.js';
 import { getGlobalTopScores } from '../systems/leaderboard.js';
 
 function listFromObjKeys(obj) { return Object.keys(obj); }
@@ -591,6 +591,74 @@ export class MenuSystem {
         },
       },
       {
+        label: 'LANGUAGE LEVEL',
+        get value() {
+          // Read saved CEFR once per language selection change; manual override shows (manual)
+          if (!cfg.langLevel && cfg.targetLanguage) {
+            // Lazy cache in cfg to avoid per-render localStorage read
+            if (cfg._cachedLangLevel == null || cfg._cachedLangLevelFor !== cfg.targetLanguage) {
+              cfg._cachedLangLevel = getLangProgress(cfg.targetLanguage).level;
+              cfg._cachedLangLevelFor = cfg.targetLanguage;
+            }
+            return `${cfg._cachedLangLevel} (auto)`;
+          }
+          return cfg.langLevel ? `${cfg.langLevel} (manual)` : 'A1 (auto)';
+        },
+        left: () => {
+          const cur = cfg.langLevel || cfg._cachedLangLevel || 'A1';
+          const idx = CEFR_LEVELS.indexOf(cur);
+          cfg.langLevel = CEFR_LEVELS[Math.max(0, idx - 1)];
+          if (cfg.targetLanguage) setLangLevel(cfg.targetLanguage, cfg.langLevel);
+          try { localStorage.setItem('glitchpeace.langLevel', cfg.langLevel); } catch (e) {}
+        },
+        right: () => {
+          const cur = cfg.langLevel || cfg._cachedLangLevel || 'A1';
+          const idx = CEFR_LEVELS.indexOf(cur);
+          cfg.langLevel = CEFR_LEVELS[Math.min(CEFR_LEVELS.length - 1, idx + 1)];
+          if (cfg.targetLanguage) setLangLevel(cfg.targetLanguage, cfg.langLevel);
+          try { localStorage.setItem('glitchpeace.langLevel', cfg.langLevel); } catch (e) {}
+        },
+        extra: 'A1=Beginner · A2 · B1 · B2 · C1 · C2=Master',
+      },
+      {
+        label: 'FULL IMMERSION',
+        value: cfg.langImmersion ? 'ON' : 'OFF',
+        toggle: () => {
+          cfg.langImmersion = !cfg.langImmersion;
+          try { localStorage.setItem('glitchpeace.langImmersion', cfg.langImmersion ? '1' : '0'); } catch (e) {}
+        },
+        extra: 'ON = questions in target language only (B1+)',
+      },
+      // ── AUDIO VOLUME CONTROLS ────────────────────────────────────────
+      {
+        label: 'MUSIC VOLUME',
+        get value() { return `${Math.round((cfg.musicVolume ?? 0.5) * 100)}%`; },
+        left: () => {
+          cfg.musicVolume = Math.max(0, +((cfg.musicVolume ?? 0.5) - 0.1).toFixed(1));
+          try { if (window.AudioManager?.setMusicVolume) window.AudioManager.setMusicVolume(cfg.musicVolume); } catch (e) {}
+          try { localStorage.setItem('glitchpeace.musicVol', cfg.musicVolume); } catch (e) {}
+        },
+        right: () => {
+          cfg.musicVolume = Math.min(1.0, +((cfg.musicVolume ?? 0.5) + 0.1).toFixed(1));
+          try { if (window.AudioManager?.setMusicVolume) window.AudioManager.setMusicVolume(cfg.musicVolume); } catch (e) {}
+          try { localStorage.setItem('glitchpeace.musicVol', cfg.musicVolume); } catch (e) {}
+        },
+      },
+      {
+        label: 'SFX VOLUME',
+        get value() { return `${Math.round((cfg.sfxVolume ?? 0.7) * 100)}%`; },
+        left: () => {
+          cfg.sfxVolume = Math.max(0, +((cfg.sfxVolume ?? 0.7) - 0.1).toFixed(1));
+          try { if (window.AudioManager?.setSfxVolume) window.AudioManager.setSfxVolume(cfg.sfxVolume); } catch (e) {}
+          try { localStorage.setItem('glitchpeace.sfxVol', cfg.sfxVolume); } catch (e) {}
+        },
+        right: () => {
+          cfg.sfxVolume = Math.min(1.0, +((cfg.sfxVolume ?? 0.7) + 0.1).toFixed(1));
+          try { if (window.AudioManager?.setSfxVolume) window.AudioManager.setSfxVolume(cfg.sfxVolume); } catch (e) {}
+          try { localStorage.setItem('glitchpeace.sfxVol', cfg.sfxVolume); } catch (e) {}
+        },
+      },
+      {
         label: 'BACK',
         value: '',
         action: () => this.open('title'),
@@ -603,7 +671,8 @@ export class MenuSystem {
   }
 
   getPlaymodeOptions() {
-    return getAvailableModes().filter(m => m.id !== 'coop'); // exclude co-op (future)
+    // Include co-op — it's playable as a local 2-keyboard mode
+    return getAvailableModes();
   }
 
   getCosmologyOptions() {
@@ -733,12 +802,17 @@ export class MenuSystem {
 
     const rows = this.getOptionRows();
 
-    const boxW = 420;
-    const boxH = 270;
+    const ROW_H = 28;
+    const VISIBLE = Math.min(rows.length, Math.floor((h * 0.68) / ROW_H));
+    const boxW = Math.min(520, w * 0.88);
+    const boxH = VISIBLE * ROW_H + 20;
     const bx = (w - boxW) / 2;
-    const by = h / 2 - 60;
+    const by = Math.max(60, h / 2 - boxH / 2);
 
-    ctx.fillStyle = 'rgba(7,7,20,0.9)';
+    // Scroll offset: keep selected row in view
+    const scrollStart = Math.max(0, Math.min(this.sel - Math.floor(VISIBLE / 2), rows.length - VISIBLE));
+
+    ctx.fillStyle = 'rgba(7,7,20,0.92)';
     ctx.fillRect(bx, by, boxW, boxH);
     ctx.strokeStyle = 'rgba(255,255,255,0.06)';
     ctx.lineWidth = 1;
@@ -746,34 +820,58 @@ export class MenuSystem {
 
     const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
 
-    for (let i = 0; i < rows.length; i++) {
+    for (let vi = 0; vi < VISIBLE; vi++) {
+      const i = scrollStart + vi;
+      if (i >= rows.length) break;
       const r = rows[i];
-      const y = by + 40 + i * 30;
+      const y = by + 16 + vi * ROW_H;
       const isSel = i === this.sel;
 
       if (isSel) {
         ctx.fillStyle = `rgba(0,255,136,${0.08 + pulse * 0.10})`;
-        ctx.fillRect(bx + 18, y - 18, boxW - 36, 24);
+        ctx.fillRect(bx + 10, y - 16, boxW - 20, ROW_H - 2);
         ctx.strokeStyle = `rgba(0,255,136,${0.20 + pulse * 0.20})`;
         ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 18, y - 18, boxW - 36, 24);
+        ctx.strokeRect(bx + 10, y - 16, boxW - 20, ROW_H - 2);
       }
 
       ctx.fillStyle = isSel ? '#00ff88' : '#b8b8d0';
-      ctx.font = isSel ? 'bold 13px Courier New' : '12px Courier New';
+      ctx.font = isSel ? 'bold 12px Courier New' : '11px Courier New';
       ctx.textAlign = 'left';
-      ctx.fillText(r.label, bx + 32, y);
+      ctx.fillText(r.label, bx + 22, y);
 
+      // Value + extra hint on same row
+      const valStr = String(r.value || '');
       ctx.fillStyle = isSel ? '#00eeff' : '#667099';
       ctx.textAlign = 'right';
-      ctx.fillText(String(r.value || ''), bx + boxW - 32, y);
+      ctx.fillText(valStr, bx + boxW - 22, y);
       ctx.textAlign = 'left';
+
+      // Extra hint below selected row
+      if (isSel && r.extra) {
+        ctx.fillStyle = '#446666';
+        ctx.font = '9px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(r.extra, bx + boxW / 2, y + 11);
+      }
+    }
+
+    // Scroll indicator
+    if (rows.length > VISIBLE) {
+      const pct = scrollStart / (rows.length - VISIBLE);
+      const trackH = boxH - 20;
+      const thumbH = Math.max(20, (VISIBLE / rows.length) * trackH);
+      const thumbY = by + 10 + pct * (trackH - thumbH);
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.fillRect(bx + boxW - 10, by + 10, 4, trackH);
+      ctx.fillStyle = 'rgba(0,255,136,0.4)';
+      ctx.fillRect(bx + boxW - 10, thumbY, 4, thumbH);
     }
 
     ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ select · ←/→ adjust · ENTER toggle · ESC back', w / 2, by + boxH + 24);
+    ctx.fillText('↑/↓ select · ←/→ adjust · ENTER toggle · ESC back', w / 2, by + boxH + 18);
     ctx.textAlign = 'left';
   }
 

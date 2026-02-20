@@ -191,6 +191,107 @@ export class EmotionalField {
     }
     this.activeSynergy = null;
     this.synergyTimer = 0;
+    // Reset behavioral tracking
+    this._behaviorSamples = [];
+  }
+
+  /**
+   * Observe player behavior signals and infer emotional states.
+   * Called each time the player makes a meaningful action.
+   *
+   * @param {string} behaviorType  - 'move', 'hazard_approach', 'hazard_enter',
+   *                                  'peace_collect', 'idle', 'rapid_move', 'reverse'
+   * @param {Object} context       - { intervalMs, tileType, direction, combo, hp }
+   */
+  observeBehavior(behaviorType, context = {}) {
+    const now = Date.now();
+    if (!this._behaviorSamples) this._behaviorSamples = [];
+
+    // Keep only the last 20 samples (sliding window)
+    this._behaviorSamples.push({ type: behaviorType, t: now, ctx: context });
+    if (this._behaviorSamples.length > 20) this._behaviorSamples.shift();
+
+    // ── Behavioral → emotion mapping ────────────────────────────────────
+    switch (behaviorType) {
+      case 'rapid_move':
+        // Very fast consecutive moves → anxiety / fear (high arousal state)
+        this.add('fear', 0.15);
+        this.add('joy', -0.05);
+        break;
+      case 'idle':
+        // Staying still → calm / hope (low arousal, contemplative state)
+        this.add('hope', 0.10);
+        this.add('fear', -0.05);
+        break;
+      case 'hazard_approach':
+        // Moving toward a hazard tile without entering → anxiety / curiosity
+        this.add('fear', 0.12);
+        this.add('curiosity', 0.08);
+        break;
+      case 'hazard_enter':
+        // Actually stepping onto a hazard tile → fear spike, anger
+        this.add('fear', 0.25);
+        this.add('anger', 0.10);
+        break;
+      case 'hazard_avoid':
+        // Changing direction to avoid a hazard → hope, tender
+        this.add('hope', 0.15);
+        this.add('tender', 0.05);
+        break;
+      case 'peace_collect':
+        // Collecting a peace node → joy, hope
+        this.add('joy', 0.20);
+        this.add('hope', 0.10);
+        break;
+      case 'reverse':
+        // Player reverses direction frequently → confusion / frustration
+        this.add('anger', 0.08);
+        this.add('curiosity', 0.06);
+        break;
+      case 'exploration':
+        // Moving to new tiles (not retracing) → curiosity
+        this.add('curiosity', 0.10);
+        this.add('hope', 0.05);
+        break;
+      case 'circling':
+        // Moving in small circles (detected by echo trail analysis) → despair / confusion
+        this.add('despair', 0.10);
+        this.add('anger', 0.05);
+        break;
+    }
+
+    // ── Speed-based inference ─────────────────────────────────────────
+    // If recent moves are all under 200ms apart → "rushing" state → more fear
+    const recentMoves = this._behaviorSamples.filter(
+      s => (s.type === 'move' || s.type === 'rapid_move') && now - s.t < 1500
+    );
+    if (recentMoves.length >= 5) {
+      // High-speed burst: raise arousal emotions
+      this.add('fear', 0.06);
+      this.add('anger', 0.04);
+    } else if (recentMoves.length <= 1 && this._behaviorSamples.length >= 5) {
+      // Very slow movement → peaceful contemplation
+      this.add('hope', 0.04);
+    }
+
+    // ── HP-based inference ────────────────────────────────────────────
+    if (context.hp !== undefined) {
+      const hpPct = context.hp / (context.maxHp || 100);
+      if (hpPct < 0.25) {
+        // Low HP → despair spike, fear
+        this.add('despair', 0.08);
+        this.add('fear', 0.08);
+      } else if (hpPct > 0.85) {
+        // Full health → hope, joy
+        this.add('hope', 0.04);
+      }
+    }
+
+    // ── Combo-based inference ─────────────────────────────────────────
+    if (context.combo !== undefined && context.combo >= 5) {
+      this.add('joy', 0.12);
+      this.add('hope', 0.06);
+    }
   }
 }
 

@@ -108,7 +108,12 @@ export class ArchitectureMode extends GameMode {
   }
 
   init(gameState, canvas, ctx) {
-    this.tileSize = Math.floor(canvas.width / (gameState.gridSize || 14));
+    const gridSz = gameState.gridSize || 14;
+    const HUD_H = 40;
+    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    this.tileSize = Math.floor(gridPixels / gridSz);
+    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
     gameState.player = gameState.player || { x: 4, y: 4, hp: 100, maxHp: 100, symbol: '◈', color: '#00e5ff' };
     gameState.score = gameState.score || 0;
     gameState.peaceCollected = 0;
@@ -116,6 +121,16 @@ export class ArchitectureMode extends GameMode {
     this._blueprintIdx = 0;
     this._resetGrid(gameState);
     this._positionBlueprintMarkers(gameState);
+  }
+
+  onResize(canvas, gameState) {
+    if (!gameState) return;
+    const gridSz = gameState.gridSize || 14;
+    const HUD_H = 40;
+    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    this.tileSize = Math.floor(gridPixels / gridSz);
+    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
   }
 
   _resetGrid(gameState) {
@@ -247,6 +262,8 @@ export class ArchitectureMode extends GameMode {
     // Background
     ctx.fillStyle = '#080810';
     ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(this._xOff || 0, this._yOff || 0);
 
     // Blueprint ghost overlay (what to build)
     for (let row = 0; row < bp.pattern.length; row++) {
@@ -317,8 +334,11 @@ export class ArchitectureMode extends GameMode {
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // Blueprint info panel (right side or bottom)
-    const panelY = sz * ts + 4;
+    // ── End grid-space rendering — restore canvas transform ────────────
+    ctx.restore();
+
+    // Blueprint info panel (right side or bottom) — in canvas space (after ctx.restore)
+    const panelY = (this._yOff || 0) + sz * ts + 4;
     if (panelY < h - 10) {
       ctx.fillStyle = '#111128';
       ctx.fillRect(0, panelY, w, h - panelY);

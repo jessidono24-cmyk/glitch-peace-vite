@@ -393,6 +393,19 @@ export function renderRecoveryOverlays(gameState, ctx, tileSize) {
     ctx.textBaseline = 'middle';
     ctx.fillText(remaining, cx, cy);
     ctx.restore();
+
+    // "HOLD to enter" label above the target tile so player understands the mechanic
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = '#ffee00';
+    ctx.font = `bold ${Math.max(9, Math.floor(tileSize * 0.28))}px monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.shadowColor = '#ff6600';
+    ctx.shadowBlur = 6;
+    ctx.fillText('HOLD to cross hazard', cx, targetY * tileSize - 2);
+    ctx.shadowBlur = 0;
+    ctx.restore();
   }
 
   // 5. Near-miss flash (brief red border on player tile)

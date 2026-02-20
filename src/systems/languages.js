@@ -190,21 +190,171 @@ const VOCAB_BANK = [
   },
 ];
 
+// ─── CEFR LEVEL SYSTEM ──────────────────────────────────────────────────────
+//  A1 → A2 → B1 → B2 → C1 → C2  (Common European Framework of Reference)
+//  Level advances when accuracy is high; drops if accuracy falls.
+//  Players can also manually set their level in Options.
+
+export const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+// Minimum rolling accuracy required to *hold* a level before advancing/retreating
+const CEFR_ADVANCE_ACCURACY = 0.82; // 82% correct over last 10 challenges → advance
+const CEFR_RETREAT_ACCURACY = 0.45; // below 45% → retreat one level
+const MIN_ANSWERS_FOR_PROGRESSION = 5; // minimum answers in window before level can change
+
 /**
- * Generate a language challenge for the given target language.
+ * Read per-language CEFR progress from localStorage.
+ * Returns { level, correct, total } for the given language.
+ */
+export function getLangProgress(langId) {
+  try {
+    const raw = localStorage.getItem(`gp.lang.${langId}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        level: CEFR_LEVELS.includes(parsed.level) ? parsed.level : 'A1',
+        correct: parsed.correct || 0,
+        total: parsed.total || 0,
+        // Rolling window: last 10 answers (array of booleans)
+        recent: Array.isArray(parsed.recent) ? parsed.recent : [],
+      };
+    }
+  } catch (_) {}
+  return { level: 'A1', correct: 0, total: 0, recent: [] };
+}
+
+/**
+ * Save per-language CEFR progress.
+ */
+export function saveLangProgress(langId, progress) {
+  try {
+    localStorage.setItem(`gp.lang.${langId}`, JSON.stringify(progress));
+  } catch (_) {}
+}
+
+/**
+ * Record the result of a language challenge answer and update CEFR level.
+ * Returns the updated progress object.
+ */
+export function recordLangAnswer(langId, wasCorrect) {
+  const progress = getLangProgress(langId);
+  progress.total++;
+  if (wasCorrect) progress.correct++;
+
+  // Update rolling window (last 10)
+  progress.recent.push(wasCorrect);
+  if (progress.recent.length > 10) progress.recent.shift();
+
+  // Level progression/regression based on rolling accuracy
+  if (progress.recent.length >= MIN_ANSWERS_FOR_PROGRESSION) {
+    const rollingAcc = progress.recent.filter(Boolean).length / progress.recent.length;
+    const curIdx = CEFR_LEVELS.indexOf(progress.level);
+
+    if (rollingAcc >= CEFR_ADVANCE_ACCURACY && curIdx < CEFR_LEVELS.length - 1) {
+      // Advance level and reset rolling window
+      progress.level = CEFR_LEVELS[curIdx + 1];
+      progress.recent = [];
+    } else if (rollingAcc < CEFR_RETREAT_ACCURACY && curIdx > 0) {
+      // Retreat one level; keep rolling window
+      progress.level = CEFR_LEVELS[curIdx - 1];
+    }
+  }
+
+  saveLangProgress(langId, progress);
+  return progress;
+}
+
+/**
+ * Manually set CEFR level for a language (player override from Options).
+ */
+export function setLangLevel(langId, level) {
+  if (!CEFR_LEVELS.includes(level)) return;
+  const progress = getLangProgress(langId);
+  progress.level = level;
+  progress.recent = []; // reset rolling window on manual change
+  saveLangProgress(langId, progress);
+}
+
+// ─── GRAMMAR CHALLENGE BANK ───────────────────────────────────────────────
+// Grammar challenges are displayed when level >= B1.
+// Each entry: { lang, level, prompt, options, correct, hint }
+// 'hint' is shown after the answer for deeper learning.
+
+export const GRAMMAR_CHALLENGES = [
+  // Spanish
+  { lang: 'es', level: 'A1', prompt: 'Ella ___ feliz.  (to be — permanent trait)', options: ['está', 'es', 'tiene', 'hay'], correct: 1,  hint: 'SER (es) for permanent states; ESTAR (está) for temporary.' },
+  { lang: 'es', level: 'A2', prompt: '"I went" in Spanish:', options: ['voy', 'fui', 'iba', 'iré'], correct: 1,  hint: '"Fui" — irregular preterite of IR and SER.' },
+  { lang: 'es', level: 'B1', prompt: 'Subjunctive: Quiero que tú ___ (venir)', options: ['vengas', 'vienes', 'viniste', 'vendrás'], correct: 0, hint: 'Subjunctive required after "quiero que". Stem-change: ven→veng.' },
+  { lang: 'es', level: 'B2', prompt: '"Se habla español aquí" means:', options: ['One speaks Spanish here', 'He spoke Spanish here', 'Spanish is spoken here', 'They speak Spanish here'], correct: 2, hint: 'Pasiva refleja: se + 3rd person verb = passive construction.' },
+  // French
+  { lang: 'fr', level: 'A1', prompt: '"I have" in French:', options: ["j'ai", "je suis", "j'ai été", "j'avais"], correct: 0, hint: 'AVOIR (to have): j\'ai, tu as, il a…' },
+  { lang: 'fr', level: 'A2', prompt: 'Passé composé of "manger" (I ate):', options: ["j'ai mangé", "je mangeais", "je mange", "j'avais mangé"], correct: 0, hint: 'Passé composé = avoir/être + past participle.' },
+  { lang: 'fr', level: 'B1', prompt: 'Which takes ÊTRE in passé composé?', options: ['manger', 'avoir', 'partir', 'faire'], correct: 2, hint: 'House of être: verbs of motion + reflexives use ÊTRE, not AVOIR.' },
+  { lang: 'fr', level: 'B2', prompt: 'Subjonctif: Il faut que tu ___ (être)', options: ['sois', 'es', 'soit', 'étais'], correct: 0, hint: 'Subjonctif of ÊTRE: sois, sois, soit, soyons, soyez, soient.' },
+  // German
+  { lang: 'de', level: 'A1', prompt: '"The house" in German (nominative):', options: ['der Haus', 'das Haus', 'die Haus', 'den Haus'], correct: 1, hint: 'Haus is neuter → das Haus.' },
+  { lang: 'de', level: 'A2', prompt: '"I see the man" — accusative:', options: ['der Mann', 'den Mann', 'dem Mann', 'des Mannes'], correct: 1, hint: 'Definite article accusative masc.: der → den.' },
+  { lang: 'de', level: 'B1', prompt: '"She gives him the book" — dative:', options: ['Er gibt ihr das Buch', 'Sie gibt ihm das Buch', 'Sie gibt den Mann das Buch', 'Sie gibt er das Buch'], correct: 1, hint: 'Dative of "he/him" is IHM; sie = she.' },
+  { lang: 'de', level: 'B2', prompt: 'Konjunktiv II of "haben" (I would have):', options: ['ich habe', 'ich hatte', 'ich hätte', 'ich würde haben'], correct: 2, hint: 'Konjunktiv II of haben: hätte, hättest, hätte…' },
+  // Japanese (romaji)
+  { lang: 'ja', level: 'A1', prompt: '"I eat sushi" in Japanese:', options: ['わたしは すし が たべます', 'わたしは すし を たべます', 'わたしは すし に たべます', 'わたしは すし で たべます'], correct: 1, hint: 'Particle WO (を) marks the direct object of eating.' },
+  { lang: 'ja', level: 'B1', prompt: 'て-form (te-form) of 食べる (taberu):', options: ['食べた', '食べて', '食べる', '食べます'], correct: 1, hint: 'RU-verbs: drop -ru, add -te. 食べ + て = 食べて.' },
+  // Mandarin
+  { lang: 'zh', level: 'A1', prompt: '"I am Chinese" in Mandarin:', options: ['我 是 中国人', '我 有 中国人', '我 在 中国人', '我 叫 中国人'], correct: 0, hint: '是 (shì) is the copula "to be" for identity.' },
+  { lang: 'zh', level: 'B1', prompt: 'Resultative complement in "看完" means:', options: ['see quickly', 'finish seeing', 'cannot see', 'see again'], correct: 1, hint: '完 (wán) = complete/finish; 看完 = finish watching.' },
+  // Russian
+  { lang: 'ru', level: 'A2', prompt: '"I see a woman" — accusative:', options: ['женщина', 'женщиной', 'женщины', 'женщину'], correct: 3, hint: 'Feminine nouns in accusative: -а/-я endings become -у/-ю.' },
+  // Arabic
+  { lang: 'ar', level: 'A2', prompt: '"The book" in Arabic:', options: ['كتاب', 'الكتاب', 'كتابًا', 'للكتاب'], correct: 1, hint: 'Definite article in Arabic = ال (al-) prefixed to the noun.' },
+];
+
+/**
+ * Get a grammar challenge for a given language and CEFR level.
+ * Falls back to lower levels if no challenges at current level.
+ */
+export function getGrammarChallenge(langId, cefrLevel = 'A1') {
+  const levelIdx = CEFR_LEVELS.indexOf(cefrLevel);
+  // Try current level first, then lower levels
+  for (let i = levelIdx; i >= 0; i--) {
+    const pool = GRAMMAR_CHALLENGES.filter(c => c.lang === langId && c.level === CEFR_LEVELS[i]);
+    if (pool.length > 0) {
+      const c = pool[Math.floor(Math.random() * pool.length)];
+      return {
+        type: 'grammar',
+        lang: langId,
+        level: c.level,
+        prompt: c.prompt,
+        options: c.options,
+        correct: c.correct,
+        hint: c.hint,
+      };
+    }
+  }
+  return null; // no grammar challenges for this language yet
+}
+
+/**
+ * Generate a language challenge for the given target language and CEFR level.
  * Returns an object compatible with the learning-modules challenge format.
  *
- * The question shows the English concept and asks the player to identify
- * the correct translation in the target language.
+ * immersionMode: if true, show the concept in the target language (not English).
+ * cefrLevel: used to modulate difficulty (higher levels prefer grammar challenges).
  */
-export function getLangChallenge(targetLangId = 'fr') {
+export function getLangChallenge(targetLangId = 'fr', cefrLevel = 'A1', immersionMode = false) {
   const targetLang = getLanguage(targetLangId);
   if (!targetLang) return null;
+
+  // B1+ levels: 40% chance of grammar challenge instead of vocabulary
+  const levelIdx = CEFR_LEVELS.indexOf(cefrLevel);
+  if (levelIdx >= 2 && Math.random() < 0.40) {
+    const grammar = getGrammarChallenge(targetLangId, cefrLevel);
+    if (grammar) return grammar;
+  }
 
   // Pick a random word from vocab bank
   const entry = VOCAB_BANK[Math.floor(Math.random() * VOCAB_BANK.length)];
   const correctWord = entry[targetLangId];
-  if (!correctWord) return null; // shouldn't happen
+  if (!correctWord) return null;
 
   // Build 3 distractors from other vocab entries, same language
   const distractors = [];
@@ -226,12 +376,24 @@ export function getLangChallenge(targetLangId = 'fr') {
 
   const correctIndex = allOptions.indexOf(correctWord);
 
+  // Immersion mode: show concept in target language (no English) at B1+
+  const levelTag = cefrLevel !== 'A1' ? ` [${cefrLevel}]` : '';
+  let prompt;
+  if (immersionMode && levelIdx >= 2) {
+    // Full immersion B1+: question is entirely in the target language
+    prompt = `${targetLang.name.toUpperCase()}${levelTag}: "${correctWord}" →?`;
+  } else {
+    prompt = `${targetLang.name.toUpperCase()}${levelTag}: "${entry.concept}" means...`;
+  }
+
   return {
     type: 'language',
     lang: targetLangId,
+    cefrLevel,
     langName: targetLang.name,
     nativeName: targetLang.nativeName,
-    prompt: `${targetLang.name.toUpperCase()}: "${entry.concept}" means...`,
+    prompt,
+    promptConcept: entry.concept,
     options: allOptions,
     correct: correctIndex,
   };

@@ -366,6 +366,32 @@ export const TUTORIAL_PAGES = [
     ]
   },
   {
+    title: "👥 Co-operative Play — How It Works",
+    body: [
+      "GLITCH·PEACE co-op lets two players share one emotional field.",
+      "CURRENT STATUS: Co-op requires two keyboards on one computer.",
+      "",
+      "PLAYER 1 — Arrow keys to move:",
+      "  ↑ ↓ ← →   Move one tile at a time",
+      "  SHIFT       Toggle Matrix A/B",
+      "  ENTER       Confirm / Archetype action",
+      "",
+      "PLAYER 2 — WASD to move:",
+      "  W A S D     Move one tile at a time",
+      "  Q           Activate Player 2 Archetype",
+      "  E           Use Player 2 Glitch Pulse",
+      "",
+      "CO-OP MECHANICS:",
+      "  · Both players share one HP pool and one emotional field.",
+      "  · One player collects PEACE; the other draws away enemies.",
+      "  · If one player falls (HP 0), the other can revive with 15 HP.",
+      "  · Communication and strategy matter more than individual speed.",
+      "",
+      "To start co-op: select 'Co-operative Field' from the Play Mode menu.",
+      "  (Requires two people at one keyboard — no online play yet.)"
+    ]
+  },
+  {
     title: "🎮 Gamepad Controls",
     body: [
       "GLITCH·PEACE supports any browser-connected gamepad.",

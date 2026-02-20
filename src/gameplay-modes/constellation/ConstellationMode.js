@@ -83,7 +83,12 @@ export class ConstellationMode extends GameMode {
   }
 
   init(gameState, canvas, ctx) {
-    this.tileSize = Math.floor(canvas.width / (gameState.gridSize || 12));
+    const gridSz = gameState.gridSize || 12;
+    const HUD_H = 40;
+    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    this.tileSize = Math.floor(gridPixels / gridSz);
+    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
     gameState.player = gameState.player || { x: 0, y: 0, hp: 100, maxHp: 100, symbol: '◈', color: '#00e5ff' };
     gameState.score = gameState.score || 0;
     gameState.peaceCollected = 0;
@@ -91,6 +96,16 @@ export class ConstellationMode extends GameMode {
     this._constellationIdx = 0;
     this._bgStars = this._generateBgStars(gameState);
     this._loadConstellation(gameState);
+  }
+
+  onResize(canvas, gameState) {
+    if (!gameState) return;
+    const gridSz = gameState.gridSize || 12;
+    const HUD_H = 40;
+    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    this.tileSize = Math.floor(gridPixels / gridSz);
+    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
   }
 
   _generateBgStars(gameState) {
@@ -229,6 +244,8 @@ export class ConstellationMode extends GameMode {
     // Night sky background
     ctx.fillStyle = '#03050f';
     ctx.fillRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(this._xOff || 0, this._yOff || 0);
 
     // Background stars (twinkle)
     for (const bs of this._bgStars) {
@@ -314,6 +331,8 @@ export class ConstellationMode extends GameMode {
     ctx.textBaseline = 'middle';
     ctx.fillText('◈', gameState.player.x * ts + ts / 2, gameState.player.y * ts + ts / 2);
     ctx.shadowBlur = 0;
+    ctx.restore();
+
     ctx.restore();
 
     // Constellation name and progress (top)

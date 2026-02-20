@@ -841,6 +841,14 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
   ctx.fillStyle = '#00eeff'; ctx.shadowColor = '#00eeff'; ctx.shadowBlur = 5;
   ctx.font = '9px Courier New'; ctx.fillText('◆×' + (window._insightTokens || 0), 14, 113); ctx.shadowBlur = 0;
 
+  // Alchemy seeds
+  const seedsDisplay = window._alchemySystem?.seedsDisplay;
+  if (seedsDisplay) {
+    ctx.font = '7px Courier New'; ctx.fillStyle = '#cc88ff';
+    ctx.fillText(seedsDisplay, 14, 120); // below insight tokens
+    ctx.textAlign = 'left';
+  }
+
   // Score
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 10;
   ctx.font = 'bold 19px Courier New'; ctx.textAlign = 'center';

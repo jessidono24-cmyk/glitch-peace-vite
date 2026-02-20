@@ -637,7 +637,30 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
   // Biome overlay: after world, before HUD
   biomeSystem.draw(ctx, w, h, ts);
   drawRealityCheck(ctx, w, h);
+  drawEmotionFlash(ctx, w, h);
   drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive);
+}
+
+function drawEmotionFlash(ctx, w, h) {
+  const er = window._emotionRecognition;
+  if (!er) return;
+  const flash = er.flashLabel;
+  if (!flash) return;
+  const alpha = (typeof er.flashAlpha === 'number') ? er.flashAlpha : 0.9;
+  if (alpha < 0.02) return;
+
+  ctx.globalAlpha = alpha;
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 18px Courier New';
+  ctx.fillStyle = flash.color || '#ffffff';
+  ctx.shadowColor = flash.color || '#ffffff'; ctx.shadowBlur = 14;
+  ctx.fillText(flash.label || flash.name || '', w / 2, h / 2 - 30);
+  ctx.shadowBlur = 0;
+  if (flash.tip || flash.desc) {
+    ctx.font = '8px Courier New'; ctx.fillStyle = '#aaaaaa';
+    ctx.fillText(flash.tip || flash.desc, w / 2, h / 2 - 14);
+  }
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
 
 function drawRealityCheck(ctx, w, h) {

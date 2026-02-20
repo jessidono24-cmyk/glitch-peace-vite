@@ -174,6 +174,7 @@ window._achieveDefs   = { ACHIEVEMENT_DEFS, list: ACHIEVEMENT_DEFS };
 window._achievementQueue = [];
 window._achievementSystem = achievementSystem;
 window._alchemySystem = alchemySystem;
+window._empathyTraining = empathyTraining;
 
 let glitchFrames = 0, glitchTimer = 500;
 let anomalyActive = false, anomalyData = { row:-1, col:-1, t:0 };
@@ -1016,7 +1017,7 @@ function loop(ts) {
 
   // ── Phase 9: Intelligence Enhancement tick ──────────────────────────
   logicPuzzles.tick();
-  empathyTraining.tick();
+  empathyTraining.tick?.(dt);
   emotionRecognition.tick();
   // EQ observation: feed dominant emotion to emotion-recognition
   const domEmo = emotionalField.getDominantEmotion();

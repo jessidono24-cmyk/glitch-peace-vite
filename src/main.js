@@ -1113,8 +1113,6 @@ function loop(ts) {
   }
 
   drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, hallucinations, anomalyActive, anomalyData, glitchFrames, DPR, consequencePreview.getGhostPath());
-  // Biome overlay (drawn after game world, before HUD)
-  biomeSystem.draw(ctx, w, h, ts);
   // Phase 11: Draw dashboard overlay if visible
   if (dashboard.visible) drawDashboard(ctx, CW(), CH());
   animId = requestAnimationFrame(loop);

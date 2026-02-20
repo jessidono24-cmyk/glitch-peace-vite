@@ -1,5 +1,6 @@
 import { T, TILE_DEF, ARCHETYPES, CELL, GAP, PAL_A, PAL_B, PAL_HC } from '../core/constants.js';
 import { CFG, UPG } from '../core/state.js';
+import { biomeSystem } from '../systems/biome-system.js';
 import { spritePlayer } from '../rendering/sprite-player.js';
 import { drawBoss3D } from '../rendering/boss-renderer-3d.js';
 import { getVoidNexus3D } from '../rendering/void-nexus-3d.js';
@@ -633,6 +634,8 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
     ctx.fillStyle = vg; ctx.fillRect(0, 0, w, h);
   }
 
+  // Biome overlay: after world, before HUD
+  biomeSystem.draw(ctx, w, h, ts);
   drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive);
 }
 

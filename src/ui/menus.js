@@ -14,6 +14,21 @@ import { getGlobalTopScores } from '../systems/leaderboard.js';
 function listFromObjKeys(obj) { return Object.keys(obj); }
 function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
 
+// Language Immersion: translate common menu labels to the target language
+function immersionLabel(key, settings) {
+  if (!settings?.langImmersion || !settings?.targetLanguage) return key;
+  const translations = {
+    'es': { 'NEW GAME': 'NUEVO JUEGO', 'CONTINUE': 'CONTINUAR', 'OPTIONS': 'OPCIONES', 'TUTORIAL': 'TUTORIAL', 'CREDITS': 'CRÉDITOS', 'EXIT': 'SALIR', 'RESUME': 'REANUDAR', 'RESTART RUN': 'REINICIAR', 'QUIT TO TITLE': 'SALIR AL MENÚ', 'HIGH SCORES': 'PUNTUACIONES' },
+    'fr': { 'NEW GAME': 'NOUVEAU JEU', 'CONTINUE': 'CONTINUER', 'OPTIONS': 'OPTIONS', 'TUTORIAL': 'TUTORIEL', 'CREDITS': 'CRÉDITS', 'EXIT': 'QUITTER', 'RESUME': 'REPRENDRE', 'RESTART RUN': 'RECOMMENCER', 'QUIT TO TITLE': 'MENU PRINCIPAL', 'HIGH SCORES': 'SCORES' },
+    'de': { 'NEW GAME': 'NEUES SPIEL', 'CONTINUE': 'WEITER', 'OPTIONS': 'OPTIONEN', 'TUTORIAL': 'TUTORIAL', 'CREDITS': 'CREDITS', 'EXIT': 'BEENDEN', 'RESUME': 'FORTSETZEN', 'RESTART RUN': 'NEUSTART', 'QUIT TO TITLE': 'HAUPTMENÜ', 'HIGH SCORES': 'BESTENLISTE' },
+    'ja': { 'NEW GAME': '新しいゲーム', 'CONTINUE': '続ける', 'OPTIONS': '設定', 'TUTORIAL': 'チュートリアル', 'CREDITS': 'クレジット', 'EXIT': '終了', 'RESUME': '再開', 'RESTART RUN': '再スタート', 'QUIT TO TITLE': 'メニューへ', 'HIGH SCORES': 'ハイスコア' },
+    'zh': { 'NEW GAME': '新游戏', 'CONTINUE': '继续', 'OPTIONS': '选项', 'TUTORIAL': '教程', 'CREDITS': '致谢', 'EXIT': '退出', 'RESUME': '恢复', 'RESTART RUN': '重新开始', 'QUIT TO TITLE': '返回菜单', 'HIGH SCORES': '高分榜' },
+  };
+  const lang = settings.targetLanguage;
+  const dict = translations[lang] || translations[lang?.substring(0, 2)] || {};
+  return dict[key] || key;
+}
+
 export class MenuSystem {
   constructor({ CFG, onStartNew, onContinue, onQuitToTitle, onRestart, onSelectDreamscape, onResume }) {
     this.CFG = CFG;
@@ -812,7 +827,7 @@ export class MenuSystem {
       ctx.fillStyle = disabled ? '#2a2a3a' : (isSel ? '#00ff88' : '#b8b8d0');
       ctx.font = isSel ? 'bold 14px Courier New' : '13px Courier New';
       ctx.textAlign = 'center';
-      ctx.fillText((isSel ? '▶ ' : '  ') + it.label, w / 2, y);
+      ctx.fillText((isSel ? '▶ ' : '  ') + immersionLabel(it.label, this.CFG), w / 2, y);
       ctx.textAlign = 'left';
     }
 

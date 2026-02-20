@@ -37,6 +37,7 @@ export class Constellation3DMode extends ConstellationMode {
     this._starMeshes     = [];    // activated-star sprites
     this._lineMeshes     = [];    // connection lines
     this._bgStarPoints   = null;  // Points object for bg star-field
+    this._nebulaMesh     = null;  // nebula particle cloud
     this._playerMesh     = null;  // player marker
     this._nameLabel      = null;  // canvas2d DOM label overlay
   }
@@ -124,6 +125,57 @@ export class Constellation3DMode extends ConstellationMode {
     return [(gx - half) * GRID_SCALE, -(gy - half) * GRID_SCALE];
   }
 
+  _buildNebula() {
+    if (this._nebulaMesh) {
+      this._scene.remove(this._nebulaMesh);
+      this._nebulaMesh.geometry.dispose();
+      this._nebulaMesh.material.dispose();
+    }
+    const COUNT = 2000;
+    const positions = new Float32Array(COUNT * 3);
+    const colors    = new Float32Array(COUNT * 3);
+
+    // Nebula color palette: purples, blues, teals
+    const palette = [
+      [0.55, 0.20, 0.90], // purple
+      [0.25, 0.40, 0.95], // blue
+      [0.15, 0.75, 0.85], // teal
+      [0.60, 0.30, 0.80], // violet
+      [0.35, 0.55, 1.00], // cornflower
+    ];
+
+    for (let i = 0; i < COUNT; i++) {
+      // Gaussian distribution (Box-Muller)
+      const u = Math.random() + 1e-10;
+      const v = Math.random() + 1e-10;
+      const r = Math.sqrt(-2 * Math.log(u));
+      const theta = 2 * Math.PI * v;
+      positions[i * 3]     = r * Math.cos(theta) * 3.5;
+      positions[i * 3 + 1] = r * Math.sin(theta) * 3.5;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 4;
+
+      const col = palette[Math.floor(Math.random() * palette.length)];
+      const brightness = 0.4 + Math.random() * 0.6;
+      colors[i * 3]     = col[0] * brightness;
+      colors[i * 3 + 1] = col[1] * brightness;
+      colors[i * 3 + 2] = col[2] * brightness;
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color',    new THREE.BufferAttribute(colors, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.08,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.6,
+    });
+
+    this._nebulaMesh = new THREE.Points(geo, mat);
+    this._scene.add(this._nebulaMesh);
+  }
+
   _build3DScene(gameState) {
     // Remove old star / line meshes
     for (const m of this._starMeshes)  { this._scene.remove(m); m.geometry.dispose(); m.material.dispose(); }
@@ -134,6 +186,9 @@ export class Constellation3DMode extends ConstellationMode {
 
     const sz  = gameState.gridSize || 12;
     const constellationColor = this._safeConstellationColor();
+
+    // ── Nebula particle cloud ────────────────────────────────────────────
+    this._buildNebula();
 
     // ── Star sprites ─────────────────────────────────────────────────────
     for (const star of this._stars) {
@@ -235,6 +290,12 @@ export class Constellation3DMode extends ConstellationMode {
     if (this._bgStarPoints) {
       this._bgStarPoints.rotation.y = now * 0.00003;
       this._bgStarPoints.rotation.x = now * 0.000012;
+    }
+
+    // Slowly rotate nebula
+    if (this._nebulaMesh) {
+      this._nebulaMesh.rotation.y += 0.0002;
+      this._nebulaMesh.rotation.z += 0.0001;
     }
 
     // Gentle camera bob
@@ -343,6 +404,11 @@ export class Constellation3DMode extends ConstellationMode {
     this._lineMeshes  = [];
     this._playerMesh  = null;
     this._bgStarPoints = null;
+    if (this._nebulaMesh) {
+      this._nebulaMesh.geometry.dispose();
+      this._nebulaMesh.material.dispose();
+      this._nebulaMesh = null;
+    }
   }
 }
 

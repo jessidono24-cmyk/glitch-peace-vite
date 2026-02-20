@@ -91,6 +91,7 @@ export default class ShooterMode extends GameMode {
     
     // Update enemies
     this.updateEnemies(dt);
+    this._separateEnemies();
     
     // Update particles
     this.updateParticles(dt);
@@ -274,6 +275,31 @@ export default class ShooterMode extends GameMode {
     }
   }
   
+  /**
+   * Apply separation forces so enemies don't stack (verlet-style)
+   */
+  _separateEnemies() {
+    for (let i = 0; i < this.enemies.length; i++) {
+      for (let j = i + 1; j < this.enemies.length; j++) {
+        const a = this.enemies[i];
+        const b = this.enemies[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
+        const minDist = a.size + b.size;
+        if (dist < minDist) {
+          const push = (minDist - dist) / 2;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          a.x -= nx * push;
+          a.y -= ny * push;
+          b.x += nx * push;
+          b.y += ny * push;
+        }
+      }
+    }
+  }
+
   /**
    * Update all enemies
    */

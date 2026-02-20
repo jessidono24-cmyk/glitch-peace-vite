@@ -158,6 +158,58 @@ const NPC_DATA = [
       { id: 'end', speaker: null, text: null, options: [] },
     ],
   },
+  {
+    id: 'healer',
+    symbol: '✚',
+    color: '#88ffaa',
+    name: 'THE HEALER',
+    zone: 'village',
+    preferX: 14, preferY: 5,
+    dialogue: [
+      {
+        id: 'start',
+        speaker: 'HEALER',
+        text: 'I can strengthen your life force — but I need herbs from the forest first. Bring me four and I will do what I can.',
+        options: [
+          { label: 'I will gather them.', next: 'end', effect: { emotion: 'hope', amt: 0.3 } },
+          { label: 'Are you well yourself?', next: 'self' },
+        ],
+      },
+      {
+        id: 'self',
+        speaker: 'HEALER',
+        text: 'Healing others IS my wellbeing. Do not worry for me.',
+        options: [{ label: 'Understood.', next: 'end', effect: { emotion: 'tender', amt: 0.2 } }],
+      },
+      { id: 'end', speaker: null, text: null, options: [] },
+    ],
+  },
+  {
+    id: 'guardian',
+    symbol: '⚔',
+    color: '#ff8844',
+    name: 'THE GUARDIAN',
+    zone: 'void_edge',
+    preferX: 14, preferY: 14,
+    dialogue: [
+      {
+        id: 'start',
+        speaker: 'GUARDIAN',
+        text: 'The Void Edge tests those who dare enter. Prove yourself: collect three peace nodes before the sand runs out.',
+        options: [
+          { label: 'I accept the trial.', next: 'end', effect: { emotion: 'pride', amt: 0.3 } },
+          { label: 'Why this test?', next: 'why' },
+        ],
+      },
+      {
+        id: 'why',
+        speaker: 'GUARDIAN',
+        text: 'Only the swiftest of spirit can reclaim what the Glitch devours. Speed IS compassion here.',
+        options: [{ label: 'I understand.', next: 'end', effect: { emotion: 'hope', amt: 0.2 } }],
+      },
+      { id: 'end', speaker: null, text: null, options: [] },
+    ],
+  },
 ];
 
 const INTRO_DIALOGUE = [
@@ -220,6 +272,50 @@ const SAMPLE_QUESTS = [
     objectives: [{ type: 'complete_challenge', target: 1 }],
     reward: { score: 150, insight: 2, emotion: { hope: 0.5 } },
     completed: false,
+  },
+  // ── Phase 2 Quests ──────────────────────────────────────────────────────────
+  {
+    id: 'elders_mission',
+    title: "Elder's Mission",
+    description: 'Find the Temple of Echoes — collect 5 SHRINE tiles.',
+    objectives: [{ type: 'collect_shrine', target: 5 }],
+    reward: { score: 500, insight: 2, emotion: { hope: 0.6 } },
+    completed: false,
+  },
+  {
+    id: 'seers_vision',
+    title: "Seer's Vision",
+    description: 'Collect all SIGIL tiles on this level to unlock the sigil library.',
+    objectives: [{ type: 'collect_sigil', target: 3 }],
+    reward: { score: 400, insight: 3, emotion: { curiosity: 0.8 } },
+    completed: false,
+  },
+  {
+    id: 'sparks_discovery',
+    title: "Spark's Discovery",
+    description: 'Spark reveals a hidden map section — collect 3 PEACE nodes.',
+    objectives: [{ type: 'collect_peace', target: 3 }],
+    reward: { score: 250, insight: 1, emotion: { joy: 0.5 } },
+    completed: false,
+  },
+  {
+    id: 'healers_request',
+    title: "Healer's Request",
+    description: 'Bring 4 HERB items to the Healer for a max HP reward.',
+    objectives: [{ type: 'collect_herb', target: 4 }],
+    reward: { score: 350, insight: 1, emotion: { tender: 0.7 }, maxHp: 20 },
+    completed: false,
+  },
+  {
+    id: 'guardians_trial',
+    title: "Guardian's Trial",
+    description: 'Collect 3 PEACE nodes within 30 seconds!',
+    objectives: [{ type: 'timed_peace', target: 3, timeLimit: 30 }],
+    reward: { score: 600, insight: 2, emotion: { pride: 0.9 } },
+    completed: false,
+    _timerActive: false,
+    _timerStart: 0,
+    _timedCount: 0,
   },
 ];
 
@@ -286,10 +382,17 @@ export default class RPGMode extends GameMode {
     // Quest tracking — peace collection
     const peaceCollected = gameState.peaceCollected || 0;
     this._checkQuestProgress('restore_peace', 'collect_peace', peaceCollected, gameState);
+    this._checkQuestProgress('sparks_discovery', 'collect_peace', peaceCollected, gameState);
 
     // Quest tracking — learning challenges
     const challengesComplete = gameState._totalChallengesCompleted || 0;
     this._checkQuestProgress('first_challenge', 'complete_challenge', challengesComplete, gameState);
+
+    // Phase 2 quest tracking
+    this._checkQuestProgress('elders_mission', 'collect_shrine', gameState._shrineCount || 0, gameState);
+    this._checkQuestProgress('seers_vision', 'collect_sigil', gameState._sigilCount || 0, gameState);
+    this._checkQuestProgress('healers_request', 'collect_herb', gameState._herbCount || 0, gameState);
+    this._checkGuardiansTrial(gameState, deltaTime);
 
     // Advance shadow enemies on a timer
     this._shadowMoveAccMs += (deltaTime || 0);
@@ -539,9 +642,53 @@ export default class RPGMode extends GameMode {
           gameState.emotionalField.add(emo, amt);
         }
       }
+      // Max HP reward (Healer's Request)
+      if (quest.reward.maxHp && gameState.player) {
+        gameState.player.maxHp = (gameState.player.maxHp || 100) + quest.reward.maxHp;
+        gameState.player.hp   = Math.min(gameState.player.hp || 0, gameState.player.maxHp);
+      }
       // Stat growth on quest completion
       this.stats.wisdom = Math.min(10, this.stats.wisdom + 1);
       gameState._questCompleted = quest.title;
+    }
+  }
+
+  _checkGuardiansTrial(gameState, deltaTime) {
+    const quest = this._quests.find(q => q.id === 'guardians_trial');
+    if (!quest || quest.completed) return;
+
+    const obj = quest.objectives[0];
+    const peaceCollected = gameState.peaceCollected || 0;
+
+    // Start the timer on the first peace node collected (once per attempt)
+    if (!quest._timerActive && peaceCollected > (quest._baseCount || 0)) {
+      quest._timerActive = true;
+      quest._timerStart = Date.now();
+      quest._baseCount = peaceCollected - 1; // count from just before this node
+    }
+
+    if (quest._timerActive) {
+      const elapsed = (Date.now() - quest._timerStart) / 1000;
+      const gained = peaceCollected - quest._baseCount;
+      if (gained >= obj.target) {
+        // Mark complete by faking the target for the generic checker
+        const q2 = { ...quest, objectives: [{ type: 'timed_peace', target: obj.target }] };
+        quest.completed = true;
+        if (quest.reward.score) gameState.score = (gameState.score || 0) + quest.reward.score;
+        if (quest.reward.insight) gameState.insightTokens = (gameState.insightTokens || 0) + quest.reward.insight;
+        if (quest.reward.emotion && gameState.emotionalField?.add) {
+          for (const [emo, amt] of Object.entries(quest.reward.emotion)) {
+            gameState.emotionalField.add(emo, amt);
+          }
+        }
+        this.stats.wisdom = Math.min(10, this.stats.wisdom + 1);
+        gameState._questCompleted = quest.title;
+      } else if (elapsed > obj.timeLimit) {
+        // Trial failed — reset for retry
+        quest._timerActive = false;
+        quest._baseCount = peaceCollected; // new baseline for next attempt
+        gameState._questFailed = "Guardian's Trial — time ran out!";
+      }
     }
   }
 

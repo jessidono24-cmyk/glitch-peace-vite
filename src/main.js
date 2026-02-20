@@ -21,6 +21,7 @@ import { emotionRecognition }  from './intelligence/emotion-recognition.js';
 import { empathyTraining }     from './intelligence/empathy-training.js';
 import { strategicThinking }   from './intelligence/strategic-thinking.js';
 import { addScore, getTopScores } from './systems/leaderboard.js';
+import { AmbientMusicEngine } from './systems/ambient-music.js';
 import { recordSession, getAnalyticsSummary } from './systems/session-analytics.js';
 import {
   checkImpulseBuffer, cancelImpulseBuffer, recordEchoPosition,
@@ -64,6 +65,9 @@ let gameStateManager = null;
 let inputManager = null;
 let currentMode = null;
 
+// Ambient music engine (initialized lazily after user gesture)
+const ambientMusic = new AmbientMusicEngine();
+
 // Game state (legacy - will be gradually migrated to GameStateManager)
 const game = {
   state: 'MENU', // MENU | MENU_DREAMSCAPE | PLAYING | PAUSED
@@ -79,6 +83,8 @@ const game = {
   peaceTotal: 0,
   particles: [],
   currentDreamscape: 'RIFT', // RIFT | LODGE
+  _playerLastX: undefined,
+  _playerLastY: undefined,
   
   // PHASE 2A: Consciousness engine systems
   emotionalField: new EmotionalField(),
@@ -288,6 +294,8 @@ try {
           AudioManager.loadSamples(['move', 'peace', 'damage', 'nav', 'select', 'teleport', 'ambient']);
         }
       } catch (e) {}
+      // Start ambient music engine after user gesture
+      try { ambientMusic.start(); } catch (_) {}
       document.removeEventListener('keydown', _initAudioOnce);
       document.removeEventListener('click', _initAudioOnce);
     };
@@ -758,6 +766,15 @@ function updateSpriteLayer() {
     _spritePool.player.style.left = `${sx}px`;
     _spritePool.player.style.top  = `${sy}px`;
     _spritePool.player.style.display = 'block';
+
+    // Toggle 'walking' class when player moves
+    if (px !== game._playerLastX || py !== game._playerLastY) {
+      _spritePool.player.classList.add('walking');
+      game._playerLastX = px;
+      game._playerLastY = py;
+    } else {
+      _spritePool.player.classList.remove('walking');
+    }
   } else if (_spritePool.player) {
     _spritePool.player.style.display = 'none';
   }
@@ -977,6 +994,16 @@ function updateConsciousnessEngine(deltaMs) {
   // Visual feedback: world gets darker/more distorted with high distortion
   const distortion = game.emotionalField.calcDistortion();
   game.worldDistortion = distortion;
+
+  // Update ambient music engine if audio is enabled
+  if (game.settings?.audio) {
+    try {
+      ambientMusic.update({
+        distortion,
+        dominant: game.emotionalField?.getDominant() || null,
+      });
+    } catch (_) {}
+  }
 
   // CSS glitch animation driven by distortion level — respects reducedMotion setting
   if (!game.settings?.reducedMotion) {

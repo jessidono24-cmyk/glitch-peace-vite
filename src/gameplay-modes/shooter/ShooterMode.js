@@ -38,6 +38,7 @@ export default class ShooterMode extends GameMode {
     this.waveActive = false;
     this.enemiesRemaining = 0;
     this.score = 0;
+    this.kills = 0;
     this.comboMultiplier = 1;
     this.comboTimer = 0;
     
@@ -350,6 +351,7 @@ export default class ShooterMode extends GameMode {
           if (enemy.health <= 0) {
             // Enemy destroyed
             this.score += Math.floor(10 * this.comboMultiplier);
+            this.kills++;
             this.comboMultiplier += 0.1;
             this.comboTimer = 3; // Reset combo timer
             this.createParticles(enemy.x, enemy.y, 15, '#ffaa00');

@@ -2,7 +2,7 @@
 
 **A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
 
-[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
+[![Version](https://img.shields.io/badge/version-2.9.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
@@ -38,9 +38,63 @@ GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than e
 
 ---
 
-## ✨ What's Working Right Now (v2.6)
+## ✨ What's Working Right Now (v2.9 — Updated Feb 2026)
 
-### 🎮 Two Complete Gameplay Modes
+### 🎮 10 Fully Playable Gameplay Modes (+ 3D)
+
+All 10 modes verified working across all dreamscapes and play styles. 22 bugs fixed total.
+
+| Mode | Icon | Core Mechanic | Status |
+|------|------|---------------|--------|
+| **Grid Roguelike** | ◈ | Collect peace nodes, dodge enemies, emotional field | ✅ Full |
+| **Twin-Stick Shooter** | ⚡ | Wave survival, 4 weapons, kill counter, mouse aiming | ✅ Full |
+| **RPG Adventure** | ⚔ | Dialogue trees, character stats, visible quest log | ✅ Active |
+| **Ornithology** | 🦅 | Move through biomes, observe birds, answer challenges | ✅ Full |
+| **Mycology** | 🍄 | Forage mushrooms, identify toxic species | ✅ Full |
+| **Architecture** | 🏛 | Place tiles, design structures (SPACE/Q/E/X) | ✅ Full |
+| **Constellation** | ✦ | Navigate to stars, activate sequences | ✅ Full |
+| **Constellation 3D** | 🌌 | Three.js WebGL 3D starfield, same game logic | ✅ NEW |
+| **Alchemy** | ⚗ | Collect elements (🜂Fire 🜄Water 🜃Earth 🜁Air), transmute at Athanor | ✅ Full |
+| **Rhythm** | ♪ | Move to pulsing beat tiles, build streak multiplier | ✅ Full |
+
+### 🧘 Dream Yoga & Recovery Systems (Phase 2.5 — Now Live)
+
+These systems were designed but not wired. They are now active in every session:
+
+| System | What It Does | Trigger |
+|--------|-------------|---------|
+| **Lucidity Meter** | 0-100% bar (top-right) rises from insight tiles, body scans, challenges; decays on damage | Always visible when lucidity > 0 |
+| **Body Scan** | Somatic reminder overlay — `"Feel your feet · Press into the ground"` | Stepping on COVER tile |
+| **Dream Sign Tracking** | Records which tile types + emotions appear most across sessions (localStorage) | Every tile stepped |
+| **Reality Check** | `"Am I dreaming right now?"` prompt with sensory anchors | Every ~5 min (when enabled) |
+| **Pause Rewards** | +2 insight tokens + 10 lucidity after 60s pause; +10 HP after 10 min break | On resume from long pause |
+| **CSS Glitch Animation** | Canvas skews/hue-rotates with 3 intensity levels | `EmotionalField.calcDistortion()` |
+
+### 🐞 22 Bugs Fixed (Feb 2026 Session)
+
+17 original bugs + 5 new bugs found during comprehensive testing = 22 total, all resolved:
+- **BUG-022**: ESC now correctly returns from OPTIONS/CREDITS/HIGH SCORES → back to pause menu (not title)
+- **BUG-020**: Alchemy hint now shows element names + "Walk to ⚗ Athanor to transmute"
+- **BUG-018**: RPG quest log is now prominently rendered below mode banner (bright green, bordered)
+- **BUG-019**: Shooter HUD shows `Wave N · Kills: N` using accurate `this.kills` counter
+- **CSS Glitch**: Three mutually exclusive CSS keyframe animations driven by distortion level
+
+### 🎮 v2.9 New Features (Feb 2026)
+
+| Feature | Details |
+|---------|---------|
+| **5 Boss Types** | Fear Guardian 👁 · Chaos Bringer ⚡ · Pattern Master ◉ · Void Keeper ◈ · Integration Boss ✦ — unique colors, symbols, behaviors, specials |
+| **Character Sprites** | CSS overlay layer: glowing orb player sprite (pulsing head+body), enemy/boss DOM sprites positioned each frame |
+| **Animated Tiles** | DESPAIR dark-crawl pulse · TERROR red strobe · TRAP orange shimmer (join PEACE/GLITCH/INSIGHT/ARCH animations) |
+| **Isometric 3D Tilt** | Press `I` to toggle `perspective(800px) rotateX(18deg)` — both canvas and sprite layer transform |
+| **Tone.js Audio** | Learning challenge correct = ascending E4→G4→B4→E5 arpeggio · incorrect = descending D4→Bb3 · boss spawn = AMSynth detuned A1 drone |
+| **RPG Spatial Map** | 18×18 grid (was 12×12) · 5 named zones (Forest/Village/Temple/Void Edge/Convergence) · 3 NPCs (Elder/Seer/Spark) with full dialogue trees · Zone entry messages |
+| **Test Coverage** | 25 Playwright tests (was 4) — all 9 modes + boss types + learning challenge + isometric + RPG NPCs + Tone.js |
+
+**New Key Bindings:**
+| Key | Action |
+|-----|--------|
+| `I` | Toggle isometric 3D tilt (any grid mode) |
 
 #### 1. Grid-Based Roguelike — All Systems Connected
 **Gameplay:**
@@ -59,6 +113,7 @@ GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than e
 | **U** | Open Upgrade Shop (when you have insight tokens) |
 | ESC | Pause |
 | M | Switch to Shooter mode |
+| **I** | Toggle isometric 3D tilt |
 
 **13 Play Mode Variations:**
 Classic · Zen Garden · Speedrun · Puzzle · Survival Horror · Roguelike · Pattern Training · Boss Rush · Pacifist · Reverse · Campaign · Ritual · Daily Challenge
@@ -517,17 +572,16 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 
 | Metric | Value |
 |--------|-------|
-| Version | 2.4.0 |
-| Lines of Code | ~17,000 |
-| Target LOC | 23,500+ |
-| Blueprint Completion | ~82% |
-| Source Modules | 57 |
-| Gameplay Modes (running) | 9 (Grid + Shooter + RPG + Ornithology + Mycology + Architecture + Constellation + Alchemy + Rhythm) |
+| Version | 2.9.0 (Feb 2026 updated) |
+| Lines of Code | ~18,200 |
+| Blueprint Completion | ~65% (Phase 1–2 complete, Phase 3–8 in progress) |
+| Source Modules | 66 |
+| Gameplay Modes (running) | **9** (Grid + Shooter + RPG + Ornithology + Mycology + Architecture + Constellation + Alchemy + Rhythm) |
 | Gameplay Modes (designed) | 31+ |
 | Languages | 16 |
-| Dreamscapes | 11 |
-| Cosmologies | 12 |
-| Play Mode Variations | 13 |
+| Dreamscapes | 18 |
+| Cosmologies | 13 |
+| Play Mode Variations | 17 |
 | Enemy AI Behaviors | 9 |
 | Archetypes | 5 |
 | Sigils in Database | 31 |
@@ -538,8 +592,10 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 | Mushroom Species | 12 |
 | Blueprints | 4 |
 | Constellations | 6 |
-| Build Time | ~680ms |
-| Bundle Size | 258KB (81KB gzip) |
+| Build Time | ~860ms |
+| Bundle Size | 343KB (109KB gzip) |
+| Test Pass Rate | 4/4 ✅ |
+| Bugs Fixed (Feb 2026) | 22 |
 | Vulnerabilities | 0 |
 
 ---

@@ -36,8 +36,33 @@ export function updateHUD(game) {
   if (level && level.textContent !== levelStr) level.textContent = levelStr;
   const scoreStr = String(game.score || 0);
   if (score && score.textContent !== scoreStr) score.textContent = scoreStr;
-  // Objective: remaining peace nodes + timer (if timed) + moves left (PUZZLE)
-  let objParts = [`◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}`];
+  // Objective: mode-aware display
+  const modeType = game._currentModeType || 'grid';
+  let objParts;
+  if (modeType === 'shooter') {
+    // Shooter: show wave and kill count
+    const waveNum = game._waveNumber || 1;
+    const killCount = game._killCount || 0;
+    objParts = [`Wave ${waveNum} · Kills: ${killCount}`];
+  } else if (modeType === 'ornithology') {
+    const remaining = Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0));
+    objParts = [`🐦 ×${remaining}`];
+  } else if (modeType === 'constellation' || modeType === 'constellation-3d') {
+    const remaining = Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0));
+    objParts = [`★ ×${remaining}`];
+  } else if (modeType === 'mycology') {
+    const remaining = Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0));
+    objParts = [`🍄 ×${remaining}`];
+  } else if (modeType === 'alchemy') {
+    const remaining = Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0));
+    objParts = [`⚗ ×${remaining}`];
+  } else if (modeType === 'rhythm') {
+    const remaining = Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0));
+    objParts = [`♪ ×${remaining}`];
+  } else {
+    // Grid/RPG/Architecture: peace nodes
+    objParts = [`◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}`];
+  }
   if (game.movesRemaining !== undefined) objParts.push(`${game.movesRemaining}↕`);
   if (game.timeRemainingMs !== undefined) {
     const secs = Math.ceil(game.timeRemainingMs / 1000);
@@ -180,7 +205,7 @@ export function renderHUD(game) {
     <div class="hud-section" title="Level, Score, and Objective (Peace nodes to collect)">
       <div class="hud-item"><span class="hud-label">Level</span><span class="hud-value" id="level">${game.level}</span></div>
       <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="score">${game.score}</span></div>
-      <div class="hud-item"><span class="hud-label">Objective</span><span class="hud-value" id="objective">◈ ×${game.peaceTotal}</span></div>
+      <div class="hud-item"><span class="hud-label">Objective</span><span class="hud-value" id="objective">◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}</span></div>
     </div>
     ${powerupHTML}
     ${comboHTML}

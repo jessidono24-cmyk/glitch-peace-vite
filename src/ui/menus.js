@@ -15,7 +15,7 @@ function listFromObjKeys(obj) { return Object.keys(obj); }
 function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
 
 export class MenuSystem {
-  constructor({ CFG, onStartNew, onContinue, onQuitToTitle, onRestart, onSelectDreamscape }) {
+  constructor({ CFG, onStartNew, onContinue, onQuitToTitle, onRestart, onSelectDreamscape, onResume }) {
     this.CFG = CFG;
 
     this.onStartNew = onStartNew;
@@ -23,6 +23,7 @@ export class MenuSystem {
     this.onQuitToTitle = onQuitToTitle;
     this.onRestart = onRestart;
     this.onSelectDreamscape = onSelectDreamscape;
+    this.onResume = onResume || (() => {});
 
     this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology' | 'gamemode' | 'onboarding' | 'highscores'
     this.sel = 0;
@@ -58,6 +59,11 @@ export class MenuSystem {
   }
 
   open(screen) {
+    // Track where we came from so ESC from sub-screens returns correctly
+    if ((screen === 'options' || screen === 'credits' || screen === 'highscores') &&
+        (this.screen === 'title' || this.screen === 'pause')) {
+      this._subScreenReturn = this.screen; // remember 'title' or 'pause'
+    }
     this.screen = screen;
     this.sel = 0;
     if (screen === 'tutorial') this.tutPage = 0;
@@ -79,13 +85,18 @@ export class MenuSystem {
     // Global escapes
     if (k === 'Escape') {
       if (this.screen === 'options' || this.screen === 'credits' || this.screen === 'dreamscape' || this.screen === 'highscores') {
-        this.open('title');
+        const returnTo = this._subScreenReturn || 'title';
+        this._subScreenReturn = null;
+        this.open(returnTo);
         return { consumed: true };
       }
       if (this.screen === 'tutorial') {
-        // Return to wherever tutorial was opened from ('title' normally, 'pause' when H pressed in-game)
+        // 'resume' sentinel: ESC from tutorial (opened via H key) → signal main.js to resume PLAYING
         const ret = this._tutorialReturnScreen || 'title';
         this._tutorialReturnScreen = null;
+        if (ret === 'resume') {
+          return { consumed: true, resumeGame: true };
+        }
         this.open(ret);
         return { consumed: true };
       }
@@ -267,7 +278,7 @@ export class MenuSystem {
     }
     if (k === 'Enter' || k === ' ') {
       const mode = modes[this.playmodeSel];
-      if (mode) {
+      if (mode && !mode.disabled) {
         this._pendingPlaymode = mode.id;
         this.open('cosmology'); // proceed to cosmology selection
       }
@@ -433,7 +444,7 @@ export class MenuSystem {
 
     const common = [];
     if (isPause) {
-      common.push({ label: 'RESUME', action: () => this.onQuitToTitle({ to: 'playing' }) });
+      common.push({ label: 'RESUME', action: () => this.onResume() });
       common.push({ label: 'RESTART RUN', action: () => this.onRestart() });
     } else {
       common.push({ label: 'NEW GAME', action: () => this.onStartNew() });
@@ -695,6 +706,7 @@ export class MenuSystem {
       { id: 'constellation',  name: 'Constellation',       desc: 'Navigate stars and activate sequences',         icon: '✦' },
       { id: 'alchemy',        name: 'Alchemy',             desc: 'Collect elements and transmute them in the Athanor', icon: '⚗' },
       { id: 'rhythm',         name: 'Rhythm',              desc: 'Move to the beat and build score multipliers',  icon: '♪' },
+      { id: 'constellation-3d', name: 'Constellation 3D',  desc: 'Stars & Myth with Three.js 3D starfield',       icon: '🌌' },
     ];
   }
 
@@ -745,6 +757,21 @@ export class MenuSystem {
     ctx.font = '9px Courier New';
     ctx.fillText(subtitle, w / 2, h / 2 - 108);
 
+    ctx.textAlign = 'left';
+  }
+
+  /** Compact header for selection screens — no large glow so it doesn't bleed through the panel */
+  _drawCompactHeader(ctx, w, subtitle) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#00cc66';
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 6;
+    ctx.font = 'bold 16px Courier New';
+    ctx.fillText('GLITCH·PEACE', w / 2, 28);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#445566';
+    ctx.font = '9px Courier New';
+    ctx.fillText(subtitle, w / 2, 46);
     ctx.textAlign = 'left';
   }
 
@@ -914,7 +941,7 @@ export class MenuSystem {
   }
 
   _drawDreamscape(ctx, w, h) {
-    this._drawHeader(ctx, w, h, 'SELECT DREAMSCAPE');
+    this._drawCompactHeader(ctx, w, "SELECT DREAMSCAPE");
 
     const dreams = this.getDreamscapeOptions();
     const boxW = 460;
@@ -970,7 +997,7 @@ export class MenuSystem {
 
   _drawPlaymode(ctx, w, h) {
     const dreamId = this._pendingDreamscape || 'RIFT';
-    this._drawHeader(ctx, w, h, `SELECT PLAY MODE · ${dreamId}`);
+    this._drawCompactHeader(ctx, w, `SELECT PLAY MODE · ${dreamId}`);
 
     const modes = this.getPlaymodeOptions();
     const boxW = 480;
@@ -991,9 +1018,10 @@ export class MenuSystem {
     for (let i = 0; i < modes.length; i++) {
       const mode = modes[i];
       const isSel = i === this.playmodeSel;
+      const isDisabled = !!mode.disabled;
       const rowY = by + paddingV + i * rowH;
 
-      if (isSel) {
+      if (isSel && !isDisabled) {
         ctx.fillStyle = `rgba(0,229,255,${0.07 + pulse * 0.10})`;
         ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
         ctx.strokeStyle = `rgba(0,229,255,${0.28 + pulse * 0.20})`;
@@ -1001,13 +1029,13 @@ export class MenuSystem {
         ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
       }
 
-      ctx.fillStyle = isSel ? '#00e5ff' : '#b8b8d0';
-      ctx.font = isSel ? 'bold 12px Courier New' : '11px Courier New';
+      ctx.fillStyle = isDisabled ? '#3a3a4a' : (isSel ? '#00e5ff' : '#b8b8d0');
+      ctx.font = isSel && !isDisabled ? 'bold 12px Courier New' : '11px Courier New';
       ctx.textAlign = 'left';
-      ctx.fillText((isSel ? '▶ ' : '  ') + mode.name, bx + 26, rowY + rowH / 2 - 2);
+      ctx.fillText((isSel && !isDisabled ? '▶ ' : '  ') + mode.name + (isDisabled ? ' 🔒' : ''), bx + 26, rowY + rowH / 2 - 2);
 
       const descLine = mode.desc.length > 42 ? mode.desc.slice(0, 40) + '…' : mode.desc;
-      ctx.fillStyle = isSel ? '#88ffcc' : '#445566';
+      ctx.fillStyle = isDisabled ? '#2a2a3a' : (isSel ? '#88ffcc' : '#445566');
       ctx.font = '9px Courier New';
       ctx.textAlign = 'right';
       ctx.fillText(descLine, bx + boxW - 20, rowY + rowH / 2 - 2);
@@ -1024,7 +1052,7 @@ export class MenuSystem {
   _drawCosmology(ctx, w, h) {
     const dreamId = this._pendingDreamscape || 'RIFT';
     const playMode = this._pendingPlaymode || 'ARCADE';
-    this._drawHeader(ctx, w, h, `CHOOSE COSMOLOGY · ${dreamId} · ${playMode}`);
+    this._drawCompactHeader(ctx, w, `CHOOSE COSMOLOGY · ${dreamId} · ${playMode}`);
 
     const cosmologies = this.getCosmologyOptions();
     const boxW = 500;
@@ -1093,14 +1121,14 @@ export class MenuSystem {
     ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ choose · ENTER start · BKSP back', w / 2, by + boxH + 22);
+    ctx.fillText('↑/↓ choose · ENTER start · Backspace: back', w / 2, by + boxH + 22);
     ctx.textAlign = 'left';
   }
 
   _drawGamemode(ctx, w, h) {
     const dreamId = this._pendingDreamscape || 'RIFT';
     const playMode = this._pendingPlaymode || 'ARCADE';
-    this._drawHeader(ctx, w, h, `SELECT GAME MODE · ${dreamId} · ${playMode}`);
+    this._drawCompactHeader(ctx, w, `SELECT GAME MODE · ${dreamId} · ${playMode}`);
 
     const modes = this.getGamemodeOptions();
     const boxW = 500;
@@ -1149,7 +1177,7 @@ export class MenuSystem {
     ctx.fillStyle = '#445566';
     ctx.font = '8px Courier New';
     ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ choose · ENTER start · BKSP back', w / 2, by + boxH + 22);
+    ctx.fillText('↑/↓ choose · ENTER start · Backspace: back', w / 2, by + boxH + 22);
     ctx.textAlign = 'left';
   }
 

@@ -22,6 +22,16 @@ import { empathyTraining }     from './intelligence/empathy-training.js';
 import { strategicThinking }   from './intelligence/strategic-thinking.js';
 import { addScore, getTopScores } from './systems/leaderboard.js';
 import { recordSession, getAnalyticsSummary } from './systems/session-analytics.js';
+import {
+  checkImpulseBuffer, cancelImpulseBuffer, recordEchoPosition,
+  checkThresholdMonitor, updateSessionManager, applyRelapseCompassion,
+  checkRealityCheck, renderRecoveryOverlays,
+} from './systems/recovery-tools.js';
+import {
+  recordDreamSign, gainLucidity, loseLucidity,
+  triggerBodyScan, onGamePaused, onGameResumed,
+  renderDreamYogaOverlays,
+} from './systems/dream-yoga.js';
 
 // Expose intelligence singletons for stats dashboard (avoids circular imports)
 try {
@@ -103,7 +113,10 @@ let _lastHintText = ''; // cache to avoid redundant DOM updates every frame
 function initUI() {
   const app = document.getElementById('app');
   app.innerHTML = `
-    <canvas id="canvas" width="800" height="800"></canvas>
+    <div id="canvas-wrapper" style="position:relative;display:inline-block;overflow:hidden;">
+      <canvas id="canvas" width="800" height="800"></canvas>
+      <div id="sprite-layer" aria-hidden="true"></div>
+    </div>
     <div id="hud" style="display:none">
       <div class="hud-section">
         <div class="hud-item">
@@ -200,6 +213,14 @@ function initUI() {
       game.player = createPlayer();
       startGame();
     },
+    onResume: () => {
+      game.state = 'PLAYING';
+      const pauseReward = onGameResumed(game);
+      if (pauseReward) {
+        game._message = `⏸ Pause reward: ${pauseReward.bonus}`;
+        game._messageMs = Date.now();
+      }
+    },
     onSelectDreamscape: (dreamscapeId, playModeId, cosmologyId = null, gameModeId = 'grid-classic') => {
       // Fresh start — reset run state
       game.currentDreamscape = dreamscapeId;
@@ -244,6 +265,8 @@ function initUI() {
   
   console.log('[Phase 1] Modular architecture initialized');
   console.log('[ModeRegistry] Available modes:', modeRegistry.getAllModes());
+  // Expose menuSystem on game object for test access
+  game.menuSystem = menuSystem;
 }
 
 // Attach game to window for cross-module access (menu -> temporalSystem)
@@ -283,6 +306,7 @@ function switchGameMode() {
     'grid': 'grid-classic', 'shooter': 'shooter', 'rpg': 'rpg',
     'ornithology': 'ornithology', 'mycology': 'mycology',
     'architecture': 'architecture', 'constellation': 'constellation',
+    'constellation-3d': 'constellation-3d',
     'alchemy': 'alchemy', 'rhythm': 'rhythm',
   };
   const currentModeId = currentMode
@@ -292,9 +316,12 @@ function switchGameMode() {
   const nextIndex = (currentIndex + 1) % availableModes.length;
   const nextModeId = availableModes[nextIndex];
   
-  // Cleanup current mode
+  // Cleanup current mode (also call dispose for 3D modes that own a second canvas)
   if (currentMode && currentMode.cleanup) {
     currentMode.cleanup();
+  }
+  if (currentMode && currentMode.dispose) {
+    currentMode.dispose();
   }
   
   // Create new mode
@@ -323,13 +350,18 @@ function startGame() {
     
     if (currentMode) {
       currentMode.init(game, canvas, ctx);
+      game._currentModeType = currentMode.type; // expose for HUD
+      game._currentMode = currentMode;          // expose for tests + dev tools
       console.log('[Phase 1] Game mode initialized:', currentMode.name);
     } else {
       // Fallback to legacy grid generation if mode creation fails
       console.warn('[Phase 1] Mode creation failed, using legacy grid generation');
+      game._currentModeType = 'grid';
       generateGrid(game);
     }
   } else {
+    game._currentModeType = currentMode.type;
+    game._currentMode = currentMode;
     // Mode already exists, just generate new level
     if (currentMode.generateLevel) {
       currentMode.generateLevel(game);
@@ -434,6 +466,12 @@ document.addEventListener('keydown', e => {
   // Menu input
   if (menuSystem && (game.state === 'MENU' || game.state === 'MENU_DREAMSCAPE' || game.state === 'PAUSED')) {
     const result = menuSystem.handleKey(e);
+    if (result.resumeGame) {
+      // Tutorial ESC with 'resume' sentinel → go directly back to playing
+      game.state = 'PLAYING';
+      e.preventDefault();
+      return;
+    }
     if (result.consumed) {
       e.preventDefault();
       return;
@@ -466,15 +504,17 @@ document.addEventListener('keydown', e => {
       game.state = 'PAUSED';
       menuSystem.open('pause');
       saveGame(game);
+      onGamePaused();
       e.preventDefault();
       return;
     }
     
-    // H key: open in-game help / tutorial (returns to pause menu on ESC)
+    // H key: open in-game help / tutorial (ESC from tutorial → returns directly to PLAYING)
     if (e.key === 'h' || e.key === 'H') {
       game.state = 'PAUSED';
-      menuSystem._tutorialReturnScreen = 'pause'; // ESC from tutorial → pause menu
+      menuSystem._tutorialReturnScreen = 'resume'; // special sentinel: ESC from tutorial resumes game
       menuSystem.open('tutorial');
+      onGamePaused();
       e.preventDefault();
       return;
     }
@@ -485,6 +525,18 @@ document.addEventListener('keydown', e => {
       e.preventDefault();
       return;
     }
+
+    // I key: toggle isometric 3D tilt on canvas wrapper
+    if (e.key === 'i' || e.key === 'I') {
+      const wrapper = document.getElementById('canvas-wrapper');
+      if (wrapper) {
+        const on = wrapper.classList.toggle('isometric');
+        game._message = on ? '⟁ Isometric view ON (I to toggle)' : '⟁ Isometric view OFF';
+        game._messageMs = Date.now();
+      }
+      e.preventDefault();
+      return;
+    }
     
     // PHASE 2: Mode switching with M key
     if (e.key === 'm' || e.key === 'M') {
@@ -492,6 +544,22 @@ document.addEventListener('keydown', e => {
       e.preventDefault();
       return;
     }
+  }
+
+  // ESC during PAUSE: resume game (unless in a sub-screen like tutorial/options)
+  if (game.state === 'PAUSED' && e.key === 'Escape') {
+    if (menuSystem && menuSystem.screen === 'pause') {
+      // ESC on the pause menu itself → resume
+      game.state = 'PLAYING';
+      const pauseReward = onGameResumed(game);
+      if (pauseReward) {
+        game._message = `⏸ Pause reward: ${pauseReward.bonus}`;
+        game._messageMs = Date.now();
+      }
+      e.preventDefault();
+      return;
+    }
+    // Sub-screens handle their own ESC via menuSystem.handleKey (already handled above)
   }
 });
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -575,11 +643,25 @@ function render(deltaMs = 16) {
         'mycology':      'WASD/Arrows: Forage mushrooms · 1-4: Identify toxic species · M: Switch Mode · ESC: Pause',
         'architecture':  'WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · M: Switch Mode · ESC: Pause',
         'constellation': 'WASD/Arrows: Navigate to stars · Activate in sequence · M: Switch Mode · ESC: Pause',
-        'alchemy':       'WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute · M: Switch Mode · ESC: Pause',
+        'constellation-3d': 'WASD/Arrows: Navigate to stars · 3D starfield view · M: Switch Mode · ESC: Pause',
+        'alchemy':       'WASD: Move · Step on elements (🜂Fire 🜄Water 🜃Earth 🜁Air) to collect · Walk to ⚗ Athanor tile to transmute · M: Switch Mode · ESC: Pause',
         'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
       };
       // Only update the DOM when the text actually changes to prevent flicker
-      const newHintText = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · D: Stats · ESC: Pause';
+      // Grid mode: dynamically adjust hint based on what's currently active
+      let gridHint = 'WASD/Arrows: Move · J: Archetype · SHIFT: Matrix · H: Help · D: Stats · ESC: Pause';
+      if (currentMode?.type === 'grid') {
+        const g = game;
+        const pulseReady = (g.glitchPulseCharge || 0) >= 100;
+        const hasTokens = (g.insightTokens || 0) > 0;
+        const puzzleMode = !!g.mechanics?.undoEnabled;
+        gridHint = 'WASD/Arrows: Move · J: Archetype · SHIFT: Matrix'
+          + (pulseReady ? ' · R: PULSE READY!' : ' · R: Pulse (charge needed)')
+          + (hasTokens ? ' · U: Shop' : '')
+          + (puzzleMode ? ' · Z: Undo' : '')
+          + ' · H: Help · D: Stats · ESC: Pause';
+      }
+      const newHintText = hints[currentMode?.type] || gridHint;
       if (newHintText !== _lastHintText) {
         hint.textContent = newHintText;
         _lastHintText = newHintText;
@@ -603,6 +685,12 @@ function render(deltaMs = 16) {
     if (game._showStats) {
       renderStatsDashboard(game, ctx, canvas.width, canvas.height);
     }
+
+    // Dream Yoga + Recovery overlays (lucidity bar, body scan, reality checks)
+    if (game.state === 'PLAYING') {
+      renderDreamYogaOverlays(game, ctx);
+      renderRecoveryOverlays(game, ctx, game.tileSize || 32);
+    }
   }
 
   if (game.state === 'GAME_OVER') {
@@ -625,6 +713,84 @@ function render(deltaMs = 16) {
     ctx.fillText('ESC to return to menu', canvas.width / 2, canvas.height / 2 + 55);
     ctx.textAlign = 'left';
     document.querySelector('#hud').style.display = 'none';
+  }
+
+  // Update sprite layer (CSS character sprites over canvas)
+  updateSpriteLayer();
+}
+
+// ── Sprite Layer: position CSS character sprites over the canvas ────────────
+// Uses a pool of DOM elements to avoid constant createElement calls.
+const _spritePool = { player: null, enemies: [] };
+
+function updateSpriteLayer() {
+  const layer = document.getElementById('sprite-layer');
+  if (!layer || !canvas) return;
+
+  // Only show sprites in grid-based game modes (not menus/game-over)
+  if (game.state !== 'PLAYING' && game.state !== 'MESSAGE_PAUSE') {
+    layer.style.display = 'none';
+    return;
+  }
+  // Only show for grid-type modes
+  const modeType = currentMode?.type;
+  if (modeType && modeType !== 'grid' && modeType !== 'rpg') {
+    layer.style.display = 'none';
+    return;
+  }
+  layer.style.display = 'block';
+
+  const tileSize = currentMode?.tileSize || game.tileSize || 32;
+  const xOff = currentMode?._xOff || 0;
+  const yOff = currentMode?._yOff || 0;
+
+  // Player sprite
+  const px = game.player?.x;
+  const py = game.player?.y;
+  if (px !== undefined && py !== undefined) {
+    if (!_spritePool.player) {
+      _spritePool.player = document.createElement('div');
+      _spritePool.player.className = 'player-sprite';
+      layer.appendChild(_spritePool.player);
+    }
+    const sx = xOff + px * tileSize + tileSize / 2;
+    const sy = yOff + py * tileSize + tileSize;
+    _spritePool.player.style.left = `${sx}px`;
+    _spritePool.player.style.top  = `${sy}px`;
+    _spritePool.player.style.display = 'block';
+  } else if (_spritePool.player) {
+    _spritePool.player.style.display = 'none';
+  }
+
+  // Enemy sprites (pool: reuse DOM nodes)
+  const enemies = game.enemies || [];
+  // Grow pool if needed
+  while (_spritePool.enemies.length < enemies.length) {
+    const el = document.createElement('div');
+    el.className = 'enemy-sprite';
+    layer.appendChild(el);
+    _spritePool.enemies.push(el);
+  }
+  enemies.forEach((enemy, i) => {
+    const el = _spritePool.enemies[i];
+    if (!el) return;
+    const ex = xOff + enemy.x * tileSize + tileSize / 2;
+    const ey = yOff + enemy.y * tileSize + tileSize / 2;
+    el.style.left = `${ex}px`;
+    el.style.top  = `${ey}px`;
+    el.style.display = enemy.active === false ? 'none' : 'block';
+    // Boss gets bigger hexagon shape; use boss color if set
+    if (enemy.isBoss) {
+      el.classList.add('boss');
+      if (enemy.color) el.style.background = enemy.color + 'cc';
+    } else {
+      el.classList.remove('boss');
+      el.style.background = (enemy.color || '#ff6600') + 'cc';
+    }
+  });
+  // Hide unused pool slots
+  for (let i = enemies.length; i < _spritePool.enemies.length; i++) {
+    _spritePool.enemies[i].style.display = 'none';
   }
 }
 
@@ -708,6 +874,25 @@ function gameLoop(currentTime) {
     
     // PHASE 2A: Update consciousness engine systems
     updateConsciousnessEngine(deltaMs);
+
+    // ── Dream Yoga & Recovery: process tile-triggered flags ───────────────
+    if (game._triggerBodyScan) {
+      delete game._triggerBodyScan;
+      triggerBodyScan(game);
+    }
+    if (game._triggerLearningChallenge) {
+      delete game._triggerLearningChallenge;
+      gainLucidity(game, 'challenge');
+    }
+    if (game._lastTileType !== undefined) {
+      const dom = game.emotionalField?.getDominant() || null;
+      recordDreamSign(game._lastTileType, dom);
+      delete game._lastTileType;
+    }
+    // Session manager: tick fatigue/time-warning systems
+    if (game.mechanics) updateSessionManager(game, deltaMs);
+    // Reality check: may show occasional prompt after many moves
+    checkRealityCheck(game);
     
     // PHASE 1: Use mode update if available
     if (currentMode && currentMode.update) {
@@ -721,6 +906,9 @@ function gameLoop(currentTime) {
         game.player.maxHp = currentMode.player.maxHealth;
         game.score = currentMode.score;
         game.level = currentMode.waveNumber;
+        // Expose shooter-specific data for HUD objective display
+        game._waveNumber = currentMode.waveNumber || 1;
+        game._killCount = currentMode.kills || 0;
       }
     } else {
       // Fallback to legacy game systems
@@ -789,6 +977,15 @@ function updateConsciousnessEngine(deltaMs) {
   // Visual feedback: world gets darker/more distorted with high distortion
   const distortion = game.emotionalField.calcDistortion();
   game.worldDistortion = distortion;
+
+  // CSS glitch animation driven by distortion level — respects reducedMotion setting
+  if (!game.settings?.reducedMotion) {
+    canvas.classList.toggle('glitch-heavy',  distortion > 0.7);
+    canvas.classList.toggle('glitch-medium', distortion > 0.35 && distortion < 0.7);
+    canvas.classList.toggle('glitch-light',  distortion > 0.15 && distortion <= 0.35);
+  } else {
+    canvas.classList.remove('glitch-heavy', 'glitch-medium', 'glitch-light');
+  }
 }
 
 // Init

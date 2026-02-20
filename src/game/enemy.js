@@ -206,9 +206,134 @@ export function updateEnemies(gameState) {
       }
       if (!moved) _randomStep(e, gameState);
 
+    } else if (beh === 'teleport') {
+      // Chaos Bringer: teleports to a random VOID tile every 2.5s, otherwise wanders
+      if (!e._lastTeleport || now - e._lastTeleport > 2500) {
+        e._lastTeleport = now;
+        const sz = gameState.gridSize || 10;
+        for (let t = 0; t < 30; t++) {
+          const tx = 1 + Math.floor(Math.random() * (sz - 2));
+          const ty = 1 + Math.floor(Math.random() * (sz - 2));
+          if (gameState.grid[ty]?.[tx] === T.VOID) { e.x = tx; e.y = ty; break; }
+        }
+        // Spread GLITCH on teleport (special: glitch_spread)
+        if (e.special === 'glitch_spread' && gameState.grid) {
+          const gx = e.x + (Math.random() < 0.5 ? 1 : -1);
+          const gy = e.y + (Math.random() < 0.5 ? 1 : -1);
+          if (gameState.grid[gy]?.[gx] === T.VOID) gameState.grid[gy][gx] = T.GLITCH;
+        }
+      } else {
+        _randomStep(e, gameState);
+      }
+
+    } else if (beh === 'intercept') {
+      // Pattern Master: predicts player position 2 steps ahead using last direction
+      const ld = gameState._lastDir;
+      let ptx = gameState.player.x + (ld ? ld.x * 2 : 0);
+      let pty = gameState.player.y + (ld ? ld.y * 2 : 0);
+      const sz = gameState.gridSize || 10;
+      ptx = Math.max(0, Math.min(sz - 1, ptx));
+      pty = Math.max(0, Math.min(sz - 1, pty));
+      const cx = ptx - e.x, cy = pty - e.y;
+      const pref = Math.abs(cy) >= Math.abs(cx)
+        ? [[cy > 0 ? 1 : -1, 0], [0, cx > 0 ? 1 : -1]]
+        : [[0, cx > 0 ? 1 : -1], [cy > 0 ? 1 : -1, 0]];
+      let moved = false;
+      for (const [dy, dx] of pref) {
+        if (tryStep(e, e.y + dy, e.x + dx, gameState)) { moved = true; break; }
+      }
+      if (!moved) _randomStep(e, gameState);
+      // Place TRAP ahead of player (special: trap_ahead) every 3s
+      if (e.special === 'trap_ahead' && (!e._lastTrap || now - e._lastTrap > 3000)) {
+        e._lastTrap = now;
+        const fx = gameState.player.x + (ld ? ld.x : 0);
+        const fy = gameState.player.y + (ld ? ld.y : 0);
+        if (gameState.grid[fy]?.[fx] === T.VOID) gameState.grid[fy][fx] = T.TRAP;
+      }
+
+    } else if (beh === 'phase') {
+      // Integration Boss: aggressive chase in phase 1, slow heal in phase 2
+      const halfHp = e.maxHp / 2;
+      if (e.hp <= halfHp && e.phase === 1) {
+        e.phase = 2;
+        // Phase 2 announcement
+        if (!gameState._bossAlert) {
+          gameState._bossAlert = {
+            text: 'INTEGRATION BOSS — PHASE 2',
+            subtext: 'Face the shadow — embrace its power',
+            shownAtMs: now,
+            durationMs: 2000,
+            color: '#ffdd00',
+          };
+        }
+        // Heal minor HP at transition
+        if (e.special === 'phase_heal') {
+          const healAmt = Math.round(e.maxHp * 0.15);
+          e.hp = Math.min(e.maxHp, e.hp + healAmt);
+          // Also heal nearby regular enemies
+          for (const other of (gameState.enemies || [])) {
+            if (!other.isBoss && other.active !== false) {
+              other.hp = Math.min(other.maxHp || other.hp, (other.hp || 0) + 5);
+            }
+          }
+        }
+      }
+      if (e.phase === 2) {
+        // Phase 2: move every 2.5x the normal interval (slow)
+        // Slow down by only acting every other eligible frame
+        if (!e._phase2Skip) { e._phase2Skip = 0; }
+        e._phase2Skip++;
+        if (e._phase2Skip % 3 !== 0) {
+          // skip 2 out of every 3 eligible moves → ~3× slower
+        } else {
+          _chaseStep(e, tdx, tdy, gameState, true);
+        }
+        // Clear adjacent hazard tiles (Integration: reduces harm)
+        for (const [dy, dx] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+          const nx2 = e.x + dx, ny2 = e.y + dy;
+          const t2 = gameState.grid[ny2]?.[nx2];
+          if (t2 === T.DESPAIR || t2 === T.TERROR || t2 === T.TRAP) {
+            gameState.grid[ny2][nx2] = T.VOID;
+          }
+        }
+      } else {
+        // Phase 1: full-speed chase + TERROR trail
+        _chaseStep(e, tdx, tdy, gameState, true);
+        if (e.special === 'terror_trail' && (!e._lastTrail || now - e._lastTrail > 1500)) {
+          e._lastTrail = now;
+          const tw = e.x + (Math.random() < 0.5 ? 1 : -1);
+          const th = e.y + (Math.random() < 0.5 ? 1 : -1);
+          if (gameState.grid[th]?.[tw] === T.VOID) gameState.grid[th][tw] = T.TERROR;
+        }
+      }
+
     } else {
       // Default: direct chase
       _chaseStep(e, tdx, tdy, gameState, true);
+    }
+
+    // ── Boss Special Abilities (post-move, all behavior types) ──────────────
+    if (e.isBoss && e.special) {
+      // Fear Guardian: leave TERROR trail behind
+      if (e.special === 'terror_trail' && (!e._lastTrail || now - e._lastTrail > 1800)) {
+        e._lastTrail = now;
+        const tw = e.x + (Math.random() < 0.5 ? 1 : -1);
+        const th = e.y;
+        if (gameState.grid[th]?.[tw] === T.VOID) gameState.grid[th][tw] = T.TERROR;
+      }
+      // Void Keeper: drain nearest un-collected peace node into VOID every 5s
+      if (e.special === 'peace_drain' && (!e._lastDrain || now - e._lastDrain > 5000)) {
+        e._lastDrain = now;
+        const nodes = (gameState.peaceNodes || []).filter(n => !n.collected);
+        if (nodes.length > 1) { // gameplay balance: always keep ≥1 peace node collectible so level can complete
+          let closest = null, minD = Infinity;
+          for (const n of nodes) {
+            const d = Math.abs(n.x - e.x) + Math.abs(n.y - e.y);
+            if (d < minD) { minD = d; closest = n; }
+          }
+          if (closest && minD < 6) { closest.collected = true; } // "drain" it
+        }
+      }
     }
   }
 }

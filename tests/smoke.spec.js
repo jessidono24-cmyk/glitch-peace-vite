@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('smoke: game loads, title menu renders', async ({ page }) => {
   // Dev server runs on 3000/3001 (in use falls back to next port)
-  await page.goto(process.env.PW_BASE_URL || 'http://localhost:3002/', { waitUntil: 'domcontentloaded' });
+  await page.goto(process.env.PW_BASE_URL || 'http://localhost:3001/', { waitUntil: 'domcontentloaded' });
 
   const canvas = page.locator('canvas');
   await expect(canvas).toHaveCount(1);
@@ -27,7 +27,7 @@ test('smoke: game loads, title menu renders', async ({ page }) => {
 });
 
 test('smoke: menu navigation works (arrow keys)', async ({ page }) => {
-  await page.goto(process.env.PW_BASE_URL || 'http://localhost:3002/', { waitUntil: 'domcontentloaded' });
+  await page.goto(process.env.PW_BASE_URL || 'http://localhost:3001/', { waitUntil: 'domcontentloaded' });
   
   await page.waitForTimeout(500);
   
@@ -48,7 +48,7 @@ test('smoke: menu navigation works (arrow keys)', async ({ page }) => {
 });
 
 test('smoke: dreamscape selection accessible', async ({ page }) => {
-  await page.goto(process.env.PW_BASE_URL || 'http://localhost:3002/', { waitUntil: 'domcontentloaded' });
+  await page.goto(process.env.PW_BASE_URL || 'http://localhost:3001/', { waitUntil: 'domcontentloaded' });
   
   await page.waitForTimeout(500);
   

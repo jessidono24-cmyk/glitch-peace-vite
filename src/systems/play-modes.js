@@ -287,7 +287,8 @@ export const PLAY_MODES = {
   COOP: {
     id: 'coop',
     name: "Co-operative Field",
-    desc: "Two players, shared emotional field (FUTURE)",
+    desc: "Two players, shared emotional field — coming soon",
+    disabled: true,
     config: {
       peaceMul: 1.2,
       hazardMul: 1.2,
@@ -543,5 +544,6 @@ export function getAvailableModes() {
     id: PLAY_MODES[key].id,
     name: PLAY_MODES[key].name,
     desc: PLAY_MODES[key].desc,
+    disabled: PLAY_MODES[key].disabled || false,
   }));
 }

@@ -52,9 +52,11 @@ export function applyPowerup(gameState, powerup) {
   // Immediate effects on application
   if (powerup.effect === 'stun_enemies' && Array.isArray(gameState.enemies)) {
     const until = Date.now() + powerup.duration;
+    // Set global freeze timestamp so updateEnemies() can check it
+    gameState._freezeUntilMs = until;
+    // Also set per-enemy stun timer as belt-and-suspenders backup
     for (const enemy of gameState.enemies) {
-      enemy.stunned = true;
-      enemy.stunnedUntil = until;
+      enemy.stunTimer = Math.max(enemy.stunTimer || 0, powerup.duration);
     }
   }
 }

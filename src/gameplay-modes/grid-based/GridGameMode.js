@@ -72,6 +72,7 @@ import { recordSession }       from '../../systems/session-analytics.js';
 // ── GLITCH tile animation constants ─────────────────────────────────────────
 const GLITCH_FLICKER_PERIOD_MS = 180;  // how fast the GLITCH tile color cycles
 const GLITCH_COLOR_COUNT = 6;          // number of distinct GLITCH colors
+const BOSS_LABEL_MAX_CHARS = 12;       // max characters shown above boss tile (fits in one tile width)
 
 /**
  * GridGameMode implements the traditional grid-based roguelike gameplay.
@@ -300,10 +301,98 @@ export class GridGameMode extends GameMode {
   }
 
   /**
-   * Spawn a boss enemy — larger, faster, more HP, distinctive color.
+   * Spawn a boss enemy — one of 5 distinct types based on level and dreamscape.
+   * Fear Guardian / Chaos Bringer / Pattern Master / Void Keeper / Integration Boss.
    * Called every 5th level when bossEnabled is true.
    */
   _spawnBoss(gameState) {
+    // ── 5 Boss Types (from FEATURES.md) ──────────────────────────────────────
+    const BOSS_TYPES = [
+      {
+        id: 'fear_guardian',
+        name: 'FEAR GUARDIAN',
+        subtext: 'The Guardian of unprocessed fear rises',
+        color: '#ff2233',
+        symbol: '👁',
+        hpMul: 1.0,
+        dmg: 20,
+        speedMul: 0.7,   // fast
+        behavior: 'chase',
+        emotion: 'fear',
+        // Special: places TERROR tiles in its wake (handled in enemy AI)
+        special: 'terror_trail',
+      },
+      {
+        id: 'chaos_bringer',
+        name: 'CHAOS BRINGER',
+        subtext: 'Entropy given form — patterns unravel',
+        color: '#ff8800',
+        symbol: '⚡',
+        hpMul: 0.8,
+        dmg: 15,
+        speedMul: 0.5,   // teleports — compensated in AI
+        behavior: 'teleport',
+        emotion: 'rage',
+        // Special: randomly converts nearby VOID tiles to GLITCH
+        special: 'glitch_spread',
+      },
+      {
+        id: 'pattern_master',
+        name: 'PATTERN MASTER',
+        subtext: 'It knows your next move — adapt',
+        color: '#00ccff',
+        symbol: '◉',
+        hpMul: 1.2,
+        dmg: 18,
+        speedMul: 0.8,
+        behavior: 'intercept', // moves to predicted player position
+        emotion: 'grief',
+        // Special: spawns TRAP tiles ahead of the player
+        special: 'trap_ahead',
+      },
+      {
+        id: 'void_keeper',
+        name: 'VOID KEEPER',
+        subtext: 'The guardian of emptiness reclaims the grid',
+        color: '#8800ff',
+        symbol: '◈',
+        hpMul: 1.5,
+        dmg: 12,
+        speedMul: 1.2,   // slow but tanky
+        behavior: 'patrol',  // circles the grid perimeter
+        emotion: 'despair',
+        // Special: gradually converts peace nodes into VOID tiles
+        special: 'peace_drain',
+      },
+      {
+        id: 'integration_boss',
+        name: 'INTEGRATION BOSS',
+        subtext: 'Face the shadow — it carries your strength',
+        color: '#ffdd00',
+        symbol: '✦',
+        hpMul: 2.0,
+        dmg: 10,
+        speedMul: 0.9,
+        behavior: 'phase', // aggressive phase 1 (>50% HP), slow/heals phase 2
+        emotion: 'awe',
+        // Special: phase transition — heals enemies at half HP
+        special: 'phase_heal',
+      },
+    ];
+
+    // Select boss type: cycle through them as levels progress, with dreamscape influence
+    const dsId = gameState.dreamscape?.id || '';
+    let typeIndex;
+    if (gameState.mechanics?.bossOnly) {
+      // Boss Rush: random each spawn
+      typeIndex = Math.floor(Math.random() * BOSS_TYPES.length);
+    } else {
+      // Normal progression: rotate by level, but Fear Guardian more common in RIFT/SHADOW dreamscapes
+      typeIndex = Math.floor((gameState.level - 1) / 5) % BOSS_TYPES.length;
+      if ((dsId === 'rift' || dsId === 'shadow') && Math.random() < 0.4) typeIndex = 0;
+    }
+    const bossType = BOSS_TYPES[typeIndex];
+
     const sz = gameState.gridSize;
     for (let attempt = 0; attempt < 200; attempt++) {
       const x = 1 + Math.floor(Math.random() * (sz - 2));
@@ -312,24 +401,32 @@ export class GridGameMode extends GameMode {
       if (gameState.grid[y]?.[x] === T.VOID && dist > 7) {
         const boss = createEnemy(x, y, gameState.level);
         boss.isBoss = true;
-        boss.hp = 50 + gameState.level * 10;
+        boss.bossType = bossType.id;
+        boss.hp = Math.round((50 + gameState.level * 10) * bossType.hpMul);
         boss.maxHp = boss.hp;
-        boss.speed = Math.max(200, boss.speed * 0.65); // faster than normal
-        boss.dmg = 25; // higher collision damage
-        boss.color = '#ff00aa';
-        boss.symbol = '◆';
-        boss.size = 1; // occupies 1 tile but rendered larger
+        boss.speed = Math.max(150, Math.round((boss.speed || 400) * bossType.speedMul));
+        boss.dmg = bossType.dmg;
+        boss.color = bossType.color;
+        boss.symbol = bossType.symbol;
+        boss.behavior = bossType.behavior;
+        boss.special = bossType.special;
+        boss.phase = 1; // for phase-based bosses
+        boss.specialCooldownMs = 0;
+        boss.size = 1;
         gameState.enemies.push(boss);
 
-        // Announce boss
+        // Announce boss with type-specific message
         gameState._bossAlert = {
-          text: `LEVEL ${gameState.level} · BOSS ENCOUNTER`,
-          subtext: 'Pattern entity manifesting',
+          text: `LEVEL ${gameState.level} · ${bossType.name}`,
+          subtext: bossType.subtext,
           shownAtMs: Date.now(),
-          durationMs: 2500,
-          color: '#ff44aa',
+          durationMs: 3000,
+          color: bossType.color,
         };
-        if (gameState.emotionalField?.add) gameState.emotionalField.add('fear', 0.8);
+        if (gameState.emotionalField?.add) {
+          gameState.emotionalField.add(bossType.emotion, 0.9);
+        }
+        try { window.AudioManager?.play('boss'); } catch (_) {}
         return;
       }
     }
@@ -794,6 +891,68 @@ export class GridGameMode extends GameMode {
           continue;
         }
 
+        // ── DESPAIR tile: dark crawling pulse ────────────────────────────
+        if (tile === T.DESPAIR && !hcDef) {
+          const dp = 0.4 + 0.6 * Math.abs(Math.sin(nowTile / 1800 + x * 0.7 + y * 1.1));
+          ctx.save();
+          const dcx = x * tileSize + tileSize / 2;
+          const dcy = y * tileSize + tileSize / 2;
+          const dGrad = ctx.createRadialGradient(dcx, dcy, 0, dcx, dcy, tileSize * 0.8);
+          dGrad.addColorStop(0, `rgba(0,0,60,${dp * 0.7})`);
+          dGrad.addColorStop(1, 'rgba(0,0,80,0)');
+          ctx.fillStyle = dGrad;
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+          ctx.globalAlpha = 0.5 + dp * 0.5;
+          ctx.shadowColor = '#4488ff';
+          ctx.shadowBlur = 4 + dp * 6;
+          ctx.fillStyle = '#4488ff';
+          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('▼', dcx, dcy);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
+        // ── TERROR tile: red spike flicker ───────────────────────────────
+        if (tile === T.TERROR && !hcDef) {
+          const tf = (Math.floor(nowTile / 120 + x * 3 + y * 5) % 3 === 0) ? 1.0 : 0.6;
+          ctx.save();
+          ctx.globalAlpha = tf;
+          ctx.fillStyle = '#330000';
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+          ctx.shadowColor = '#ff3333';
+          ctx.shadowBlur = 8 * tf;
+          ctx.fillStyle = '#ff3333';
+          ctx.font = `bold ${tileSize * 0.65}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('!', x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
+        // ── TRAP tile: orange shimmer ─────────────────────────────────────
+        if (tile === T.TRAP && !hcDef) {
+          const tp = 0.5 + 0.5 * Math.sin(nowTile / 500 + x * 1.5 + y * 2.1);
+          ctx.save();
+          ctx.globalAlpha = 0.7 + tp * 0.3;
+          ctx.fillStyle = '#221000';
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+          ctx.shadowColor = '#ff8800';
+          ctx.shadowBlur = 5 + tp * 7;
+          ctx.fillStyle = '#ff8800';
+          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('⊗', x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
         // Draw symbol (default for all other tile types)
         if (tileDef.sy) {
           const symColor = hcDef?.sy || tileDef.g || tileDef.bd || '#fff';
@@ -854,37 +1013,52 @@ export class GridGameMode extends GameMode {
       enemies.forEach(enemy => {
         if (enemy.active !== false) {
           if (enemy.isBoss) {
-            // Boss: pulsing magenta glow + bigger symbol + HP bar
+            // Boss: type-specific glow color + symbol + HP bar + phase indicator
+            const bossColor = enemy.color || '#ff00aa';
+            const bossSymbol = enemy.symbol || '\u25c6';
             const pulse = 0.5 + 0.5 * Math.sin(nowEnemy / 250);
+            const isPhase2 = enemy.phase === 2;
+            const glowColor = isPhase2 ? '#ffdd00' : bossColor;
             ctx.save();
-            // Glow halo
             const bcx = enemy.x * tileSize + tileSize / 2;
             const bcy = enemy.y * tileSize + tileSize / 2;
             const bGrad = ctx.createRadialGradient(bcx, bcy, 0, bcx, bcy, tileSize * 1.2);
-            bGrad.addColorStop(0, `rgba(255,0,170,${0.4 + pulse * 0.3})`);
-            bGrad.addColorStop(1, 'rgba(255,0,170,0)');
+            bGrad.addColorStop(0, glowColor + 'aa');
+            bGrad.addColorStop(1, glowColor + '00');
             ctx.fillStyle = bGrad;
             ctx.fillRect(enemy.x * tileSize - tileSize * 0.5, enemy.y * tileSize - tileSize * 0.5, tileSize * 2, tileSize * 2);
             ctx.globalAlpha = 0.7 + pulse * 0.3;
-            ctx.fillStyle = '#ff00aa';
+            ctx.fillStyle = bossColor;
             ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize, tileSize, tileSize);
             ctx.globalAlpha = 1.0;
             ctx.fillStyle = '#fff';
             ctx.font = `bold ${tileSize * 0.8}px monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.shadowColor = '#ff44aa';
+            ctx.shadowColor = glowColor;
             ctx.shadowBlur = 14 + pulse * 8;
-            ctx.fillText('◆', bcx, bcy);
+            ctx.fillText(bossSymbol, bcx, bcy);
             ctx.shadowBlur = 0;
-            // HP bar below boss
+            if (enemy.bossType) {
+              ctx.fillStyle = glowColor;
+              ctx.font = `${Math.max(7, Math.floor(tileSize * 0.28))}px monospace`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              ctx.fillText(enemy.bossType.replace('_', ' ').toUpperCase().slice(0, BOSS_LABEL_MAX_CHARS), bcx, enemy.y * tileSize - 2);
+            }
             if (enemy.hp !== undefined && enemy.maxHp) {
               const bw = tileSize;
               const frac = enemy.hp / enemy.maxHp;
-              ctx.fillStyle = '#330011';
-              ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize + tileSize, bw, 4);
-              ctx.fillStyle = frac > 0.5 ? '#ff44aa' : (frac > 0.25 ? '#ffaa00' : '#ff3344');
-              ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize + tileSize, Math.round(bw * frac), 4);
+              ctx.fillStyle = '#110011';
+              ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize + tileSize, bw, 5);
+              ctx.fillStyle = frac > 0.5 ? bossColor : (frac > 0.25 ? '#ffaa00' : '#ff3344');
+              ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize + tileSize, Math.round(bw * frac), 5);
+              if (isPhase2) {
+                ctx.fillStyle = '#ffdd00';
+                ctx.beginPath();
+                ctx.arc(enemy.x * tileSize + bw - 4, enemy.y * tileSize + tileSize + 2, 3, 0, Math.PI * 2);
+                ctx.fill();
+              }
             }
             ctx.restore();
           } else {
@@ -1618,6 +1792,14 @@ export class GridGameMode extends GameMode {
         };
         createParticles(gameState, px, py, '#aa00ff', 18);
         try { window.AudioManager?.play('power'); } catch(e) {}
+      } else {
+        // Feedback: show current charge
+        const charge = Math.round(gameState.glitchPulseCharge || 0);
+        gameState._glitchPulseMsg = {
+          text: `Pulse charge: ${charge}% — collect ◈ tiles to charge`,
+          color: '#886699',
+          expiresMs: now + 1400,
+        };
       }
     }
 
@@ -1627,6 +1809,13 @@ export class GridGameMode extends GameMode {
         closeUpgradeShop(gameState);
       } else if ((gameState.insightTokens || 0) > 0) {
         openUpgradeShop(gameState);
+      } else {
+        // Feedback: explain how to earn tokens
+        gameState._glitchPulseMsg = {
+          text: 'Shop needs ☆ insight tokens — step on ☆ ARCH tiles',
+          color: '#886633',
+          expiresMs: now + 1600,
+        };
       }
     }
 
@@ -1667,10 +1856,21 @@ export class GridGameMode extends GameMode {
     }
 
     // PUZZLE mode undo: Z key (U is reserved for upgrade shop)
-    if (gameState.mechanics?.undoEnabled && (input.isKeyPressed('z') || input.isKeyPressed('Z'))) {
-      undoGameMove(gameState);
-      this.lastMoveTime = now;
-      return;
+    if (input.isKeyPressed('z') || input.isKeyPressed('Z')) {
+      if (gameState.mechanics?.undoEnabled) {
+        undoGameMove(gameState);
+        this.lastMoveTime = now;
+        return;
+      } else {
+        // Feedback: undo only available in PUZZLE mode
+        gameState._glitchPulseMsg = {
+          text: 'Undo only available in PUZZLE play mode',
+          color: '#665544',
+          expiresMs: now + 1400,
+        };
+        this.lastMoveTime = now;
+        return;
+      }
     }
 
     // Get directional input

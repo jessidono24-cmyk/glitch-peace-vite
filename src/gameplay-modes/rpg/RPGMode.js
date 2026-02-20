@@ -29,15 +29,137 @@ const CLARITY_GROWTH_DIVISOR = 5;  // every 5 levels
 const DEFAULT_EMOTION_EFFECT = 0.3;
 
 // ─── RPG Grid Constants ───────────────────────────────────────────────────────
-const RPG_GRID_SIZE      = 12;   // tile count per side
-const RPG_SHADOW_COUNT   = 3;    // wandering glitch spirit enemies
+const RPG_GRID_SIZE      = 18;   // expanded tile count per side (was 12)
+const RPG_SHADOW_COUNT   = 4;    // wandering glitch spirit enemies (was 3)
 const RPG_SHADOW_MOVE_MS = 900;  // ms between shadow enemy steps
 const RPG_TOP_OFFSET     = 58;   // px at top reserved for banner
 const RPG_BOT_OFFSET     = 178;  // px at bottom reserved for dialogue box
 const RPG_MIN_SPAWN_DIST = 5;    // min Manhattan distance from (1,1) for enemy spawn
 
-// ─── Sample Dialogue Tree ─────────────────────────────────────────────────────
-// Each node: { id, speaker, text, options: [{ label, next, effect }] }
+// ─── Named Zones (18×18 grid divided into 4 quadrants + center) ───────────────
+// Each zone: { name, x1, y1, x2, y2, description, music }
+const RPG_ZONES = [
+  { id: 'forest',    name: '🌲 Whispering Forest', x1: 0, y1: 0,  x2: 8,  y2: 8,  desc: 'Ancient trees hum old patterns' },
+  { id: 'village',   name: '🏘 Pattern Village',   x1: 9, y1: 0,  x2: 17, y2: 8,  desc: 'Survivors who remember the peace' },
+  { id: 'temple',    name: '⛩ Temple of Sigils',  x1: 0, y1: 9,  x2: 8,  y2: 17, desc: 'Sacred symbols hold the grid together' },
+  { id: 'void_edge', name: '🌑 Void Edge',          x1: 9, y1: 9,  x2: 17, y2: 17, desc: 'The Glitch spreads here — be careful' },
+  { id: 'center',   name: '✦ Convergence Point',  x1: 7, y1: 7,  x2: 10, y2: 10, desc: 'All paths meet here' },
+];
+
+// ─── NPC Characters with dialogue trees ──────────────────────────────────────
+const NPC_DATA = [
+  {
+    id: 'elder',
+    symbol: '⊕',
+    color: '#ffdd88',
+    name: 'THE ELDER',
+    zone: 'village',
+    preferX: 13, preferY: 3,
+    dialogue: [
+      {
+        id: 'start',
+        speaker: 'ELDER',
+        text: 'The Pattern Village stood for generations. Now the Glitch eats at our edges.',
+        options: [
+          { label: 'How do we stop it?', next: 'stop' },
+          { label: 'Have others survived?', next: 'others' },
+          { label: '[Listen quietly]', next: 'quiet', effect: { emotion: 'tender', amt: 0.3 } },
+        ],
+      },
+      {
+        id: 'stop',
+        speaker: 'ELDER',
+        text: 'Collect the peace nodes. Each one strengthens the pattern. It is slow work — but the only work that matters.',
+        options: [{ label: 'I understand.', next: 'end', effect: { emotion: 'hope', amt: 0.4 } }],
+      },
+      {
+        id: 'others',
+        speaker: 'ELDER',
+        text: 'The Seer remains in the Temple of Sigils. And a young one called Spark wanders the Forest still.',
+        options: [{ label: 'I will find them.', next: 'end', effect: { emotion: 'hope', amt: 0.3 } }],
+      },
+      {
+        id: 'quiet',
+        speaker: 'ELDER',
+        text: '...Your silence speaks compassion. That alone is healing.',
+        options: [{ label: '...', next: 'end', effect: { emotion: 'tender', amt: 0.5 } }],
+      },
+      { id: 'end', speaker: null, text: null, options: [] },
+    ],
+  },
+  {
+    id: 'seer',
+    symbol: '◉',
+    color: '#88aaff',
+    name: 'THE SEER',
+    zone: 'temple',
+    preferX: 3, preferY: 13,
+    dialogue: [
+      {
+        id: 'start',
+        speaker: 'SEER',
+        text: 'Each sigil you decode restores one fragment of the original pattern. Do you read the old signs?',
+        options: [
+          { label: 'Teach me.', next: 'teach' },
+          { label: 'I know some.', next: 'know', effect: { emotion: 'pride', amt: 0.2 } },
+          { label: 'Not yet.', next: 'not_yet' },
+        ],
+      },
+      {
+        id: 'teach',
+        speaker: 'SEER',
+        text: 'The circle ◈ is presence. The triangle ▼ is descent. The star ✦ is integration. Read the grid as language.',
+        options: [{ label: 'I will remember.', next: 'end', effect: { emotion: 'curiosity', amt: 0.6 } }],
+      },
+      {
+        id: 'know',
+        speaker: 'SEER',
+        text: 'Then you carry the elder knowledge. Use it.',
+        options: [{ label: 'I will.', next: 'end' }],
+      },
+      {
+        id: 'not_yet',
+        speaker: 'SEER',
+        text: 'Then learn by walking. Every tile has meaning. You will understand in time.',
+        options: [{ label: 'Thank you.', next: 'end', effect: { emotion: 'hope', amt: 0.2 } }],
+      },
+      { id: 'end', speaker: null, text: null, options: [] },
+    ],
+  },
+  {
+    id: 'spark',
+    symbol: '⚡',
+    color: '#ffff44',
+    name: 'SPARK',
+    zone: 'forest',
+    preferX: 3, preferY: 3,
+    dialogue: [
+      {
+        id: 'start',
+        speaker: 'SPARK',
+        text: 'Oh! Another one who can still walk through the Glitch! I thought I was the last!',
+        options: [
+          { label: 'You are not alone.', next: 'alone', effect: { emotion: 'joy', amt: 0.7 } },
+          { label: 'What have you found out there?', next: 'found' },
+        ],
+      },
+      {
+        id: 'alone',
+        speaker: 'SPARK',
+        text: '...Thank you. I needed to hear that. The forest still sings, you know. If you listen, really listen.',
+        options: [{ label: '[Listen]', next: 'end', effect: { emotion: 'tender', amt: 0.5 } }],
+      },
+      {
+        id: 'found',
+        speaker: 'SPARK',
+        text: 'The center of the map — the Convergence Point — has more peace nodes than anywhere else. But it is surrounded by the Void Edge.',
+        options: [{ label: 'Good to know.', next: 'end' }],
+      },
+      { id: 'end', speaker: null, text: null, options: [] },
+    ],
+  },
+];
+
 const INTRO_DIALOGUE = [
   {
     id: 'start',
@@ -133,7 +255,7 @@ export default class RPGMode extends GameMode {
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
   init(gameState, canvas, ctx) {
-    console.log('[RPGMode] Initializing RPG mode (Phase M5 skeleton)');
+    console.log('[RPGMode] Initializing RPG mode — dialogue, quests, stats, shadow enemies active');
     this.canvas = canvas;
     this.ctx = ctx;
 
@@ -338,6 +460,14 @@ export default class RPGMode extends GameMode {
       // End of branch — close dialogue
       this._dialogueActive = false;
       gameState._dialogueActive = false;
+      // Mark NPC as talked-to so dialogue doesn't auto-retrigger immediately
+      if (this._currentNPC) {
+        this._currentNPC.dialogueDone = true;
+        // Re-enable after 8s so player can revisit
+        const npc = this._currentNPC;
+        setTimeout(() => { npc.dialogueDone = false; }, 8000);
+        this._currentNPC = null;
+      }
       return;
     }
     this._currentNodeId = next;
@@ -419,16 +549,20 @@ export default class RPGMode extends GameMode {
     const active = this._quests.filter(q => !q.completed);
     if (!active.length) return;
 
-    const x = this.canvas.width - 180;
-    const y = 10;
-    ctx.fillStyle = 'rgba(5,5,20,0.75)';
-    ctx.fillRect(x, y, 172, 18 + active.length * 18);
-    ctx.fillStyle = '#445566';
-    ctx.font = '9px Courier New';
+    const x = this.canvas.width - 190;
+    const y = 62; // below mode banner, avoid overlap
+    const panelH = 18 + active.length * 18;
+    ctx.fillStyle = 'rgba(5,5,20,0.88)';
+    ctx.fillRect(x, y, 180, panelH);
+    ctx.strokeStyle = 'rgba(0,255,136,0.25)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, 180, panelH);
+    ctx.fillStyle = '#00ff88';
+    ctx.font = 'bold 9px Courier New';
     ctx.textAlign = 'left';
-    ctx.fillText('QUESTS', x + 6, y + 12);
+    ctx.fillText('📋 QUESTS', x + 6, y + 12);
     active.forEach((q, i) => {
-      ctx.fillStyle = '#667099';
+      ctx.fillStyle = '#88ffcc';
       ctx.fillText(`◇ ${q.title}`, x + 6, y + 28 + i * 18);
     });
     ctx.textAlign = 'left';
@@ -458,7 +592,30 @@ export default class RPGMode extends GameMode {
     };
     generateGrid(this._rpgState);
 
-    // Spawn wandering glitch-spirit enemies away from spawn point
+    // Place NPCs at their preferred positions (or nearest VOID cell)
+    this._npcs = NPC_DATA.map(npc => {
+      let px = npc.preferX, py = npc.preferY;
+      // Find a walkable cell near the preferred position
+      for (let r = 0; r <= 4; r++) {
+        for (let dy = -r; dy <= r; dy++) {
+          for (let dx = -r; dx <= r; dx++) {
+            const nx = Math.max(0, Math.min(RPG_GRID_SIZE - 1, px + dx));
+            const ny = Math.max(0, Math.min(RPG_GRID_SIZE - 1, py + dy));
+            if (this._rpgState.grid[ny]?.[nx] === T.VOID) {
+              px = nx; py = ny;
+              break;
+            }
+          }
+        }
+      }
+      return { ...npc, x: px, y: py, dialogueDone: false };
+    });
+
+    // Set current zone
+    this._currentZone = null;
+    this._updateCurrentZone(1, 1);
+
+    // Spawn wandering glitch-spirit enemies away from spawn point and NPCs
     this._shadowEnemies = [];
     for (let i = 0; i < RPG_SHADOW_COUNT; i++) {
       let ex, ey, attempts = 0;
@@ -469,10 +626,22 @@ export default class RPGMode extends GameMode {
       } while (
         attempts < 80 && (
           this._rpgState.grid[ey]?.[ex] !== T.VOID ||
-          Math.abs(ex - 1) + Math.abs(ey - 1) < RPG_MIN_SPAWN_DIST
+          Math.abs(ex - 1) + Math.abs(ey - 1) < RPG_MIN_SPAWN_DIST ||
+          this._npcs.some(n => Math.abs(n.x - ex) + Math.abs(n.y - ey) < 3)
         )
       );
-      this._shadowEnemies.push({ x: ex, y: ey, maxHp: 15 + i * 5 });
+      const enemyHp = 15 + i * 5;
+      this._shadowEnemies.push({ x: ex, y: ey, maxHp: enemyHp, hp: enemyHp });
+    }
+  }
+
+  /** Update which named zone the player is in; show message on zone entry */
+  _updateCurrentZone(px, py) {
+    const zone = RPG_ZONES.find(z => px >= z.x1 && px <= z.x2 && py >= z.y1 && py <= z.y2)
+                 || RPG_ZONES[4]; // fallback to center
+    if (!this._currentZone || this._currentZone.id !== zone.id) {
+      this._currentZone = zone;
+      this._zoneMsg = { text: zone.name, desc: zone.desc, shownAtMs: Date.now(), durationMs: 2500 };
     }
   }
 
@@ -492,6 +661,20 @@ export default class RPGMode extends GameMode {
 
     st.player.x = nx;
     st.player.y = ny;
+
+    // Zone transition check
+    this._updateCurrentZone(nx, ny);
+
+    // NPC proximity: auto-trigger dialogue if player steps adjacent to an NPC
+    if (this._npcs && !this._dialogueActive) {
+      for (const npc of this._npcs) {
+        if (!npc.dialogueDone && Math.abs(npc.x - nx) + Math.abs(npc.y - ny) <= 1) {
+          this._startDialogue(npc.dialogue, 'start', gameState);
+          this._currentNPC = npc;
+          break;
+        }
+      }
+    }
 
     // Hazard: apply resilience-reduced damage to shared player HP
     if (def.d > 0) {
@@ -636,6 +819,37 @@ export default class RPGMode extends GameMode {
       ctx.fillText('◌', ex, ey);
     }
 
+    // NPCs — render with their unique color + symbol + name label
+    if (this._npcs) {
+      const npPulse = 0.7 + 0.3 * Math.sin(now / 800);
+      for (const npc of this._npcs) {
+        const nx2 = gx + npc.x * ts + ts / 2;
+        const ny2 = gy + npc.y * ts + ts / 2;
+        // Glow
+        ctx.save();
+        ctx.globalAlpha = npPulse;
+        ctx.shadowColor = npc.color || '#ffdd88';
+        ctx.shadowBlur  = 10;
+        ctx.fillStyle   = npc.color || '#ffdd88';
+        ctx.font        = `bold ${Math.floor(ts * 0.6)}px monospace`;
+        ctx.textAlign   = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(npc.symbol || '⊕', nx2, ny2);
+        ctx.shadowBlur  = 0;
+        // Name tag above (only if tile size allows)
+        if (ts > 12) {
+          ctx.globalAlpha = 0.85;
+          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          const tagW = Math.min(55, npc.name.length * 5.5 + 6);
+          ctx.fillRect(nx2 - tagW / 2, ny2 - ts - 12, tagW, 12);
+          ctx.fillStyle = npc.color || '#ffdd88';
+          ctx.font = `7px Courier New`;
+          ctx.fillText(npc.name.slice(0, 10), nx2, ny2 - ts - 4);
+        }
+        ctx.restore();
+      }
+    }
+
     // Player
     const plx  = gx + st.player.x * ts + ts / 2;
     const ply  = gy + st.player.y * ts + ts / 2;
@@ -652,5 +866,32 @@ export default class RPGMode extends GameMode {
     ctx.globalAlpha  = 1;
 
     ctx.restore();
+
+    // Zone name overlay (bottom of grid, fades in/out)
+    if (this._zoneMsg) {
+      const zm = this._zoneMsg;
+      const age = Date.now() - zm.shownAtMs;
+      if (age < zm.durationMs) {
+        const alpha = age < 400
+          ? age / 400
+          : Math.max(0, 1 - (age - zm.durationMs + 600) / 600);
+        const w = ctx.canvas.width;
+        const zoneY = gy + RPG_GRID_SIZE * ts + 10;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(gx, zoneY, ts * RPG_GRID_SIZE, 30);
+        ctx.fillStyle = '#00ffcc';
+        ctx.font = 'bold 13px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText(zm.text, w / 2, zoneY + 12);
+        ctx.fillStyle = '#558899';
+        ctx.font = '9px Courier New';
+        ctx.fillText(zm.desc, w / 2, zoneY + 25);
+        ctx.restore();
+      } else {
+        this._zoneMsg = null;
+      }
+    }
   }
 }

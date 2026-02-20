@@ -1412,7 +1412,7 @@ export class MenuSystem {
       }
       ctx.fillStyle = '#00cc88';
       ctx.font = `bold ${Math.floor(w / 36)}px Courier New`;
-      ctx.fillText('Vocabulary challenges will appear in this language!', w / 2, h * 0.84);
+      ctx.fillText('Vocabulary challenges will appear in this language!', w / 2, h * 0.88);
       ctx.fillStyle = '#445566';
       ctx.font = '8px Courier New';
       ctx.fillText('↑/↓ to scroll  ·  ENTER to confirm  ·  ESC to skip', w / 2, h * 0.90);

@@ -244,6 +244,13 @@ export class ArchitectureMode extends GameMode {
       try { window.AudioManager?.play('level_complete'); } catch(e) {}
       // Advance to next blueprint
       this._blueprintIdx++;
+      // When all blueprints in this set are done, advance the level and restart the cycle
+      if ((gameState.peaceCollected || 0) >= gameState.peaceTotal) {
+        gameState.level = (gameState.level || 1) + 1;
+        gameState.peaceCollected = 0;
+        this._blueprintIdx = 0;
+        this._completedBlueprints = [];
+      }
       this._resetGrid(gameState);
       this._positionBlueprintMarkers(gameState);
     }

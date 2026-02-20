@@ -133,6 +133,7 @@ export class RhythmMode extends GameMode {
     this._lastPlayerMove = 0;
     this._scoreMultiplier = 1;
     this._patternFlash = null;  // { text, color, at }
+    this._levelCompletePending = false;
     // Note: _audioCtx and _gainNode reserved for future direct Web Audio API integration
     this._audioCtx = null;
     this._gainNode = null;
@@ -261,6 +262,7 @@ export class RhythmMode extends GameMode {
   handleInput(gameState, input) {
     const now = Date.now();
     if (now - this.lastMoveTime < this.moveDelay) return;
+    if (this._levelCompletePending) return;
 
     const dir = input.getDirectionalInput();
     if (dir.x === 0 && dir.y === 0) return;
@@ -304,11 +306,13 @@ export class RhythmMode extends GameMode {
 
     // Level complete
     if ((gameState.peaceCollected || 0) >= gameState.peaceTotal) {
+      this._levelCompletePending = true;
       setTimeout(() => this._onLevelComplete(gameState), 400);
     }
   }
 
   _onLevelComplete(gameState) {
+    this._levelCompletePending = false;
     const accuracy = this._totalAttempts > 0
       ? Math.round(100 * this._totalOnBeat / this._totalAttempts)
       : 0;

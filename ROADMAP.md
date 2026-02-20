@@ -1,620 +1,517 @@
-# 🗺️ GLITCH·PEACE Development Roadmap
+# GLITCH·PEACE Development Roadmap
 
-**Vision**: A consciousness awakening engine that supports addiction recovery, accelerates learning, and cultivates embodiment and dream yoga practice through gentle stress inoculation and pattern recognition training.
+## Vision
 
-**Target**: 23,500+ lines of production-ready code
-**Current**: 4,300 lines  
-**Timeline**: March 20, 2026 (extended for dream yoga integration)
+Transform GLITCH·PEACE into a complete consciousness-awakening, learning-acceleration, and addiction-cessation tool through incremental development.
 
----
+## Current State (2026-02-19)
 
-## 🎯 Core Mission
+### ✅ Completed (Phases 1-5)
+- **~5,000 lines of code** across 16 source files
+- Base game mechanics fully functional
+- Emotional engine integrated
+- Temporal system active
+- Pattern recognition tools created
+- Audio engine wired
+- **Status**: Playable, stable, well-architected
 
-### 1. Consciousness Awakening
-- Gentle stress inoculation through gameplay
-- Pattern recognition training
-- Emotional awareness development
-- Mindfulness integration
-- Reality testing and awareness cultivation
+### 🏗️ Infrastructure Complete
+- Folder structure for all future systems
+- Comprehensive documentation (8 READMEs)
+- Architecture document defining vision
+- Clear separation of concerns
 
-### 2. Addiction Recovery Support
-- Impulse delay training (1-second buffer)
-- Consequence prediction (3-move preview)
-- Route alternatives (multiple paths)
-- Relapse compassion (non-punitive design)
-- Craving simulation (hazard pull mechanic)
-- Pattern loop detection (echo system)
-- Threshold awareness (close-call monitoring)
+## Development Phases
 
-### 3. Learning Enhancement
-- Language learning mini-games
-- Mathematical reasoning puzzles
-- Memory training exercises
-- Spatial intelligence challenges
-- Verbal reasoning tasks
-- Problem-solving scenarios
-- IQ/EQ skill development
+### Phase 6: Learning Systems Foundation (Next Priority) 
+**Estimated**: 3,000-4,000 lines | **Time**: 2-3 weeks
 
-### 4. Embodiment Machine
-- Body awareness cultivation
-- Somatic presence training
-- Proprioceptive feedback integration
-- Energy body awareness (chakra connection)
-- Breath synchronization mechanics
-- Grounding techniques
-- Physical-digital bridge
+#### Objectives
+Make gameplay naturally teach language and mathematics through immersive interaction.
 
-### 5. Dream Yoga Practice
-- Lucid dreaming preparation
-- Reality check training
-- Dream sign recognition and tracking
-- Sleep state awareness cultivation
-- Hypnagogic state practice
-- Consciousness continuity exercises
-- Dream journal integration prompts
+#### Tasks (In Order)
+1. **L1**: Create `language/vocabulary-engine.js`
+   - Tile interactions teach vocabulary
+   - Context-based word learning
+   - Multiple language support infrastructure
+   - Start with English, expand later
 
-### 6. Consciousness Engine
-- Emergent complexity from simple rules
-- Multiple intelligence pathways
-- Self-directed exploration
-- Non-coercive design
-- Body-mind integration
+2. **L2**: Create `mathematics/pattern-recognition.js`
+   - Fibonacci teaching explicit
+   - Grid pattern identification
+   - Enemy behavior patterns
+   - Reward pattern discovery
 
----
+3. **L3**: Create `meta-learning/attention-training.js`
+   - Focus mechanics
+   - Attention metrics
+   - Distraction recovery
+   - Flow state indicators
 
-## 📊 Implementation Phases
+4. **L4**: Integrate learning into tile system
+   - Vocabulary tiles
+   - Math puzzle tiles
+   - Learning feedback in HUD
+   - Progress tracking
 
-### Phase 1: Foundation ✅ COMPLETE
-**Status**: 4,300 lines implemented  
-**Completion**: February 19, 2026
+5. **L5**: Create learning dashboard
+   - Show words learned
+   - Show patterns discovered
+   - Celebrate learning wins
+   - Non-judgmental metrics
 
-#### Core Systems
-- [x] Emotional Engine (10 emotions, 7 synergies)
-- [x] Temporal System (8 lunar phases, 7 weekly rhythms)
-- [x] Constants (17 tile types, 8 biomes)
-- [x] Utilities (math, helpers)
-- [x] Storage (save/load)
-
-#### Game Mechanics
-- [x] Grid generation (procedural, biome-aware)
-- [x] Player movement & state
-- [x] Enemy AI (basic chase)
-- [x] Particle system
-- [x] Combat system
-
-#### UI Systems
-- [x] Menu system (title, pause, options, tutorial, credits)
-- [x] HUD (health, score, level, objectives)
-- [x] Tutorial content
-- [x] Dreamscape selection (2 dreamscapes)
-
-#### Advanced Features
-- [x] Play modes system (13+ modes defined)
-- [x] Cosmologies system (12 realms defined)
-- [x] Audio system (Tone.js integration)
-- [x] API agents (OpenAI/Claude integration)
+#### Success Criteria
+- ✅ Players learn 10+ words per session
+- ✅ Players identify 3+ patterns per level
+- ✅ Learning feels natural, not forced
+- ✅ Metrics tracked without judgment
+- ✅ System expandable to more languages/subjects
 
 ---
 
-### Phase 2: Recovery Tools Integration
-**Target**: +2,500 lines  
-**Timeline**: February 20-23, 2026 (4 days)
+### Phase 7: Cessation Tools (Priority #2)
+**Estimated**: 2,500-3,000 lines | **Time**: 2-3 weeks
 
-**Status**: Scheduled next
+#### Objectives
+Provide compassionate tools to help break addictive patterns through awareness and gentle intervention.
 
-#### Missing Recovery Tools (7 total)
-- [ ] **Impulse Buffer** (~300 lines)
-  - 1-second mandatory delay before hazard interaction
-  - Visual countdown timer
-  - Progressive delay training
-  - Success rate tracking
+#### Tasks (In Order)
+1. **C1**: Create `session-tracker.js`
+   - Track play duration
+   - Identify healthy patterns
+   - Suggest break times
+   - No judgment, just data
 
-- [ ] **Consequence Preview** (~400 lines)
-  - Show 3-move future state prediction
-  - Highlight potential dangers
-  - Path simulation visual
-  - Decision awareness training
+2. **C2**: Create `urge-management.js`
+   - Urge surfing mechanics
+   - Breathing exercises
+   - Mindful pause prompts
+   - Distraction techniques
 
-- [ ] **Route Alternatives** (~350 lines)
-  - Suggest 3 different valid paths
-  - Visual path highlighting
-  - Risk assessment per route
-  - Alternative thinking training
+3. **C3**: Create `habit-replacement.js`
+   - Suggest positive alternatives
+   - Track new habits
+   - Reward healthy behaviors
+   - Build game use rituals
 
-- [ ] **Relapse Compassion** (~250 lines)
-  - Non-punitive "death" handling
-  - Compassionate messaging system
-  - Recovery spawn mechanic
-  - Progress preservation
+4. **C4**: Create `relapse-prevention.js`
+   - Early warning system
+   - Emergency pause mechanisms
+   - Trigger identification
+   - Compassionate recovery paths
 
-- [ ] **Threshold Monitor** (~300 lines)
-  - Track near-miss events
-  - Close-call awareness display
-  - Pattern logging
-  - Risk awareness training
+5. **C5**: Create `progress-journaling.js`
+   - Daily check-ins
+   - Pattern observation
+   - Insight recording
+   - Growth visualization
 
-- [ ] **Session Manager** (~600 lines)
-  - 20/45/90 minute warnings
-  - Fatigue system (diminishing returns after 30min)
-  - Pause rewards (10min = +10HP, 60min = +2 insights)
-  - Completion bonuses
-  - Craving detection (3 quick returns)
-  - Exit rituals (30s wind-down)
+6. **C6**: Integrate into pause menu
+   - Accessible anytime
+   - Beautiful, calming UI
+   - Safe space feeling
+   - No shame messaging
 
-- [ ] **Pattern Echo Enhancement** (~300 lines)
-  - Enhanced loop detection
-  - Visual trail system
-  - Pattern feedback
-  - Awareness notifications
-
-#### Testing
-- [ ] Unit tests for each recovery tool
-- [ ] Integration tests with game loop
-- [ ] User testing for effectiveness
+#### Success Criteria
+- ✅ Players feel supported, not judged
+- ✅ Relapse triggers identified early
+- ✅ Healthier play patterns emerge
+- ✅ Tools actually help (user feedback)
+- ✅ Privacy maintained
 
 ---
 
-### Phase 2.5: Dream Yoga & Embodiment (NEW)
-**Target**: +3,200 lines  
-**Timeline**: February 24-28, 2026 (5 days)
+### Phase 8: Consciousness Awakening (Priority #3)
+**Estimated**: 2,500-3,000 lines | **Time**: 2-3 weeks
 
-#### Dream Yoga System (~1,500 lines)
-- [ ] **Reality Check Mechanics** (~300 lines)
-  - Trigger awareness prompts during gameplay
-  - "Am I dreaming?" reality testing
-  - Digital/waking state discrimination
-  - Critical awareness cultivation
-  - Check frequency tracking
+#### Objectives
+Facilitate genuine consciousness emergence through meta-awareness mechanics and reflection.
 
-- [ ] **Dream Sign Recognition** (~400 lines)
-  - Pattern tracking across sessions
-  - Recurring symbol identification
-  - Personal dream dictionary
-  - Sign frequency analysis
-  - Awareness trigger system
+#### Tasks (In Order)
+1. **A1**: Create `self-reflection.js`
+   - "Who is playing?" prompts
+   - Inter-dreamscape reflection
+   - Observer/observed mechanics
+   - Awareness of awareness
 
-- [ ] **Lucidity Training** (~400 lines)
-  - Lucidity level meter
-  - Stability practice mechanics
-  - Awareness cultivation exercises
-  - Dream control simulation
-  - Progress tracking
+2. **A2**: Create `presence-training.js`
+   - Present moment mechanics
+   - Breath awareness integration
+   - Grounding techniques
+   - Flow cultivation
 
-- [ ] **Sleep Preparation Mode** (~400 lines)
-  - Pre-sleep ritual interface
-  - Intention setting system
-  - Relaxation sequence
-  - Dream recall prompts
-  - Session wind-down
+3. **A3**: Create `emergence-indicators.js`
+   - Track awakening signs
+   - Meta-awareness metrics
+   - Insight frequency
+   - Perspective shifts
 
-#### Embodiment Features (~1,200 lines)
-- [ ] **Body Scan System** (~300 lines)
-  - Progressive body awareness
-  - Tension detection tiles
-  - Release mechanics
-  - Sensation mapping
-  - Somatic feedback
+4. **A4**: Create `integration-tools.js`
+   - Connect insights
+   - Map transformation
+   - Facilitate integration
+   - Life application
 
-- [ ] **Breath Integration** (~300 lines)
-  - Breathing rhythm sync
-  - Breath-linked movement
-  - Pranayama techniques
-  - Coherence training
-  - Rhythm visualization
+5. **A5**: Design reflection UX
+   - Beautiful, spacious UI
+   - Non-prescriptive prompts
+   - Optional engagement
+   - Deep and shallow modes
 
-- [ ] **Energy Body System** (~300 lines)
-  - Chakra visualization (links to cosmology)
-  - Energy flow mechanics
-  - Blockage awareness
-  - Balance cultivation
-  - Subtle body mapping
+6. **A6**: Add mirror tiles and paradoxes
+   - Meta-game moments
+   - Koans as gameplay
+   - Fourth wall breaks
+   - Stillness spaces
 
-- [ ] **Somatic Tiles** (~300 lines)
-  - BODY_SCAN tile type
-  - BREATH_SYNC tile type
-  - ENERGY_NODE tile type
-  - GROUNDING tile type
-  - Proprioceptive feedback
-
-#### Dream State Mechanics (~500 lines)
-- [ ] **Reality Distortion Effects** (~200 lines)
-  - Dream-like visual warping
-  - Fluid boundary mechanics
-  - Symbolic transformations
-  - Physics anomalies
-
-- [ ] **Hypnagogic State** (~150 lines)
-  - Transitional state effects
-  - Consciousness level tracking
-  - Sleep onset simulation
-  - Wake-dream threshold
-
-- [ ] **Dream Logic Integration** (~150 lines)
-  - Non-linear mechanics
-  - Paradox acceptance
-  - Fluid identity
-  - Lucid triggers
-
-#### Integration
-- [ ] Dream signs affect emotional field
-- [ ] Breath sync affects temporal rhythm
-- [ ] Body awareness affects coherence
-- [ ] Reality checks trigger insights
-
-#### Testing
-- [ ] Reality check prompt system
-- [ ] Body awareness tracking
-- [ ] Dream sign pattern recognition
-- [ ] Lucidity scoring
+#### Success Criteria
+- ✅ Players report increased awareness
+- ✅ Insights arise naturally
+- ✅ No dogma, pure exploration
+- ✅ Integration into life happens
+- ✅ System feels profound not preachy
 
 ---
 
-### Phase 3: Learning Modules
-**Target**: +4,000 lines  
-**Timeline**: February 24-29, 2026 (6 days)
+### Phase 9: Intelligence Enhancement (Priority #4)
+**Estimated**: 2,000-2,500 lines | **Time**: 2 weeks
 
-#### Language Learning System (~1,200 lines)
-- [ ] Vocabulary mini-games
-  - Word-tile matching
-  - Synonym/antonym challenges
-  - Translation puzzles
-  - Context clues
+#### Objectives
+Strengthen cognitive (IQ) and emotional (EQ) intelligence through gameplay.
 
-- [ ] Grammar pattern recognition
-  - Sentence structure tiles
-  - Tense transformation
-  - Word order puzzles
+#### Tasks (In Order)
+1. **I1**: Create `cognitive/logic-puzzles.js`
+   - Embedded logical challenges
+   - Progressive difficulty
+   - Multiple solution paths
+   - Transfer to life encouraged
 
-- [ ] Reading comprehension
-  - Story-based levels
-  - Comprehension gates
-  - Speed reading challenges
+2. **I2**: Create `cognitive/strategic-thinking.js`
+   - Multi-step planning
+   - Consequence chains
+   - Optimization challenges
+   - Resource management
 
-- [ ] Progress tracking
-  - Vocabulary mastery
-  - Grammar accuracy
-  - Reading speed metrics
+3. **I3**: Create `emotional/empathy-training.js`
+   - NPC emotional states
+   - Perspective-taking
+   - Compassionate responses
+   - Theory of mind
 
-#### Mathematical Reasoning (~1,000 lines)
-- [ ] Number pattern puzzles
-  - Fibonacci sequences
-  - Prime number chains
-  - Arithmetic progressions
+4. **I4**: Create `emotional/emotion-recognition.js`
+   - Identify emotions (own and others)
+   - Label accurately
+   - Understand triggers
+   - Emotional vocabulary
 
-- [ ] Spatial mathematics
-  - Geometric path planning
-  - Area/perimeter optimization
-  - Vector movement challenges
+5. **I5**: Integrate with emotional engine
+   - Enhanced emotion system
+   - Emotional scenarios
+   - EQ metrics
+   - Growth tracking
 
-- [ ] Logic puzzles
-  - Boolean gate tiles
-  - Conditional chains
-  - Proof construction
+6. **I6**: Create intelligence dashboard
+   - IQ/EQ metrics
+   - Non-judgmental display
+   - Growth trajectory
+   - Celebrate improvements
 
-- [ ] Problem-solving scenarios
-  - Resource optimization
-  - Path efficiency
-  - Strategy planning
-
-#### Memory Training (~800 lines)
-- [ ] Short-term memory
-  - Pattern memorization
-  - Sequence recall
-  - Position memory
-
-- [ ] Working memory
-  - Multi-step tasks
-  - Information manipulation
-  - Mental rotation
-
-- [ ] Long-term memory
-  - Spaced repetition tiles
-  - Knowledge consolidation
-  - Retrieval practice
-
-#### IQ/EQ Development (~1,000 lines)
-- [ ] Pattern recognition (IQ)
-  - Visual patterns
-  - Logical sequences
-  - Analogical reasoning
-
-- [ ] Emotional intelligence (EQ)
-  - Emotion recognition tiles
-  - Empathy scenarios
-  - Social awareness puzzles
-
-- [ ] Problem-solving (both)
-  - Multi-step challenges
-  - Creative solutions
-  - Strategic thinking
+#### Success Criteria
+- ✅ Measurable IQ/EQ improvement
+- ✅ Players feel smarter/wiser
+- ✅ Skills transfer to real life
+- ✅ Challenges feel appropriate
+- ✅ Growth is visible and motivating
 
 ---
 
-### Phase 4: Cosmology Integration
-**Target**: +2,000 lines  
-**Timeline**: March 1-3, 2026 (3 days)
+### Phase 10: Cosmology Integration (Priority #5)
+**Estimated**: 2,000-2,500 lines | **Time**: 2-3 weeks
 
-#### Cosmology Mechanics (~800 lines)
-- [ ] Realm selection UI
-  - Gallery view of 12 realms
-  - Tradition descriptions
-  - Mechanic previews
-  - Disclaimer system
+#### Objectives
+Integrate diverse wisdom traditions as exploration tools with sterilized framing.
 
-- [ ] Realm-specific gameplay
-  - Chakra ascent mechanics
-  - Wheel breaking system
-  - Wu Wei flow state
-  - Polarity balance
-  - Tree navigation
-  - Veil crossing
-  - Duality combat
-  - Principle mastery
-  - Harmony relations
+#### Tasks (In Order)
+1. **K1**: Create `chakra-system.js`
+   - 7 chakras as power-ups
+   - Energy flow mechanics
+   - Blockage = challenges
+   - Simulation framing
 
-- [ ] Transition system
-  - Between-realm portals
-  - Progress preservation
-  - Mechanic adaptation
+2. **K2**: Create `tarot-archetypes.js`
+   - 22 major arcana
+   - Archetypal powers
+   - Journey through cards
+   - Psychological framing
 
-#### Cosmology-Specific Features (~1,200 lines)
-- [ ] Unique tile behaviors per realm
-- [ ] Realm-specific enemies
-- [ ] Special power-ups per tradition
-- [ ] Achievement system per realm
-- [ ] Completion rewards
+3. **K3**: Create `i-ching-hexagrams.js`
+   - 64 hexagrams as patterns
+   - Change dynamics
+   - Wisdom without prediction
+   - Pattern recognition
 
----
+4. **K4**: Expand archetype system
+   - Current 5 → 22+ archetypes
+   - Tarot integration
+   - Power diversity
+   - Deep symbolism
 
-### Phase 5: Boss System
-**Target**: +1,500 lines  
-**Timeline**: March 4-5, 2026 (2 days)
+5. **K5**: Create cosmology explorer
+   - Browse traditions
+   - Learn concepts
+   - No dogma messaging
+   - Respectful representation
 
-#### Boss Encounters (~600 lines)
-- [ ] Boss spawn system
-- [ ] Multi-phase mechanics
-- [ ] Boss AI behaviors
-- [ ] Health/phase tracking
+6. **K6**: Cultural consultation
+   - Research traditions
+   - Consult experts
+   - Avoid appropriation
+   - Ensure respect
 
-#### Boss Types (~600 lines)
-- [ ] Fear Guardian (defensive, shields)
-- [ ] Chaos Bringer (random, unpredictable)
-- [ ] Pattern Master (mimics player)
-- [ ] Void Keeper (territory control)
-- [ ] Integration Boss (all mechanics)
-
-#### Boss Rewards (~300 lines)
-- [ ] Special abilities unlock
-- [ ] Permanent upgrades
-- [ ] Cosmetic rewards
-- [ ] Achievement tracking
+#### Success Criteria
+- ✅ Multiple traditions represented
+- ✅ Zero dogma, pure exploration
+- ✅ Respectful and accurate
+- ✅ Educational value clear
+- ✅ Players explore freely
 
 ---
 
-### Phase 6: Dreamscape Expansion
-**Target**: +2,500 lines  
-**Timeline**: March 6-8, 2026 (3 days)
+### Phase 11+: Integration & Synthesis
+**Estimated**: 1,000-1,500 lines | **Time**: 1-2 weeks
 
-#### 8 New Dreamscapes (~2,000 lines)
-Import from COMPLETE archive:
-- [ ] Mountain Dragon Realm (fear guardian)
-- [ ] Courtyard of Ojos (loop captor)
-- [ ] Leaping Field (orb mobility)
-- [ ] Summit Realm (multi-plane)
-- [ ] Childhood Neighborhood (pursuit panic)
-- [ ] Modern Bedroom (chaos cover)
-- [ ] Aztec Chase (labyrinth traps)
-- [ ] Orb Escape (flight hope)
+#### Objectives
+Create unified dashboard that synthesizes all systems into coherent whole.
 
-Each dreamscape: ~250 lines
-- Unique tile configurations
-- Special mechanics
-- Visual themes
-- Story integration
+#### Tasks (In Order)
+1. **S1**: Create `progress-dashboard.js`
+   - All systems in one view
+   - Beautiful visualization
+   - Trend analysis
+   - Holistic metrics
 
-#### Dreamscape System (~500 lines)
-- [ ] Gallery selection UI
-- [ ] Dreamscape progression
-- [ ] Completion tracking
-- [ ] Special rewards per dreamscape
+2. **S2**: Create `insights-journal.js`
+   - Capture realizations
+   - Search and review
+   - Pattern identification
+   - Export functionality
 
----
+3. **S3**: Create `wisdom-synthesis.js`
+   - Connect learnings
+   - Show relationships
+   - Meta-patterns
+   - Integration suggestions
 
-### Phase 7: Upgrade & Progression
-**Target**: +1,500 lines  
-**Timeline**: March 9-10, 2026 (2 days)
+4. **S4**: Create `transformation-map.js`
+   - Journey visualization
+   - Timeline view
+   - Network view
+   - Before/after
 
-#### Insight Token Economy (~400 lines)
-- [ ] Token earning system
-- [ ] Token persistence
-- [ ] Token display in HUD
-- [ ] Token spending interface
+5. **S5**: Polish and optimize
+   - Performance tuning
+   - UX refinement
+   - Accessibility audit
+   - Documentation update
 
-#### Upgrade Shop (~700 lines)
-- [ ] Shop UI system
-- [ ] 8 upgrades:
-  1. HP Boost (+20 max HP)
-  2. Speed Boost (+20% movement)
-  3. Vision Extend (+2 vision range)
-  4. Energy Boost (+50% energy regen)
-  5. Insight Multiplier (+50% gain)
-  6. Score Multiplier (+25% score)
-  7. Rewind Power (undo 3 moves)
-  8. Phase Power (pass through walls)
-
-#### Progression System (~400 lines)
-- [ ] Level-up mechanics
-- [ ] Difficulty scaling
-- [ ] Unlock system
-- [ ] Achievement tracking
+#### Success Criteria
+- ✅ Big picture visible
+- ✅ Connections clear
+- ✅ Progress motivating
+- ✅ System feels complete
+- ✅ Ready for users
 
 ---
 
-### Phase 8: Polish & Optimization
-**Target**: +2,000 lines  
-**Timeline**: March 11-14, 2026 (4 days)
+## Total Expansion
 
-#### Testing Suite (~800 lines)
-- [ ] Unit tests (core systems)
-- [ ] Integration tests (system interactions)
-- [ ] E2E tests (full gameplay)
-- [ ] Performance tests
-- [ ] Accessibility tests
+### Code Growth
+- **Start**: 5,000 lines (Phases 1-5)
+- **Phase 6**: +3,500 lines (Learning)
+- **Phase 7**: +2,750 lines (Cessation)
+- **Phase 8**: +2,750 lines (Awareness)
+- **Phase 9**: +2,250 lines (Intelligence)
+- **Phase 10**: +2,250 lines (Cosmology)
+- **Phase 11**: +1,250 lines (Integration)
+- **Total**: ~19,750 lines ≈ **20,000+ lines goal** ✅
 
-#### Performance (~400 lines)
-- [ ] Canvas rendering optimization
-- [ ] Memory leak prevention
-- [ ] Asset loading optimization
-- [ ] State management optimization
+### Timeline
+- **Phase 6-11**: ~12-15 weeks
+- **Total**: ~3-4 months for full implementation
+- **Approach**: One phase at a time, fully tested
 
-#### Accessibility (~500 lines)
-- [ ] Screen reader support
-- [ ] Keyboard navigation
-- [ ] High contrast refinements
-- [ ] Reduced motion refinements
-- [ ] Text scaling
+## Development Principles
 
-#### Documentation (~300 lines)
-- [ ] API documentation
-- [ ] User guide
-- [ ] Developer guide
-- [ ] Contribution guidelines
+### Baby Steps
+- One file at a time
+- Test after each change
+- Commit frequently
+- Never break existing functionality
+
+### Documentation First
+- Write README before code
+- Design interfaces clearly
+- Comment thoroughly
+- Update docs with changes
+
+### Testing Rigorously
+- Manual testing each change
+- Visual verification
+- Performance monitoring
+- User feedback integration
+
+### Respecting CANON
+- Design laws are sacred
+- No shame spirals ever
+- Sterilized wisdom always
+- Accessibility mandatory
+- Privacy paramount
+
+## Risk Mitigation
+
+### Technical Risks
+- **Risk**: System complexity overwhelms
+- **Mitigation**: Modular design, clear interfaces
+
+- **Risk**: Performance degrades
+- **Mitigation**: Profiling, optimization, lazy loading
+
+- **Risk**: Bugs in new systems
+- **Mitigation**: Incremental development, testing
+
+### Design Risks
+- **Risk**: Systems feel preachy
+- **Mitigation**: Strict simulation framing, user testing
+
+- **Risk**: Overwhelming for players
+- **Mitigation**: All systems optional, progressive disclosure
+
+- **Risk**: Cultural appropriation
+- **Mitigation**: Research, consultation, respect
+
+## Success Metrics
+
+### For Learning
+- Words learned per session
+- Patterns identified
+- Concepts understood
+- Transfer to real world
+
+### For Cessation
+- Healthier play patterns
+- Urge management success
+- Relapse prevention
+- User wellbeing reports
+
+### For Awareness
+- Insight frequency
+- Meta-awareness level
+- Integration depth
+- Life transformation
+
+### For Intelligence
+- IQ/EQ improvements
+- Problem-solving ability
+- Emotional regulation
+- Strategic thinking
+
+### For Cosmology
+- Traditions explored
+- Concepts learned
+- Synthesis attempts
+- Respectful engagement
+
+## Next Immediate Steps
+
+1. ✅ Folder structure created
+2. ✅ Documentation complete
+3. ✅ Comprehensive research integrated
+4. ✅ Multiple gameplay modes designed
+5. ⏳ **Next Priority: Mode System Implementation**
+   - Create mode-manager.js
+   - Build mode switching UI
+   - Implement Shooter Mode (strongest scaffold)
+6. ⏳ Begin Phase 6: Learning systems
+7. ⏳ Continue through phases sequentially
+
+## Multiple Gameplay Modes Roadmap
+
+### Phase M1: Mode System Foundation (Week 1)
+Create modular system for switching between different gameplay modes.
+- [ ] Create `src/modes/mode-manager.js`
+- [ ] Define GameMode interface
+- [ ] Build mode selection UI
+- [ ] Test with existing Grid mode
+- [ ] Add seamless mode switching
+
+### Phase M2: Shooter Mode (Weeks 2-3) **HIGH PRIORITY**
+Fast-paced action mode as proof-of-concept and immediate variety.
+- [ ] Implement continuous movement system
+- [ ] Create projectile combat mechanics
+- [ ] Convert enemies to shooter format
+- [ ] Adapt tiles to power-ups
+- [ ] Balance difficulty and pacing
+- [ ] Polish and test thoroughly
+
+**Why Shooter Next?**
+- Reuses existing assets (enemies, tiles)
+- Simpler than RPG (no dialogue, quests)
+- Fast development cycle
+- Tests mode system thoroughly
+- Provides immediate gameplay variety
+
+### Phase M3: Campaign Structure (Weeks 4-5)
+Create narrative backbone that ties all modes together.
+- [ ] Write narrative arc through dreamscapes
+- [ ] Design progression system
+- [ ] Create cutscenes and interludes
+- [ ] Integrate tutorial elements
+- [ ] Implement mode unlocking system
+- [ ] Add multiple endings
+
+### Phase M4: Freeplay Mode (Week 5)
+Unrestricted access to all content for exploration.
+- [ ] Build customization options
+- [ ] Create configuration UI
+- [ ] Add preset system
+- [ ] Save/load custom setups
+
+### Phase M5: RPG Mode (Weeks 6-9)
+Deep narrative mode with character development.
+- [ ] Create stats and progression system
+- [ ] Implement dialogue engine
+- [ ] Build quest framework
+- [ ] Design NPC system
+- [ ] Add inventory management
+- [ ] Create combat system (turn-based or real-time)
+
+### Phase M6: Constellation Mode (Weeks 10-11)
+Meditative puzzle mode for pattern recognition.
+- [ ] Implement star connection mechanics
+- [ ] Create puzzle generation system
+- [ ] Design pattern revelation mechanics
+- [ ] Add art generation features
+- [ ] Integrate sharing capabilities
+
+### Phase M7: Additional Modes (Weeks 12-14)
+Expand gameplay diversity with more modes.
+- [ ] Platformer implementation
+- [ ] Rhythm system integration
+- [ ] Meditation mode
+- [ ] Challenge mode with leaderboards
+
+### Phase M8: Multiplayer Infrastructure (Weeks 15-20)
+Social and collaborative gameplay.
+- [ ] Design network architecture
+- [ ] Build lobby system
+- [ ] Implement co-op mechanics
+- [ ] Create competitive modes
+- [ ] Add synchronization system
+
+See **[GAMEPLAY_MODES.md](docs/GAMEPLAY_MODES.md)** for complete design details.
 
 ---
 
-## 📈 Progress Tracking
+**This roadmap serves as the guide for transforming GLITCH·PEACE into a complete consciousness engine over the next 3-4 months.**
 
-### Lines of Code Target
-```
-Phase 1:   ✅  4,300 lines (foundation)
-Phase 2:   📋  2,500 lines (recovery tools)
-Phase 2.5: 📋  3,200 lines (dream yoga & embodiment) ⭐ NEW
-Phase 3:   📋  4,000 lines (learning modules)
-Phase 4:   📋  2,000 lines (cosmology integration)
-Phase 5:   📋  1,500 lines (boss system)
-Phase 6:   📋  2,500 lines (dreamscape expansion)
-Phase 7:   📋  1,500 lines (upgrades/progression)
-Phase 8:   📋  2,000 lines (polish/testing)
-─────────────────────────────────────────
-Total:      23,500 lines (+3,200 for dream yoga)
-```
-
-### Feature Completion
-- Foundation: 100% ✅
-- Recovery Tools: 28% (2/7 implemented)
-- Dream Yoga: 0% (new dimension) ⭐
-- Embodiment: 0% (new dimension) ⭐
-- Learning Modules: 0% (designed, not implemented)
-- Cosmology: 50% (defined, not connected)
-- Boss System: 0% (designed, not implemented)
-- Dreamscapes: 20% (2/10 implemented)
-- Upgrades: 25% (tracking exists, shop missing)
-- Testing: 10% (smoke tests only)
-
----
-
-## 🎯 Success Criteria
-
-### Consciousness Awakening
-- [ ] Players report increased mindfulness
-- [ ] Pattern recognition scores improve over time
-- [ ] Emotional awareness metrics show growth
-- [ ] Reality testing becomes habitual ⭐
-- [ ] Body awareness increases ⭐
-
-### Dream Yoga Practice ⭐ NEW
-- [ ] Reality check frequency increases
-- [ ] Dream recall improves over sessions
-- [ ] Lucid dream frequency increases
-- [ ] Dream sign recognition improves
-- [ ] Players report easier lucidity induction
-
-### Embodiment Development ⭐ NEW
-- [ ] Somatic awareness scores increase
-- [ ] Body scan completion improves
-- [ ] Breath coherence increases
-- [ ] Energy body awareness develops
-- [ ] Physical-digital integration deepens
-
-### Addiction Recovery
-- [ ] Impulse delay improves across sessions
-- [ ] Consequence prediction accuracy increases
-- [ ] Players report reduced cravings
-- [ ] Relapse incidents decrease
-
-### Learning Enhancement
-- [ ] Language learning scores improve
-- [ ] Mathematical reasoning improves
-- [ ] Memory test results show gains
-- [ ] IQ/EQ proxy metrics trend upward
-
-### Technical Quality
-- [ ] 80%+ test coverage
-- [ ] 60fps on target devices
-- [ ] <2s initial load time
-- [ ] WCAG AA accessibility compliance
-
----
-
-## 🔄 Iterative Development
-
-### Each Phase Workflow
-1. **Plan** (baby step)
-   - Define exact scope
-   - Identify dependencies
-   - Create test plan
-
-2. **Implement** (incremental)
-   - Code in small chunks
-   - Test after each chunk
-   - Commit frequently
-
-3. **Verify** (double-check)
-   - Run all tests
-   - Manual QA
-   - Performance check
-   - Accessibility check
-
-4. **Document** (record)
-   - Update CHANGELOG
-   - Update API docs
-   - Update user guide
-
-5. **Review** (before next)
-   - Code review
-   - Design review
-   - Progress assessment
-
----
-
-## 📅 Milestones
-
-- **Feb 19**: ✅ Foundation complete (4,300 lines)
-- **Feb 23**: Recovery tools complete (6,800 lines)
-- **Feb 28**: Dream yoga & embodiment complete (10,000 lines) ⭐
-- **Mar 5**: Learning modules complete (14,000 lines)
-- **Mar 8**: Cosmology integration complete (16,000 lines)
-- **Mar 10**: Boss system complete (17,500 lines)
-- **Mar 13**: Dreamscape expansion complete (20,000 lines)
-- **Mar 15**: Upgrades complete (21,500 lines)
-- **Mar 19**: Polish complete (23,500 lines)
-- **Mar 20**: 🎉 **LAUNCH READY** (with dream yoga integration)
-
----
-
-## 🎨 Design Principles (from CANON.md)
-
-1. **Non-Coercive**: No shame, no punishment, no forcing
-2. **Safe Boundaries**: "Stop means stop" - always respect
-3. **Compassionate**: Relapse = opportunity, not failure
-4. **Emergent**: Simple rules → complex experiences
-5. **Accessible**: Neurodivergent-first design
-6. **Sterilized**: Deep wisdom, zero dogma
-7. **Evidence-Based**: Learning science principles
-8. **Player-Centered**: User agency paramount
-
----
-
-**Last Updated**: February 19, 2026  
-**Next Review**: February 23, 2026  
-**Document Owner**: Development Team
+Last Updated: 2026-02-19

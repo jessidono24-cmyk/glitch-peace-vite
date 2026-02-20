@@ -26,3 +26,7 @@ _archive/".env"
 *.log
 src/main-backup.js
 src/main-phase1.js
+
+# Test artifacts
+test-results/
+playwright-report/

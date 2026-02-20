@@ -16,25 +16,25 @@
 
 | ID | Severity | Status | Description |
 |----|----------|--------|-------------|
-| BUG-001 | 🔴 Major | Open | `interactive-tiles.spec.js` test always fails — game never reaches PLAYING state |
-| BUG-002 | 🔴 Major | Open | FREEZE powerup doesn't freeze enemies |
+| BUG-001 | 🔴 Major | ✅ Fixed | `interactive-tiles.spec.js` test always fails — game never reaches PLAYING state |
+| BUG-002 | 🔴 Major | ✅ Fixed | FREEZE powerup doesn't freeze enemies |
 | BUG-003 | 🟠 Medium | **Resolved** | ESC key during PAUSE doesn't resume game — code now handles this correctly when on 'pause' screen |
-| BUG-004 | 🟠 Medium | Open | H key (help/tutorial) returns to PAUSE menu, not PLAYING |
-| BUG-005 | 🟡 Minor | Open | "Z: Undo" shown in controls hint even when undo is disabled |
-| BUG-006 | 🟡 Minor | Open | "U: Shop" hint gives no indication that insight tokens are required |
-| BUG-007 | 🟡 Minor | Open | "R: Pulse" hint gives no indication that 100% charge is required |
-| BUG-008 | 🟡 Minor | Open | `renderHUD()` shows total peace nodes, not remaining |
-| BUG-009 | 🟠 Medium | Open | "Co-operative Field" play mode listed as selectable but is unimplemented (FUTURE) |
+| BUG-004 | 🟠 Medium | ✅ Fixed | H key (help/tutorial) returns to PAUSE menu, not PLAYING |
+| BUG-005 | 🟡 Minor | ✅ Fixed | "Z: Undo" shown in controls hint even when undo is disabled |
+| BUG-006 | 🟡 Minor | ✅ Fixed | "U: Shop" hint gives no indication that insight tokens are required |
+| BUG-007 | 🟡 Minor | ✅ Fixed | "R: Pulse" hint gives no indication that 100% charge is required |
+| BUG-008 | 🟡 Minor | ✅ Fixed | `renderHUD()` shows total peace nodes, not remaining |
+| BUG-009 | 🟠 Medium | ✅ Fixed | "Co-operative Field" play mode listed as selectable but is unimplemented (FUTURE) |
 | BUG-010 | 🟡 Minor | Open | Menu descriptions are truncated with no way to view full text |
-| BUG-011 | 💙 Cosmetic | Open | GLITCH·PEACE title watermark bleeds through menu selection screens |
-| BUG-012 | 🟡 Minor | Open | HUD objective always shows "◈" symbol even in non-grid modes |
-| BUG-013 | 🔴 Major | Open | `movePlayer` (src/game/player.js) crashes when called in non-grid modes |
-| BUG-014 | 🟡 Minor | Open | "BKSP back" hint is ambiguous (Backspace abbreviation unclear) |
-| BUG-015 | 🟡 Minor | Open | RESUME in pause menu calls `menuSystem.open('title')` unnecessarily |
-| BUG-016 | 🟡 Minor | Open | No feedback when U/R/Z key actions cannot be performed |
-| BUG-017 | 🟡 Minor | Open | `renderHUD()` initial objective shows peaceTotal not remaining |
+| BUG-011 | 💙 Cosmetic | ✅ Fixed | GLITCH·PEACE title watermark bleeds through menu selection screens |
+| BUG-012 | 🟡 Minor | ✅ Fixed | HUD objective always shows "◈" symbol even in non-grid modes |
+| BUG-013 | 🔴 Major | ✅ Fixed | `movePlayer` (src/game/player.js) crashes when called in non-grid modes |
+| BUG-014 | 🟡 Minor | ✅ Fixed | "BKSP back" hint is ambiguous (Backspace abbreviation unclear) |
+| BUG-015 | 🟡 Minor | ✅ Fixed | RESUME in pause menu calls `menuSystem.open('title')` unnecessarily |
+| BUG-016 | 🟡 Minor | ✅ Fixed | No feedback when U/R/Z key actions cannot be performed |
+| BUG-017 | 🟡 Minor | ✅ Fixed | `renderHUD()` initial objective shows peaceTotal not remaining |
 | BUG-018 | 🟠 Medium | Open | RPG mode is a skeleton: shows `[Phase M5 skeleton]` in console, no quests, score never advances |
-| BUG-019 | 🟠 Medium | Open | Shooter HUD shows `◈ ×0` instead of wave/enemy count; wave data is in `modeState.waveNumber` only |
+| BUG-019 | 🟠 Medium | ✅ Fixed | Shooter HUD shows `◈ ×0` instead of wave/enemy count; wave data is in `modeState.waveNumber` only |
 | BUG-020 | 🟡 Minor | Open | Alchemy mode: 2-step mechanic (collect elements → transmute) undiscoverable; random movement yields score 0 |
 | BUG-021 | 🟡 Minor | Open | Specialty mode node positions (`_birdSightings`, `_stars`, `_elements`) stored only on mode instance, invisible via `window.GlitchPeaceGame` |
 | BUG-022 | 🟡 Minor | Open | Pause menu navigation: navigating into a sub-screen (OPTIONS/CREDITS/HIGH SCORES) prevents ESC-to-resume |

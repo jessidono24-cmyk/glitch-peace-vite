@@ -326,13 +326,16 @@ function startGame() {
     
     if (currentMode) {
       currentMode.init(game, canvas, ctx);
+      game._currentModeType = currentMode.type; // expose for HUD
       console.log('[Phase 1] Game mode initialized:', currentMode.name);
     } else {
       // Fallback to legacy grid generation if mode creation fails
       console.warn('[Phase 1] Mode creation failed, using legacy grid generation');
+      game._currentModeType = 'grid';
       generateGrid(game);
     }
   } else {
+    game._currentModeType = currentMode.type;
     // Mode already exists, just generate new level
     if (currentMode.generateLevel) {
       currentMode.generateLevel(game);
@@ -754,6 +757,10 @@ function gameLoop(currentTime) {
         game.player.maxHp = currentMode.player.maxHealth;
         game.score = currentMode.score;
         game.level = currentMode.waveNumber;
+        // Expose shooter-specific data for HUD objective display
+        game._waveNumber = currentMode.waveNumber || 1;
+        // Remaining enemies as kill objective (total - remaining)
+        game._killCount = currentMode.score ? Math.floor(currentMode.score / 10) : 0;
       }
     } else {
       // Fallback to legacy game systems

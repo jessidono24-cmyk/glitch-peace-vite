@@ -428,18 +428,21 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
 
   // ── Reflection prompt (1.0 s) ──────────────────────────────────────────
   if (interludeState.reflectionPrompt) {
-    const rp = interludeState.reflectionPrompt;
     ctx.globalAlpha = alpha * elemAlpha(1000);
+    const depthColor = { surface: '#446644', mid: '#4466aa', deep: '#884488' }[interludeState.reflectionDepth || 'surface'];
+    ctx.font = '7px Courier New';
+    ctx.fillStyle = depthColor;
+    ctx.fillText((interludeState.reflectionDepth || 'surface').toUpperCase() + ' REFLECTION', w / 2, h / 2 - 56);
     ctx.fillStyle = '#aaffcc'; ctx.shadowColor = '#00cc88'; ctx.shadowBlur = 8;
     ctx.font = 'italic 13px Courier New';
-    ctx.fillText('\u201c' + rp.prompt + '\u201d', w / 2, h / 2 - 42); ctx.shadowBlur = 0;
+    ctx.fillText('\u201c' + interludeState.reflectionPrompt + '\u201d', w / 2, h / 2 - 42); ctx.shadowBlur = 0;
     ctx.globalAlpha = alpha;
   }
 
   // ── Affirmation (1.8 s) ────────────────────────────────────────────────
   if (interludeState.affirmation) {
     ctx.globalAlpha = alpha * elemAlpha(1800);
-    ctx.fillStyle = '#446644'; ctx.font = '9px Courier New';
+    ctx.fillStyle = '#335533'; ctx.font = '7px Courier New';
     ctx.fillText(interludeState.affirmation, w / 2, h / 2 - 18);
     ctx.globalAlpha = alpha;
   }

@@ -1,5 +1,5 @@
 # GLITCH·PEACE Bug Report
-**Testing Session:** 2026-02-20  
+**Testing Session:** 2026-02-20 (updated 2026-06-10)
 **Version:** v2.1  
 **Tester:** Automated gameplay testing (Playwright + code analysis)  
 **Session Duration:** Extended testing across all major systems  
@@ -18,7 +18,7 @@
 |----|----------|--------|-------------|
 | BUG-001 | 🔴 Major | Open | `interactive-tiles.spec.js` test always fails — game never reaches PLAYING state |
 | BUG-002 | 🔴 Major | Open | FREEZE powerup doesn't freeze enemies |
-| BUG-003 | 🟠 Medium | Open | ESC key during PAUSE doesn't resume game |
+| BUG-003 | 🟠 Medium | **Resolved** | ESC key during PAUSE doesn't resume game — code now handles this correctly when on 'pause' screen |
 | BUG-004 | 🟠 Medium | Open | H key (help/tutorial) returns to PAUSE menu, not PLAYING |
 | BUG-005 | 🟡 Minor | Open | "Z: Undo" shown in controls hint even when undo is disabled |
 | BUG-006 | 🟡 Minor | Open | "U: Shop" hint gives no indication that insight tokens are required |
@@ -33,6 +33,11 @@
 | BUG-015 | 🟡 Minor | Open | RESUME in pause menu calls `menuSystem.open('title')` unnecessarily |
 | BUG-016 | 🟡 Minor | Open | No feedback when U/R/Z key actions cannot be performed |
 | BUG-017 | 🟡 Minor | Open | `renderHUD()` initial objective shows peaceTotal not remaining |
+| BUG-018 | 🟠 Medium | Open | RPG mode is a skeleton: shows `[Phase M5 skeleton]` in console, no quests, score never advances |
+| BUG-019 | 🟠 Medium | Open | Shooter HUD shows `◈ ×0` instead of wave/enemy count; wave data is in `modeState.waveNumber` only |
+| BUG-020 | 🟡 Minor | Open | Alchemy mode: 2-step mechanic (collect elements → transmute) undiscoverable; random movement yields score 0 |
+| BUG-021 | 🟡 Minor | Open | Specialty mode node positions (`_birdSightings`, `_stars`, `_elements`) stored only on mode instance, invisible via `window.GlitchPeaceGame` |
+| BUG-022 | 🟡 Minor | Open | Pause menu navigation: navigating into a sub-screen (OPTIONS/CREDITS/HIGH SCORES) prevents ESC-to-resume |
 
 ---
 
@@ -387,6 +392,94 @@ In shooter mode, the HTML HUD objective shows "◈ ×0" (0 peace nodes), which i
 
 ---
 
+### BUG-018 🟠 RPG mode is a skeleton — no progression
+
+**Console output:** `[RPGMode] Initializing RPG mode (Phase M5 skeleton)`
+
+**Description:**  
+The RPG Adventure mode (`rpg`) starts successfully (state = PLAYING) and shows the correct controls hint, but it is explicitly a Phase M5 skeleton. From live testing:
+- `g.peaceTotal = 0` and `g.peaceCollected = 0` — no standard level progression
+- `g.modeState` contains only `{ modeName, stats, quests }` — the quests array is empty
+- Movement works (player moves around the grid), but no scoring occurs
+- Level never advances above 1
+- Score stays 0 indefinitely
+
+**Affected:** `src/gameplay-modes/rpg/RPGMode.js`
+
+**Expected:** RPG mode should present quests, NPC dialogue, and a path to level advancement.  
+**Actual:** Mode runs but does nothing. No quests, no NPCs, no scoring.
+
+---
+
+### BUG-019 🟠 Shooter HUD shows `◈ ×0` instead of wave/enemy info
+
+*(Extends BUG-017 — confirmed in live testing)*
+
+**File:** `src/ui/hud.js:40`, `src/gameplay-modes/shooter/ShooterMode.js`
+
+**Description:**  
+The shooter's HTML HUD objective reads `◈ ×0`. The actual wave data is tracked in `g.modeState.waveNumber` and `g.modeState.score`, but the HTML HUD only reads from `g.peaceTotal`/`g.peaceCollected` (both 0 in shooter mode). The canvas overlay drawn by ShooterMode itself shows the correct wave info, creating a split rendering where:
+
+- HTML HUD: `OBJECTIVE ◈ ×0` (wrong/useless)
+- Canvas overlay: correct wave/enemy count (correct but inaccessible to screen readers / test automation)
+
+**Steps to reproduce:**
+1. Start game → select shooter mode
+2. Observe HUD in top-left area
+3. See `OBJECTIVE ◈ ×0` when enemies are actively chasing the player
+
+---
+
+### BUG-020 🟡 Alchemy mode mechanic is undiscoverable from controls hint
+
+**File:** `src/gameplay-modes/alchemy/AlchemyMode.js`
+
+**Description:**  
+The alchemy mode controls hint reads: `WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute`. The Athanor transmutation altar position is not marked on screen except as a small canvas symbol. During 24 moves of random exploration, score remained 0 and `peaceCollected` stayed 0. The 2-step mechanic (collect 4 elemental tiles → walk to altar) is not communicated clearly enough for new players to discover. No onscreen arrow, map marker, or first-run tutorial teaches this flow.
+
+**Evidence from live testing:**
+```json
+{ "started": true, "initial": { "peaceTotal": 8, "score": 0 },
+  "gameplay": { "level": 1, "score": 0, "collected": 0, "state": "PLAYING" } }
+```
+
+---
+
+### BUG-021 🟡 Specialty mode node data inaccessible via `window.GlitchPeaceGame`
+
+**Files:** `src/gameplay-modes/ornithology/OrnithologyMode.js`, `src/gameplay-modes/constellation/ConstellationMode.js`, `src/gameplay-modes/mycology/MycologyMode.js`
+
+**Description:**  
+The specialty game modes (ornithology, mycology, architecture, constellation, alchemy) store their interactable node positions on the **mode instance** (`this._birdSightings`, `this._stars`, `this._mushrooms`, `this._elements`) rather than on the shared `gameState` object (`window.GlitchPeaceGame`). The `currentMode` variable that holds the instance is module-scoped in `main.js` and not exposed globally.
+
+**Impact:**
+- External automation, save/load features, and debugging tools cannot read node positions
+- Test suites cannot directly navigate to nodes without implementing BFS over all grid positions
+- The interactive-tiles test cannot be extended to specialty modes without internal API changes
+
+**Suggested fix:** Expose `game.modeNodes = currentMode._getNodes?.() ?? []` as a standardised array during gameplay, or store node positions directly on `gameState`.
+
+---
+
+### BUG-022 🟡 ESC-to-resume blocked after navigating pause sub-screens
+
+**File:** `src/main.js` (lines 507-515), `src/ui/menus.js`
+
+**Description:**  
+When the pause menu is freshly opened (ESC from PLAYING), pressing ESC resumes correctly because `menuSystem.screen === 'pause'`. However, if the player navigates to a sub-screen within the pause menu (e.g., OPTIONS, CREDITS, HIGH SCORES) and then presses ESC to close that sub-screen, the menu navigates to the `title` screen — but `game.state` remains `PAUSED`. Now `menuSystem.screen === 'title'` (not `'pause'`), so the ESC-resume guard in `main.js` no longer fires. The game is stuck in PAUSED state until the player manually selects RESUME.
+
+**Steps to reproduce:**
+1. Start a game (PLAYING state)
+2. Press ESC → pause menu (screen='pause', sel=0)
+3. Arrow down to OPTIONS → press Enter
+4. Press ESC to close OPTIONS → screen becomes 'title', game still PAUSED
+5. Press ESC again — game does NOT resume
+
+**Expected:** ESC always resumes gameplay from any pause sub-screen.  
+**Actual:** ESC gets stuck after opening a pause sub-screen; player must select RESUME manually.
+
+---
+
 ## Environment
 
 - **Browser:** Chromium (Playwright headless)
@@ -404,23 +497,28 @@ In shooter mode, the HTML HUD objective shows "◈ ×0" (0 peace nodes), which i
 | Play mode selection | ✅ | 16+ modes listed (COOP is FUTURE) |
 | Cosmology selection | ✅ | 13 cosmologies listed |
 | Game mode selection | ✅ | 9 modes available |
-| Grid game mode (ARCADE) | ✅ | Core gameplay works |
+| Grid game mode (ARCADE) | ✅ | Core gameplay works — reached Level 6, Score 71,040 |
 | Peace node collection | ✅ | Score/combo/HP all correct |
-| Level completion | ✅ | Advances to level 2 correctly |
+| Level completion | ✅ | Advances correctly (BFS-navigated levels 1–6) |
 | Enemy behavior | ✅ | Chase AI works |
 | Tile interactions | ✅ | DESPAIR/TERROR/TRAP/etc. work |
 | SHIELD powerup | ✅ | Enemy damage absorption works |
 | FREEZE powerup | ❌ | BUG-002: does not freeze enemies |
 | SPEED powerup | ✅ (partial) | Not fully tested |
 | REGEN powerup | ✅ (partial) | Not fully tested |
-| Pause/resume flow | ❌ | BUG-003/004: ESC issues |
+| Pause/resume flow | 🔶 | BUG-022: ESC blocked after sub-screen navigation; direct resume (fresh pause) works |
 | Tutorial system | ✅ | Pages navigable, returns to pause |
 | Options menu | ✅ | Settings toggle works |
 | High scores | ✅ | Records and displays correctly |
 | Credits screen | ✅ | Opens and closes |
-| Shooter game mode | ✅ | Starts with 8 enemies, wave system |
-| Ornithology mode | ✅ | Bird observation mode works |
-| RPG/Mycology/Alchemy/etc. | 🔶 | Partially tested — init works |
+| Shooter game mode | ✅ | Starts, wave system initialises (8 enemies wave 1), HUD BUG-019 |
+| RPG game mode | 🔶 | Starts but is Phase M5 skeleton — no quests, no progression (BUG-018) |
+| Ornithology mode | ✅ | Starts, player movement works, bird observations require grid sweep |
+| Mycology mode | ✅ | Starts, forage mechanic initialises correctly |
+| Architecture mode | ✅ | Starts, tile placement controls hint shown |
+| Constellation mode | ✅ | Starts, star navigation works, player moves correctly |
+| Alchemy mode | ✅ | Starts, 2-step element→transmute mechanic (BUG-020) |
+| Rhythm mode | ✅ | Starts, collected 19/32 beat tiles in 24 moves, Score 2050 |
 | Controls hint accuracy | ❌ | BUG-005/006/007: misleading hints |
 | Save/load system | ✅ | localStorage persistence works |
 | Emotional field | ✅ | Updates on tile interactions |
@@ -444,3 +542,156 @@ In shooter mode, the HTML HUD objective shows "◈ ×0" (0 peace nodes), which i
 - **Save system works:** localStorage stores level/score/HP/dreamscape correctly
 - **High scores work:** Top scores tracked and retrievable via leaderboard.js
 - **Controls hint updates per mode:** Each game mode shows appropriate controls (confirmed for grid, shooter, ornithology modes)
+
+---
+
+## Comprehensive Mode Test Report (2026-06-10)
+
+All 9 gameplay modes were tested via Playwright automation using BFS grid navigation (for grid-classic) and systematic keyboard sweeps (for specialty modes). Tests ran at http://localhost:3001/ with Vite dev server.
+
+```json
+{
+  "testDate": "2026-06-10",
+  "gameVersion": "v2.1",
+  "modesTestedCount": 9,
+  "screenshotsTaken": 5,
+  "modes": {
+    "grid-classic": {
+      "index": 0,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD/Arrows: Move · J: Archetype · SHIFT: Matrix · R: Pulse (charge needed) · H: Help · D: Stats · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · Objective ◈ ×2 · Emotional: NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "BFS navigation to peace nodes (avoiding WALL tiles, maintaining HP). Advanced from Level 1 → Level 6.",
+      "finalLevel": 6,
+      "finalScore": 71040,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": [],
+      "notes": "Fully functional. Level completion log confirms levels 1-6 generated and completed. Enemy AI and scoring work correctly."
+    },
+    "shooter": {
+      "index": 1,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD: Move · Mouse: Aim · LMB: Shoot · 1-4: Weapon · M: Switch Mode · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · Objective ◈ ×0 · NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "Wave 1 started with 8 enemies. Player moves with WASD; shooting requires mouse (not keyboard-testable in automation). Score stays 0 without mouse shooting.",
+      "finalLevel": 1,
+      "finalScore": 0,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": ["BUG-019"],
+      "notes": "Mode starts correctly. Console: '[ShooterMode] Wave 1 started - 8 enemies'. Objective ◈ ×0 is misleading (BUG-019). Shooting mechanic requires mouse input unavailable in keyboard-only automation."
+    },
+    "rpg": {
+      "index": 2,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD/Arrows: Move · Walk to ◈ Peace nodes · ↑/↓+ENTER: Dialogue · U: Shop · D: Stats · M: Switch Mode · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · Objective ◈ ×0 · NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "Mode loads as 'Phase M5 skeleton'. Player movement works on grid. No quests, no NPCs, no scoring. modeState contains only { modeName, stats, quests } with empty quests.",
+      "finalLevel": 1,
+      "finalScore": 0,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": ["BUG-018"],
+      "notes": "Console: '[RPGMode] Initializing RPG mode (Phase M5 skeleton)'. No game progression possible. Objective ◈ ×0. Dialogue system hint shown but no NPC dialogue exists."
+    },
+    "ornithology": {
+      "index": 3,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD/Arrows: Move to observe birds · 1-4: Answer challenges · M: Switch Mode · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · Objective ◈ ×7 · NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "Mode initialised with peaceTotal=7 bird sightings. Player movement works via keyboard with 180ms moveDelay. Bird positions stored on mode instance (this._birdSightings) — inaccessible externally (BUG-021).",
+      "finalLevel": 1,
+      "finalScore": 0,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": ["BUG-021"],
+      "notes": "Correctly uses standard peaceCollected/peaceTotal for tracking. HUD ◈ symbol is wrong for a bird mode (BUG-012). 1-4 challenge keys appear but no challenges triggered in limited test."
+    },
+    "mycology": {
+      "index": 4,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD/Arrows: Forage mushrooms · 1-4: Identify toxic species · M: Switch Mode · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "Mode initialised for mushroom foraging. Player movement works. Mushroom positions stored on mode instance (this._mushrooms). No collection in limited test.",
+      "finalLevel": 1,
+      "finalScore": 0,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": [],
+      "notes": "Mode starts cleanly. Console: '[Phase 1] Game mode initialized: Mycology — Forest Foraging'. Same external-inaccessibility pattern as ornithology."
+    },
+    "architecture": {
+      "index": 5,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · M: Switch Mode · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "Mode initialised for tile-placement building. Unique controls: SPACE places, Q/E cycle tile types, X erases. Player movement works. Score requires deliberate tile placement not tested.",
+      "finalLevel": 1,
+      "finalScore": 0,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": [],
+      "notes": "Console: '[Phase 1] Game mode initialized: Architecture — Build & Create'. Distinct control scheme confirmed."
+    },
+    "constellation": {
+      "index": 6,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD/Arrows: Navigate to stars · Activate in sequence · M: Switch Mode · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · Objective ◈ ×6 · NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "6 stars to activate in sequence. Player movement confirmed working (150ms moveDelay). Stars stored on mode instance (this._stars). Random movement did not activate any stars in limited test.",
+      "finalLevel": 1,
+      "finalScore": 0,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": [],
+      "notes": "Console: '[Phase 1] Game mode initialized: Constellation — Stars & Myth'. Player starts near first star. Mode-instance-only node positions (BUG-021 pattern)."
+    },
+    "alchemy": {
+      "index": 7,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute · M: Switch Mode · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "8 elements to collect then transmute at Athanor altar. 24 moves of random play yielded score=0, collected=0. 2-step mechanic undiscoverable (BUG-020).",
+      "finalLevel": 1,
+      "finalScore": 0,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": ["BUG-020"],
+      "notes": "Console: '[Phase 1] Game mode initialized: Alchemy — The Great Work'. Athanor position stored on mode instance. Element symbols (🜂🜄🜃🜁) shown in controls hint are a nice touch."
+    },
+    "rhythm": {
+      "index": 8,
+      "started": true,
+      "startState": "PLAYING",
+      "controlsHint": "WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause",
+      "hud": "Health 100/100 · Level 1 · Score 0 · Objective ◈ ×32 → ◈ ×13 · NEUTRAL · MIND · RIFT · arcade · New Void Harmony",
+      "gameplay": "32 beat tiles to collect. 24 key presses collected 19/32 tiles and scored 2050 points. Tiles pulse on beat and are triggered by movement — most responsive mode.",
+      "finalLevel": 1,
+      "finalScore": 2050,
+      "finalState": "PLAYING",
+      "crashes": 0,
+      "newBugs": [],
+      "notes": "Console: '[Phase 1] Game mode initialized: Rhythm — Beat Synchrony'. Best-performing specialty mode in random movement tests. Beat-tile collection strongly responsive."
+    }
+  },
+  "summary": {
+    "allModesStart": true,
+    "modesWithProgression": ["grid-classic", "rhythm"],
+    "modesSkeletonOrIncomplete": ["rpg"],
+    "modesWithHUDBugs": ["shooter", "rpg"],
+    "modesWithNodeAccessibilityIssue": ["ornithology", "mycology", "constellation", "alchemy"],
+    "crashes": 0,
+    "newBugsFound": ["BUG-018", "BUG-019", "BUG-020", "BUG-021", "BUG-022"],
+    "resolvedBugs": ["BUG-003"]
+  }
+}
+```

@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "description": "GLITCH·PEACE - A neurodivergent-friendly consciousness simulation game (BASE LAYER)",
   "type": "module",
+  "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "VITE_DEV_SERVER_URL=http://localhost:5173 electron electron/main.js",
+    "electron:build": "vite build && electron-builder"
   },
   "keywords": [
     "game",
@@ -17,12 +20,37 @@
   ],
   "author": "Your Name",
   "license": "MIT",
+  "build": {
+    "appId": "com.glitchpeace.game",
+    "productName": "GLITCH·PEACE",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/**/*"
+    ],
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Game"
+    },
+    "win": {
+      "target": ["nsis"],
+      "icon": "public/favicon.ico"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "category": "public.app-category.games"
+    }
+  },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
     "vite": "^7.3.1"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
+    "matter-js": "^0.20.0",
     "next": "^16.1.6",
     "openai": "^6.22.0",
     "three": "^0.183.0",

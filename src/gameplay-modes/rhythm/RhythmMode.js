@@ -26,6 +26,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 import GameMode from '../../core/interfaces/GameMode.js';
+import * as THREE from 'three';
 
 // ── Rhythm patterns ───────────────────────────────────────────────────────
 // Patterns are 16-step sequences (4/4 time, 4 beats × 4 subdivisions)
@@ -137,6 +138,9 @@ export class RhythmMode extends GameMode {
     // Note: _audioCtx and _gainNode reserved for future direct Web Audio API integration
     this._audioCtx = null;
     this._gainNode = null;
+
+    // Three.js 3D waveform visualizer (initialized lazily in init())
+    this._3d = null;
   }
 
   init(gameState, canvas, ctx) {
@@ -167,6 +171,7 @@ export class RhythmMode extends GameMode {
 
     this._buildBeatGrid(gameState);
     this._initDrumAudio();
+    this._init3DWaveform(canvas);
   }
 
   onResize(canvas, gameState) {
@@ -205,6 +210,7 @@ export class RhythmMode extends GameMode {
     // No persistent timers to clear — sequencer runs in update() via elapsed-time checks.
     this._beatStep = 0;
     this._lastBeatMs = 0;
+    this._cleanup3DWaveform();
   }
 
   update(gameState, deltaTime) {
@@ -239,6 +245,9 @@ export class RhythmMode extends GameMode {
     if (p.snare[step])  { try { window.AudioManager?.play('select'); } catch(e) {} }
     if (p.hihat[step])  { try { window.AudioManager?.play('move'); } catch(e) {} }
     if (p.accent[step]) { try { window.AudioManager?.play('insight'); } catch(e) {} }
+
+    // Pulse the 3D waveform on any active beat step
+    if (p.kick[step] || p.snare[step] || p.accent[step]) this._triggerWavePulse();
 
     // Pulse tiles that match this step's active instruments
     for (let y = 0; y < sz; y++) {
@@ -477,6 +486,9 @@ export class RhythmMode extends GameMode {
     ctx.textBaseline = 'top';
     ctx.fillText(`On-beat: ${gameState.peaceCollected || 0} / ${gameState.peaceTotal}  Lv.${gameState.level || 1}`, w - 8, 6);
     ctx.restore();
+
+    // Three.js 3D waveform visualizer overlay
+    this._render3DWaveform(1 / 60);
   }
 
   _renderBeatBar(ctx, w, h, now) {
@@ -514,5 +526,129 @@ export class RhythmMode extends GameMode {
         ctx.strokeRect(sx, barY + 2, stepW - 4, barH - 4);
       }
     }
+  }
+
+  // ── Three.js 3D waveform visualizer ──────────────────────────────────────
+
+  /**
+   * Create a semi-transparent WebGL overlay canvas and build a Three.js scene
+   * containing a 3D waveform ribbon that pulses with the beat.
+   * The ribbon sits in the upper portion of the screen, behind the grid.
+   */
+  _init3DWaveform(canvas) {
+    if (this._3d) return; // already initialised
+
+    const WAVE_POINTS = 64; // number of vertices along the waveform
+
+    const overlay = document.createElement('canvas');
+    overlay.id = 'rhythm-3d-overlay';
+    overlay.width  = canvas.width;
+    overlay.height = canvas.height;
+    overlay.style.cssText = [
+      'position:absolute', 'top:0', 'left:0',
+      `width:${canvas.width}px`, `height:${canvas.height}px`,
+      'pointer-events:none', 'z-index:4',
+    ].join(';');
+
+    const parent = canvas.parentElement || document.body;
+    parent.style.position = parent.style.position || 'relative';
+    parent.appendChild(overlay);
+
+    const renderer = new THREE.WebGLRenderer({ canvas: overlay, alpha: true, antialias: true });
+    renderer.setSize(canvas.width, canvas.height, false);
+    renderer.setClearColor(0x000000, 0);
+
+    const scene  = new THREE.Scene();
+    const aspect = canvas.width / canvas.height;
+    const camera = new THREE.PerspectiveCamera(50, aspect, 0.1, 100);
+    camera.position.set(0, 2, 8);
+    camera.lookAt(0, 0, 0);
+
+    scene.add(new THREE.AmbientLight(0x112233, 1.5));
+    const dlight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dlight.position.set(0, 5, 5);
+    scene.add(dlight);
+
+    // Build the waveform as a BufferGeometry line
+    const positions = new Float32Array(WAVE_POINTS * 3);
+    const waveGeo   = new THREE.BufferGeometry();
+    waveGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const waveMat  = new THREE.LineBasicMaterial({ color: 0x00aaff, linewidth: 2 });
+    const waveLine = new THREE.Line(waveGeo, waveMat);
+    scene.add(waveLine);
+
+    // Mirror line (reflected)
+    const positions2 = new Float32Array(WAVE_POINTS * 3);
+    const waveGeo2   = new THREE.BufferGeometry();
+    waveGeo2.setAttribute('position', new THREE.BufferAttribute(positions2, 3));
+    const waveMat2  = new THREE.LineBasicMaterial({ color: 0x00aaff, linewidth: 1, transparent: true, opacity: 0.35 });
+    const waveLine2 = new THREE.Line(waveGeo2, waveMat2);
+    scene.add(waveLine2);
+
+    // Beat flash point light
+    const beatLight = new THREE.PointLight(0x00aaff, 0, 6);
+    beatLight.position.set(0, 0, 2);
+    scene.add(beatLight);
+
+    this._3d = { renderer, scene, camera, waveLine, waveLine2, beatLight, WAVE_POINTS, overlay, _phase: 0, _beatPulse: 0 };
+  }
+
+  /**
+   * Called on every render frame.  Updates the waveform geometry to simulate
+   * a live audio waveform that pulses in time with the rhythm pattern.
+   * @param {number} dt  delta-time in seconds
+   */
+  _render3DWaveform(dt) {
+    if (!this._3d) return;
+    const { renderer, scene, camera, waveLine, waveLine2, beatLight, WAVE_POINTS } = this._3d;
+    const p = this._pattern || PATTERNS[0];
+
+    // Advance phase proportional to BPM
+    this._3d._phase += dt * (p.bpm / 60) * Math.PI * 2 * 0.5;
+
+    // Beat pulse decay
+    if (this._3d._beatPulse > 0) this._3d._beatPulse = Math.max(0, this._3d._beatPulse - dt * 4);
+    beatLight.intensity = this._3d._beatPulse * 3;
+
+    // Update waveform line positions
+    const pos  = waveLine.geometry.attributes.position;
+    const pos2 = waveLine2.geometry.attributes.position;
+    const span = 8; // x-range [-4, +4]
+    for (let i = 0; i < WAVE_POINTS; i++) {
+      const t  = i / (WAVE_POINTS - 1); // 0..1
+      const x  = (t - 0.5) * span;
+      const ph = this._3d._phase + t * Math.PI * 4;
+      // Composite waveform: fundamental + harmonics
+      const y  = (Math.sin(ph) * 0.5
+               + Math.sin(ph * 2.0 + 0.5) * 0.25
+               + Math.sin(ph * 3.7 + 1.2) * 0.12)
+               * (0.6 + this._3d._beatPulse * 0.8);
+      pos.setXYZ(i, x, y, 0);
+      pos2.setXYZ(i, x, -y * 0.5, 0.5);
+    }
+    pos.needsUpdate  = true;
+    pos2.needsUpdate = true;
+
+    // Tint line colour to match current pattern
+    const patternColor = new THREE.Color(p.color || '#00aaff');
+    waveLine.material.color.set(patternColor);
+    waveLine2.material.color.set(patternColor);
+    beatLight.color.set(patternColor);
+
+    renderer.render(scene, camera);
+  }
+
+  /** Trigger a visual pulse on the waveform when the beat fires. */
+  _triggerWavePulse() {
+    if (this._3d) this._3d._beatPulse = 1.0;
+  }
+
+  /** Remove the Three.js overlay and dispose GPU resources. */
+  _cleanup3DWaveform() {
+    if (!this._3d) return;
+    const { renderer, overlay } = this._3d;
+    renderer.dispose();
+    if (overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay);
+    this._3d = null;
   }
 }

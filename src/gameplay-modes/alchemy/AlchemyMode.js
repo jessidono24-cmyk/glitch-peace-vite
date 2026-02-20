@@ -21,6 +21,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 import GameMode from '../../core/interfaces/GameMode.js';
+import * as THREE from 'three';
 
 // ── Elemental tile types ─────────────────────────────────────────────────
 export const ELEMENTS = {
@@ -178,6 +179,9 @@ export class AlchemyMode extends GameMode {
     this._totalTransmutations = 0;
     this._completedReactions = new Set();
     this._labParticles = [];     // { x, y, color, vx, vy, life, maxLife }
+
+    // Three.js 3D beaker overlay
+    this._3d = null;  // initialized lazily in init()
   }
 
   init(gameState, canvas, ctx) {
@@ -198,6 +202,8 @@ export class AlchemyMode extends GameMode {
     this._completedReactions = gameState._completedReactions || new Set();
     this._labParticles = [];
     this._buildLab(gameState);
+    // Initialize Three.js 3D beaker overlay (idempotent)
+    this._init3D(canvas);
   }
 
   onResize(canvas, gameState) {
@@ -419,6 +425,9 @@ export class AlchemyMode extends GameMode {
     if (athanorPos) {
       this._spawnParticles(athanorPos.x, athanorPos.y, reaction.product.color, 24);
     }
+
+    // Spawn Three.js element particles in the 3D beaker overlay
+    this._spawn3DParticles(reaction.inputs, reaction.product.color);
 
     // Flash banner
     this._reactionFlash = { reaction, shownAtMs: Date.now() };
@@ -678,6 +687,9 @@ export class AlchemyMode extends GameMode {
 
     // ── Reactions discovered panel (right edge, compact) ─────────────────
     this._renderDiscoveryLog(ctx, w, h, now);
+
+    // ── Three.js 3D beaker overlay ────────────────────────────────────────
+    this._render3DOverlay((Date.now() - now) / 1000 || 0.016);
   }
 
   _renderInventory(ctx, w, h, now) {
@@ -810,5 +822,179 @@ export class AlchemyMode extends GameMode {
       ctx.fillText('Move or SPACE to continue', w / 2, h * 0.82);
     }
     ctx.restore();
+  }
+
+  /** Clean up Three.js resources when this mode is unloaded. */
+  cleanup() {
+    this._cleanup3D();
+  }
+
+  // ── Three.js 3D beaker overlay ──────────────────────────────────────────
+
+  /**
+   * Initialise a small Three.js scene that renders a glass beaker above the
+   * Athanor (crucible) tile and spawns coloured element-particle spheres
+   * whenever a transmutation fires.  The WebGL canvas is overlaid on top of
+   * the 2D game canvas with pointer-events:none so it never blocks input.
+   */
+  _init3D(canvas) {
+    if (this._3d) return; // already initialised
+
+    // Overlay <canvas> matching the game canvas size
+    const overlay = document.createElement('canvas');
+    overlay.id = 'alchemy-3d-overlay';
+    overlay.width  = canvas.width;
+    overlay.height = canvas.height;
+    overlay.style.cssText = [
+      'position:absolute', 'top:0', 'left:0',
+      `width:${canvas.width}px`, `height:${canvas.height}px`,
+      'pointer-events:none', 'z-index:5',
+    ].join(';');
+
+    const parent = canvas.parentElement || document.body;
+    parent.style.position = parent.style.position || 'relative';
+    parent.appendChild(overlay);
+
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ canvas: overlay, alpha: true, antialias: true });
+    renderer.setSize(canvas.width, canvas.height, false);
+    renderer.setClearColor(0x000000, 0);
+
+    // Scene
+    const scene = new THREE.Scene();
+
+    // Camera — orthographic-ish perspective, looks down at lab center
+    const aspect = canvas.width / canvas.height;
+    const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 1000);
+    camera.position.set(0, 6, 12);
+    camera.lookAt(0, 0, 0);
+
+    // Ambient + directional light
+    scene.add(new THREE.AmbientLight(0x334455, 1.2));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir.position.set(5, 10, 7);
+    scene.add(dir);
+
+    // Beaker geometry — a cylinder with open top, tinted glass material
+    const beakerGeo  = new THREE.CylinderGeometry(0.5, 0.6, 1.4, 32, 1, true);
+    const beakerMat  = new THREE.MeshPhysicalMaterial({
+      color: 0x88ccff, transparent: true, opacity: 0.35,
+      roughness: 0.05, metalness: 0.1, side: THREE.DoubleSide,
+    });
+    const beaker = new THREE.Mesh(beakerGeo, beakerMat);
+    beaker.position.set(0, 0, 0);
+    scene.add(beaker);
+
+    // Beaker bottom disc
+    const bottomGeo = new THREE.CircleGeometry(0.6, 32);
+    const bottomMat = new THREE.MeshPhysicalMaterial({ color: 0x88ccff, transparent: true, opacity: 0.45, side: THREE.DoubleSide });
+    const bottom = new THREE.Mesh(bottomGeo, bottomMat);
+    bottom.rotation.x = -Math.PI / 2;
+    bottom.position.set(0, -0.7, 0);
+    scene.add(bottom);
+
+    // Liquid fill inside beaker (starts empty)
+    const liquidGeo = new THREE.CylinderGeometry(0.48, 0.58, 0.01, 32);
+    const liquidMat = new THREE.MeshPhysicalMaterial({ color: 0x222244, transparent: true, opacity: 0.7 });
+    const liquid = new THREE.Mesh(liquidGeo, liquidMat);
+    liquid.position.set(0, -0.6, 0);
+    scene.add(liquid);
+
+    // Element particles pool
+    const elemParticles = [];
+
+    this._3d = { renderer, scene, camera, beaker, liquid, elemParticles, overlay };
+  }
+
+  /**
+   * Spawn Three.js element-particle spheres when a transmutation fires.
+   * Call this from _performTransmutation / wherever reactions complete.
+   * @param {string[]} elementIds  e.g. ['FIRE', 'WATER']
+   * @param {string} productColor  hex string
+   */
+  _spawn3DParticles(elementIds, productColor) {
+    if (!this._3d) return;
+    const { scene, elemParticles, liquid, liquidMat } = this._3d;
+
+    // Update liquid colour
+    if (liquid) {
+      liquid.material.color.set(new THREE.Color(productColor || '#446688'));
+      liquid.material.opacity = 0.8;
+      // Animate liquid rise
+      liquid._targetY = -0.4;
+    }
+
+    for (const id of elementIds) {
+      const el = ELEMENTS[id];
+      if (!el) continue;
+      const geo  = new THREE.SphereGeometry(0.06 + Math.random() * 0.06, 8, 8);
+      const mat  = new THREE.MeshPhysicalMaterial({
+        color: el.color, emissive: el.glow, emissiveIntensity: 0.8,
+        transparent: true, opacity: 0.9,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      // Start inside beaker
+      mesh.position.set(
+        (Math.random() - 0.5) * 0.6,
+        -0.3 + Math.random() * 0.6,
+        (Math.random() - 0.5) * 0.6,
+      );
+      mesh._vel = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.04,
+        0.02 + Math.random() * 0.05,
+        (Math.random() - 0.5) * 0.04,
+      );
+      mesh._life = 2.0; // seconds
+      scene.add(mesh);
+      elemParticles.push(mesh);
+    }
+  }
+
+  /**
+   * Render the Three.js overlay.  Called at the end of every render() frame.
+   * @param {number} dt  delta time in seconds
+   */
+  _render3DOverlay(dt) {
+    if (!this._3d) return;
+    const { renderer, scene, camera, beaker, liquid, elemParticles } = this._3d;
+
+    // Gently rotate beaker
+    beaker.rotation.y += 0.4 * dt;
+
+    // Animate liquid fill
+    if (liquid._targetY !== undefined) {
+      liquid.position.y += (liquid._targetY - liquid.position.y) * dt * 2;
+      if (Math.abs(liquid.position.y - liquid._targetY) < 0.01) {
+        liquid.position.y = liquid._targetY;
+        delete liquid._targetY;
+      }
+    }
+
+    // Update element particles
+    for (let i = elemParticles.length - 1; i >= 0; i--) {
+      const p = elemParticles[i];
+      p._life -= dt;
+      if (p._life <= 0) {
+        scene.remove(p);
+        p.geometry.dispose();
+        p.material.dispose();
+        elemParticles.splice(i, 1);
+        continue;
+      }
+      p.position.add(p._vel);
+      p._vel.y -= 0.001; // light gravity
+      p.material.opacity = Math.min(0.9, p._life);
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  /** Tear down the Three.js overlay when the mode is unloaded. */
+  _cleanup3D() {
+    if (!this._3d) return;
+    const { renderer, overlay } = this._3d;
+    renderer.dispose();
+    if (overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay);
+    this._3d = null;
   }
 }

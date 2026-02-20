@@ -639,7 +639,36 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
   drawRealityCheck(ctx, w, h);
   drawEmotionFlash(ctx, w, h);
   drawEmpathyFlash(ctx, w, h);
+  drawTutorialHint(ctx, w);
   drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive);
+}
+
+function drawTutorialHint(ctx, w) {
+  const cm = window._campaignManager;
+  if (!cm) return;
+  const at = cm.activeTutorial;
+  if (!at) return;
+  const hint = at.hints[at.index];
+  if (!hint) return;
+  // Fade out in the last 30 ticks; full opacity otherwise
+  const alpha = (at.timer > 30 ? 1 : at.timer / 30) * 0.88;
+  if (alpha < 0.02) return;
+
+  ctx.globalAlpha = alpha;
+  const bw = Math.min(w - 40, 360), x = (w - bw) / 2;
+  ctx.fillStyle = '#04100a';
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x, 22, bw, 28, 5) : ctx.rect(x, 22, bw, 28);
+  ctx.fill();
+  ctx.strokeStyle = '#00aa44'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x, 22, bw, 28, 5) : ctx.rect(x, 22, bw, 28);
+  ctx.stroke();
+
+  ctx.font = '8px Courier New'; ctx.fillStyle = '#00cc55';
+  ctx.textAlign = 'center';
+  ctx.fillText(hint.text || hint, w / 2, 40);
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
 
 function drawEmpathyFlash(ctx, w, h) {

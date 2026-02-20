@@ -180,7 +180,7 @@ export function renderHUD(game) {
     <div class="hud-section" title="Level, Score, and Objective (Peace nodes to collect)">
       <div class="hud-item"><span class="hud-label">Level</span><span class="hud-value" id="level">${game.level}</span></div>
       <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="score">${game.score}</span></div>
-      <div class="hud-item"><span class="hud-label">Objective</span><span class="hud-value" id="objective">◈ ×${game.peaceTotal}</span></div>
+      <div class="hud-item"><span class="hud-label">Objective</span><span class="hud-value" id="objective">◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}</span></div>
     </div>
     ${powerupHTML}
     ${comboHTML}

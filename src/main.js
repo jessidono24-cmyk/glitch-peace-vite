@@ -200,6 +200,9 @@ function initUI() {
       game.player = createPlayer();
       startGame();
     },
+    onResume: () => {
+      game.state = 'PLAYING';
+    },
     onSelectDreamscape: (dreamscapeId, playModeId, cosmologyId = null, gameModeId = 'grid-classic') => {
       // Fresh start — reset run state
       game.currentDreamscape = dreamscapeId;
@@ -434,6 +437,12 @@ document.addEventListener('keydown', e => {
   // Menu input
   if (menuSystem && (game.state === 'MENU' || game.state === 'MENU_DREAMSCAPE' || game.state === 'PAUSED')) {
     const result = menuSystem.handleKey(e);
+    if (result.resumeGame) {
+      // Tutorial ESC with 'resume' sentinel → go directly back to playing
+      game.state = 'PLAYING';
+      e.preventDefault();
+      return;
+    }
     if (result.consumed) {
       e.preventDefault();
       return;
@@ -470,10 +479,10 @@ document.addEventListener('keydown', e => {
       return;
     }
     
-    // H key: open in-game help / tutorial (returns to pause menu on ESC)
+    // H key: open in-game help / tutorial (ESC from tutorial → returns directly to PLAYING)
     if (e.key === 'h' || e.key === 'H') {
       game.state = 'PAUSED';
-      menuSystem._tutorialReturnScreen = 'pause'; // ESC from tutorial → pause menu
+      menuSystem._tutorialReturnScreen = 'resume'; // special sentinel: ESC from tutorial resumes game
       menuSystem.open('tutorial');
       e.preventDefault();
       return;
@@ -492,6 +501,17 @@ document.addEventListener('keydown', e => {
       e.preventDefault();
       return;
     }
+  }
+
+  // ESC during PAUSE: resume game (unless in a sub-screen like tutorial/options)
+  if (game.state === 'PAUSED' && e.key === 'Escape') {
+    if (menuSystem && menuSystem.screen === 'pause') {
+      // ESC on the pause menu itself → resume
+      game.state = 'PLAYING';
+      e.preventDefault();
+      return;
+    }
+    // Sub-screens handle their own ESC via menuSystem.handleKey (already handled above)
   }
 });
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
@@ -579,7 +599,20 @@ function render(deltaMs = 16) {
         'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
       };
       // Only update the DOM when the text actually changes to prevent flicker
-      const newHintText = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · D: Stats · ESC: Pause';
+      // Grid mode: dynamically adjust hint based on what's currently active
+      let gridHint = 'WASD/Arrows: Move · J: Archetype · SHIFT: Matrix · H: Help · D: Stats · ESC: Pause';
+      if (currentMode?.type === 'grid') {
+        const g = game;
+        const pulseReady = (g.glitchPulseCharge || 0) >= 100;
+        const hasTokens = (g.insightTokens || 0) > 0;
+        const puzzleMode = !!g.mechanics?.undoEnabled;
+        gridHint = 'WASD/Arrows: Move · J: Archetype · SHIFT: Matrix'
+          + (pulseReady ? ' · R: PULSE READY!' : ' · R: Pulse (charge needed)')
+          + (hasTokens ? ' · U: Shop' : '')
+          + (puzzleMode ? ' · Z: Undo' : '')
+          + ' · H: Help · D: Stats · ESC: Pause';
+      }
+      const newHintText = hints[currentMode?.type] || gridHint;
       if (newHintText !== _lastHintText) {
         hint.textContent = newHintText;
         _lastHintText = newHintText;

@@ -42,6 +42,13 @@ export function movePlayer(gameState, dx, dy) {
     return false;
   }
 
+  // Guard: non-grid modes may have an empty or missing grid
+  if (!gameState.grid || !gameState.grid[newY]) {
+    gameState.player.x = newX;
+    gameState.player.y = newY;
+    return true;
+  }
+
   // Check solid tiles
   const tile = gameState.grid[newY][newX];
   const tileDef = TILE_DEF[tile] || {};

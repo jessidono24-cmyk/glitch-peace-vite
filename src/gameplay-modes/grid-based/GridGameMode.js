@@ -1618,6 +1618,14 @@ export class GridGameMode extends GameMode {
         };
         createParticles(gameState, px, py, '#aa00ff', 18);
         try { window.AudioManager?.play('power'); } catch(e) {}
+      } else {
+        // Feedback: show current charge
+        const charge = Math.round(gameState.glitchPulseCharge || 0);
+        gameState._glitchPulseMsg = {
+          text: `Pulse charge: ${charge}% — collect ◈ tiles to charge`,
+          color: '#886699',
+          expiresMs: now + 1400,
+        };
       }
     }
 
@@ -1627,6 +1635,13 @@ export class GridGameMode extends GameMode {
         closeUpgradeShop(gameState);
       } else if ((gameState.insightTokens || 0) > 0) {
         openUpgradeShop(gameState);
+      } else {
+        // Feedback: explain how to earn tokens
+        gameState._glitchPulseMsg = {
+          text: 'Shop needs ☆ insight tokens — step on ☆ ARCH tiles',
+          color: '#886633',
+          expiresMs: now + 1600,
+        };
       }
     }
 
@@ -1667,10 +1682,21 @@ export class GridGameMode extends GameMode {
     }
 
     // PUZZLE mode undo: Z key (U is reserved for upgrade shop)
-    if (gameState.mechanics?.undoEnabled && (input.isKeyPressed('z') || input.isKeyPressed('Z'))) {
-      undoGameMove(gameState);
-      this.lastMoveTime = now;
-      return;
+    if (input.isKeyPressed('z') || input.isKeyPressed('Z')) {
+      if (gameState.mechanics?.undoEnabled) {
+        undoGameMove(gameState);
+        this.lastMoveTime = now;
+        return;
+      } else {
+        // Feedback: undo only available in PUZZLE mode
+        gameState._glitchPulseMsg = {
+          text: 'Undo only available in PUZZLE play mode',
+          color: '#665544',
+          expiresMs: now + 1400,
+        };
+        this.lastMoveTime = now;
+        return;
+      }
     }
 
     // Get directional input

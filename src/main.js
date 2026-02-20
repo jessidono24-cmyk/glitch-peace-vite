@@ -400,6 +400,7 @@ function startGame(dreamIdx) {
   characterStats.resetSession();
   archetypeDialogue.reset();
   bossSystem.reset();
+  window._bossDefeatedThisRound = false;
   alchemySystem.resetSession();
   // Apply chosen archetype (from archetype selector) as starting power
   if (CFG.chosenArchetype && ARCHETYPES[CFG.chosenArchetype]) {
@@ -1069,7 +1070,12 @@ function loop(ts) {
       questSystem.onBossSurvived();
       emergenceIndicators.record('dream_completion'); // boss defeat = emergence event
     }
+    if (game.boss.hp <= 0 && !window._bossDefeatedThisRound) {
+      window._bossDefeatedThisRound = true;
+      if (window._achievementSystem) window._achievementSystem.onBossDefeated();
+    }
   }
+  if (!game.boss) window._bossDefeatedThisRound = false;
   // ── Quest system tick ────────────────────────────────────────────────
   questSystem.tick();
   // ── Constellation flash tick ─────────────────────────────────────────

@@ -124,7 +124,9 @@ test('interactive: step on PEACE, DESPAIR, GLITCH, TRAP and verify effects', asy
   const trapCoord = await page.evaluate(async () => {
     const C = await import('/src/core/constants.js');
     const g = window.GlitchPeaceGame;
-    const px = Math.min(g.gridSize - 2, g.player.x + 2);
+    // Place TRAP one step adjacent to the player (guaranteed reachable regardless
+    // of where GLITCH teleported the player — avoids walls at player.x+1).
+    const px = g.player.x + 1 < g.gridSize ? g.player.x + 1 : g.player.x - 1;
     const py = g.player.y;
     g.grid[py][px] = C.T.TRAP;
     return { x: px, y: py };

@@ -167,15 +167,19 @@ export function movePlayer(gameState, dx, dy) {
       gameState.emotionalField.add('fear', 0.6);
       if (stepped === T.DESPAIR) gameState.emotionalField.add('despair', 1.0);
       if (stepped === T.RAGE) gameState.emotionalField.add('anger', 1.2);
+      if (stepped === T.PAIN) gameState.emotionalField.add('grief', 0.8); // pain → grief
     }
     // DESPAIR and TERROR tiles disappear after being stepped on.
     // Symbolically: facing despair and terror transforms them — they hurt but
     // walking through them removes their grip. The tile is consumed like the emotion.
-    // Other hazards (HARM, RAGE, TRAP, PAIN, HOPELESS) remain — they represent
+    // Other hazards (HARM, RAGE, PAIN) remain — they represent
     // persistent external forces rather than internal emotional states.
+    // (TRAP and HOPELESS are handled below; they also remain on the grid.)
     if (stepped === T.DESPAIR || stepped === T.TERROR) {
       gameState.grid[newY][newX] = T.VOID;
       createParticles(gameState, newX, newY, stepped === T.DESPAIR ? DESPAIR_PARTICLE_COLOR : TERROR_PARTICLE_COLOR, 16);
+    } else if (stepped === T.PAIN) {
+      createParticles(gameState, newX, newY, '#880000', 10);
     } else {
       createParticles(gameState, newX, newY, 'damage', 12);
     }
@@ -230,15 +234,6 @@ export function movePlayer(gameState, dx, dy) {
     gameState.grid[newY][newX] = T.VOID;
     createParticles(gameState, newX, newY, '#8888ff', 6);
     try { window.AudioManager?.play('select'); } catch (e) {}
-    return true;
-  }
-
-  // Pain: small damage + shame/grief emotion
-  if (stepped === T.PAIN) {
-    const dmg = (def && def.d) ? def.d : 4;
-    gameState.player.hp = Math.max(0, gameState.player.hp - dmg);
-    if (gameState.emotionalField?.add) gameState.emotionalField.add('grief', 0.8); // pain → grief
-    createParticles(gameState, newX, newY, '#880000', 10);
     return true;
   }
 

@@ -1041,6 +1041,7 @@ function loop(ts) {
     eqFlashAlpha:     emotionRecognition.flashAlpha,
     behaviorsWitnessed: empathyTraining.behaviorsWitnessed,
   };
+  window._emotionRecognition = emotionRecognition;
   // Campaign tutorial hints
   window._tutorialHints = campaignManager.getTutorialHints(CFG.dreamIdx);
   campaignManager.tickTutorial();

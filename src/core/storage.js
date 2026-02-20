@@ -1,56 +1,33 @@
-// ═══════════════════════════════════════════════════════════
-// STORAGE - Save/Load system
-// BASE LAYER v1.0
-// ═══════════════════════════════════════════════════════════
+'use strict';
 
-const SAVE_KEY = 'glitch-peace-save';
+const SAVE_KEY = 'glitch_peace_v4';
 
-export function saveGame(gameState) {
-  const saveData = {
-    level: gameState.level,
-    score: gameState.score,
-    player: {
-      hp: gameState.player.hp,
-      maxHp: gameState.player.maxHp
-    },
-    currentDreamscape: gameState.currentDreamscape || 'RIFT',
-    playMode: gameState.playMode || 'ARCADE',
-    currentCosmology: gameState.currentCosmology || null,
-    peaceCollected: gameState.peaceCollected || 0,
-    peaceTotal: gameState.peaceTotal || 0,
-    settings: {...gameState.settings},
-    // Extended state for Phase 3+
-    insightTokens: gameState.insightTokens || 0,
-    combo: gameState.combo || 0,
-    _nearMissCount: gameState._nearMissCount || 0,
-    _lucidity: gameState._lucidity || 0,
-    timestamp: Date.now(),
-  };
-  
-  localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-  return true;
+export function saveGame(payload) {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+  } catch(e) { console.warn('Save failed:', e); }
 }
 
 export function loadGame() {
-  const saved = localStorage.getItem(SAVE_KEY);
-  if (!saved) return null;
-  
   try {
-    return JSON.parse(saved);
-  } catch (e) {
-    console.error('Load failed:', e);
-    return null;
-  }
+    const raw = localStorage.getItem(SAVE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
 }
 
-export function hasSaveData() {
-  return localStorage.getItem(SAVE_KEY) !== null;
-}
-
-export function clearSaveData() {
+export function clearSave() {
   localStorage.removeItem(SAVE_KEY);
 }
 
-// 🔌 LAYER 2 EXPANSION: Add export/import JSON
-// export function exportSave() { ... }
-// export function importSave(jsonString) { ... }
+export function saveHighScores(scores) {
+  try {
+    localStorage.setItem(SAVE_KEY + '_scores', JSON.stringify(scores));
+  } catch(e) {}
+}
+
+export function loadHighScores() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY + '_scores');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}

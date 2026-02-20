@@ -1,112 +1,181 @@
+'use strict';
 // ═══════════════════════════════════════════════════════════════════════
-//  LEADERBOARD - Local high score persistence (Phase 10)
-//  Stores top 10 runs per dreamscape/mode combination.
-//  All data lives in localStorage — privacy-respecting, offline-first.
-//  Research: Self-determination theory (Deci & Ryan 1985; Ryan & Deci 2000) —
-//  intrinsic motivation is supported by mastery feedback (personal progress
-//  visibility) rather than external social comparison pressure. The
-//  leaderboard shows personal bests only — never a comparison to other
-//  players — aligning with SDT's autonomy and competence needs.
+//  GLITCH·PEACE — leaderboard.js — Daily Challenge Leaderboard
+//
+//  Real-time leaderboard backed by Supabase (PostgreSQL + realtime).
+//  Requires a Supabase project with the following table:
+//
+//    CREATE TABLE leaderboard (
+//      id          BIGSERIAL PRIMARY KEY,
+//      score       INTEGER NOT NULL,
+//      date        DATE    NOT NULL DEFAULT CURRENT_DATE,
+//      dream_hash  TEXT    NOT NULL,
+//      player_tag  TEXT    NOT NULL DEFAULT 'ANON',
+//      created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+//    );
+//    CREATE INDEX ON leaderboard (date, score DESC);
+//
+//    -- Row-Level Security: allow anonymous inserts + reads
+//    ALTER TABLE leaderboard ENABLE ROW LEVEL SECURITY;
+//    CREATE POLICY "public read"   ON leaderboard FOR SELECT USING (true);
+//    CREATE POLICY "public insert" ON leaderboard FOR INSERT WITH CHECK (true);
+//
+//  Configuration (set before the game starts, or via environment/build):
+//    window.GLITCH_SUPABASE_URL  — your project URL
+//    window.GLITCH_SUPABASE_KEY  — your project anon (public) key
+//
+//  These values are safe to expose in the browser (anon key, RLS enforced).
 // ═══════════════════════════════════════════════════════════════════════
 
-const LEADERBOARD_KEY = 'glitch-peace-leaderboard';
-const MAX_ENTRIES_PER_BUCKET = 10;
+const TABLE = 'leaderboard';
+
+/** @returns {{ url: string, key: string } | null} */
+function _cfg() {
+  if (typeof window === 'undefined') return null;
+  const url = window.GLITCH_SUPABASE_URL;
+  const key = window.GLITCH_SUPABASE_KEY;
+  if (!url || !key) return null;
+  return { url: url.replace(/\/$/, ''), key };
+}
 
 /**
- * A single leaderboard entry.
- * @typedef {{ score: number, level: number, mode: string, dreamscape: string, ts: number }} LeaderboardEntry
+ * Build common fetch headers for Supabase REST API.
+ * @param {{ url: string, key: string }} cfg
+ * @returns {Record<string, string>}
  */
+function _headers(cfg) {
+  return {
+    'Content-Type':  'application/json',
+    'apikey':        cfg.key,
+    'Authorization': `Bearer ${cfg.key}`,
+    'Prefer':        'return=representation',
+  };
+}
 
-/** Load all leaderboard data from localStorage. */
-function _load() {
+/**
+ * Submit a daily challenge score to the leaderboard.
+ *
+ * @param {object} entry
+ * @param {number} entry.score       - final score
+ * @param {string} entry.dreamHash   - seeded hash identifying the daily run
+ * @param {string} [entry.playerTag] - 1–8 char display tag (default 'ANON')
+ * @returns {Promise<{ id: number } | null>}  The inserted row id, or null on failure.
+ */
+export async function submitScore({ score, dreamHash, playerTag = 'ANON' }) {
+  const cfg = _cfg();
+  if (!cfg) {
+    console.info('[Leaderboard] Supabase not configured — score not submitted.');
+    return null;
+  }
+
   try {
-    const raw = localStorage.getItem(LEADERBOARD_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch (_) {
-    return {};
+    const res = await fetch(`${cfg.url}/rest/v1/${TABLE}`, {
+      method:  'POST',
+      headers: _headers(cfg),
+      body: JSON.stringify({
+        score,
+        // UTC date (YYYY-MM-DD) ensures consistent daily windows across timezones.
+        // The daily challenge seed is also derived from UTC date, so they align.
+        date:       new Date().toISOString().slice(0, 10),
+        dream_hash: dreamHash,
+        player_tag: playerTag.toUpperCase().slice(0, 8),
+      }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const [row] = await res.json();
+    return row ? { id: row.id } : null;
+  } catch (err) {
+    console.warn('[Leaderboard] submitScore failed:', err.message);
+    return null;
   }
 }
 
-/** Persist leaderboard data to localStorage. */
-function _save(data) {
+/**
+ * Fetch today's top N scores for a given dreamHash (daily challenge seed).
+ *
+ * @param {string} dreamHash   - the seeded hash for today's daily challenge
+ * @param {number} [limit=10]  - number of entries to return
+ * @returns {Promise<Array<{ id, score, player_tag, created_at }>>}
+ */
+export async function fetchDailyTop(dreamHash, limit = 10) {
+  const cfg = _cfg();
+  if (!cfg) return [];
+
+  const today = new Date().toISOString().slice(0, 10);
+  const params = new URLSearchParams({
+    date:       `eq.${today}`,
+    dream_hash: `eq.${dreamHash}`,
+    order:      'score.desc',
+    limit:      String(limit),
+    select:     'id,score,player_tag,created_at',
+  });
+
   try {
-    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(data));
-  } catch (_) {
-    // Storage quota exceeded — silently skip
+    const res = await fetch(`${cfg.url}/rest/v1/${TABLE}?${params}`, {
+      headers: {
+        'apikey':        cfg.key,
+        'Authorization': `Bearer ${cfg.key}`,
+      },
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } catch (err) {
+    console.warn('[Leaderboard] fetchDailyTop failed:', err.message);
+    return [];
   }
 }
 
-/** Derive a bucket key from mode + dreamscape. */
-function _bucketKey(mode, dreamscape) {
-  const m = (mode || 'ARCADE').toUpperCase();
-  const d = (dreamscape || 'RIFT').toUpperCase();
-  return `${m}::${d}`;
-}
-
 /**
- * Add a completed run to the leaderboard.
- * @param {object} gameState - live game state
- * @returns {number|null} rank (1-based) if the score made the top-10, else null
+ * Subscribe to real-time leaderboard updates for today's daily challenge.
+ * Requires the Supabase Realtime channel to be enabled on the `leaderboard` table.
+ *
+ * @param {string}   dreamHash   - seed for today's run
+ * @param {Function} onUpdate    - called with { rows: Array } whenever a new score arrives
+ * @returns {Function} unsubscribe — call to tear down the subscription
  */
-export function addScore(gameState) {
-  const score = gameState.score || 0;
-  const level = gameState.level || 1;
-  const mode = gameState.playMode || 'ARCADE';
-  const dreamscape = gameState.currentDreamscape || 'RIFT';
+export function subscribeDaily(dreamHash, onUpdate) {
+  const cfg = _cfg();
+  if (!cfg) return () => {};
 
-  /** @type {LeaderboardEntry} */
-  const entry = { score, level, mode, dreamscape, ts: Date.now() };
-  const key = _bucketKey(mode, dreamscape);
-  const data = _load();
-  if (!data[key]) data[key] = [];
+  // Supabase Realtime over WebSocket.
+  // Security note: the anon key in the URL is the Supabase *public* anon key —
+  // it is intentionally client-visible; all data access is restricted by RLS policies.
+  // Treat it like an API endpoint slug, not a secret.
+  const wsUrl = cfg.url.replace(/^https?/, 'wss') + '/realtime/v1/websocket?apikey=' + cfg.key;
+  const ws = new WebSocket(wsUrl);
+  const today = new Date().toISOString().slice(0, 10);
+  let joined = false;
 
-  data[key].push(entry);
-  // Sort descending by score, then by level as tiebreaker
-  data[key].sort((a, b) => b.score - a.score || b.level - a.level);
-  // Keep only top-N
-  const rank = data[key].findIndex(e => e === entry) + 1; // 1-based after sort
-  data[key] = data[key].slice(0, MAX_ENTRIES_PER_BUCKET);
-  _save(data);
+  ws.onopen = () => {
+    // Join the realtime channel for the leaderboard table
+    ws.send(JSON.stringify({
+      topic:   'realtime:public:leaderboard',
+      event:   'phx_join',
+      payload: { config: { broadcast: { self: false }, presence: { key: '' } } },
+      ref:     '1',
+    }));
+    joined = true;
+  };
 
-  // If entry was bumped out (rank > MAX), return null
-  return rank <= MAX_ENTRIES_PER_BUCKET ? rank : null;
-}
+  ws.onmessage = (evt) => {
+    try {
+      const msg = JSON.parse(evt.data);
+      if (msg.event === 'INSERT' && msg.payload?.record?.date === today &&
+          msg.payload?.record?.dream_hash === dreamHash) {
+        // Re-fetch the top scores so the caller always gets a sorted list
+        fetchDailyTop(dreamHash).then((rows) => onUpdate({ rows }));
+      }
+    } catch (_e) {}
+  };
 
-/**
- * Get top scores for a given mode/dreamscape combination.
- * @param {string} mode
- * @param {string} dreamscape
- * @returns {LeaderboardEntry[]}
- */
-export function getTopScores(mode = 'ARCADE', dreamscape = 'RIFT') {
-  const data = _load();
-  return data[_bucketKey(mode, dreamscape)] || [];
-}
+  ws.onerror = (e) => console.warn('[Leaderboard] realtime WS error:', e);
 
-/**
- * Get the all-time global top scores across ALL buckets (flattened, sorted by score).
- * @param {number} limit
- * @returns {LeaderboardEntry[]}
- */
-export function getGlobalTopScores(limit = 10) {
-  const data = _load();
-  const all = Object.values(data).flat();
-  all.sort((a, b) => b.score - a.score || b.level - a.level);
-  return all.slice(0, limit);
-}
-
-/**
- * Get the personal best score for a mode/dreamscape.
- * @param {string} mode
- * @param {string} dreamscape
- * @returns {number}
- */
-export function getPersonalBest(mode = 'ARCADE', dreamscape = 'RIFT') {
-  const top = getTopScores(mode, dreamscape);
-  return top.length ? top[0].score : 0;
-}
-
-/** Clear all leaderboard data (used by "Clear Data" option). */
-export function clearLeaderboard() {
-  localStorage.removeItem(LEADERBOARD_KEY);
+  return function unsubscribe() {
+    if (joined) {
+      try {
+        ws.send(JSON.stringify({ topic: 'realtime:public:leaderboard', event: 'phx_leave', payload: {}, ref: '2' }));
+      } catch (_e) {}
+    }
+    ws.close();
+  };
 }

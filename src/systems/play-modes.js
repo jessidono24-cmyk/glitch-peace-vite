@@ -1,549 +1,385 @@
+'use strict';
 // ═══════════════════════════════════════════════════════════════════════
-//  PLAY MODES SYSTEM - 13+ Radically Different Gameplay Experiences
-//  Merged from GLITCH-PEACE-MEGA-FINAL archive
+//  PLAY MODES SYSTEM — 13 radically different gameplay experiences
+//  Ported + extended from glitch-peace-vite / GLITCH-PEACE-MEGA-FINAL
+//  Each mode changes multipliers, mechanics, and gameplay feel.
 // ═══════════════════════════════════════════════════════════════════════
 
 export const PLAY_MODES = {
-  
-  // ────────────────────────────────────────────────────────────────────
-  // 1. CLASSIC ARCADE - Traditional survival
-  // ────────────────────────────────────────────────────────────────────
-  ARCADE: {
-    id: 'arcade',
-    name: "Classic Arcade",
-    desc: "Traditional survival gameplay",
-    config: {
-      peaceMul: 1.0,
-      hazardMul: 1.0,
-      insightMul: 1.0,
-      scoreMul: 1.2,
-      enemySpeed: 1.0,
-      gridSize: 'medium',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'chase',
-      tileRespawn: false,
-      powerupsEnabled: true,
-      bossEnabled: true,
-    }
+
+  // 1. CLASSIC ARCADE — Traditional survival
+  arcade: {
+    id: 'arcade', name: 'Classic Arcade', emoji: '🕹️',
+    desc: 'Traditional survival gameplay — balanced challenge',
+    config: { peaceMul: 1.0, hazardMul: 1.0, insightMul: 1.0, scoreMul: 1.2, enemySpeed: 1.0, timeLimit: null },
+    mechanics: { enemyBehavior: 'chase', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 2. ZEN GARDEN - Meditative, no enemies
-  // ────────────────────────────────────────────────────────────────────
-  ZEN_GARDEN: {
-    id: 'zen',
-    name: "Zen Garden",
-    desc: "Peaceful exploration with no threats",
-    config: {
-      peaceMul: 1.5,
-      hazardMul: 0.0,
-      insightMul: 2.0,
-      scoreMul: 0.5,
-      enemySpeed: 0.0,
-      gridSize: 'large',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'none',
-      tileRespawn: true,
-      powerupsEnabled: false,
-      bossEnabled: false,
-      autoHeal: 1, // HP per second
-      infinitePeace: true,
-      patternEcho: true,         // show movement trail
-      realityChecks: true,       // gentle awareness prompts
-    }
+  // 2. ZEN GARDEN — Meditative, no enemies
+  zen: {
+    id: 'zen', name: 'Zen Garden', emoji: '🌸',
+    desc: 'Peaceful exploration — no enemies, no hazard damage, infinite peace',
+    config: { peaceMul: 1.5, hazardMul: 0.0, insightMul: 2.0, scoreMul: 0.5, enemySpeed: 0.0, timeLimit: null },
+    mechanics: { enemyBehavior: 'none', zenMode: true, moveLimit: null, reverseMode: false, autoHeal: 1, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 3. SPEEDRUN - Race against time
-  // ────────────────────────────────────────────────────────────────────
-  SPEEDRUN: {
-    id: 'speedrun',
-    name: "Speedrun Challenge",
-    desc: "Complete levels as fast as possible",
-    config: {
-      peaceMul: 0.8,
-      hazardMul: 1.2,
-      insightMul: 0.5,
-      scoreMul: 2.0,
-      enemySpeed: 1.3,
-      gridSize: 'small',
-      timeLimit: 180, // 3 minutes
-    },
-    mechanics: {
-      enemyBehavior: 'aggressive',
-      tileRespawn: false,
-      powerupsEnabled: true,
-      bossEnabled: false,
-      timerBonus: true,
-      moveSpeedBoost: 1.2,
-    }
+  // 3. SPEEDRUN — Race against time
+  speedrun: {
+    id: 'speedrun', name: 'Speedrun', emoji: '⚡',
+    desc: 'Complete dreamscapes as fast as possible — 3-minute timer',
+    config: { peaceMul: 0.8, hazardMul: 1.2, insightMul: 0.5, scoreMul: 2.0, enemySpeed: 1.3, timeLimit: 180 },
+    mechanics: { enemyBehavior: 'aggressive', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 4. PUZZLE MODE - Strategic planning
-  // ────────────────────────────────────────────────────────────────────
-  PUZZLE: {
-    id: 'puzzle',
-    name: "Puzzle Master",
-    desc: "Limited moves, maximum strategy",
-    config: {
-      peaceMul: 1.0,
-      hazardMul: 0.8,
-      insightMul: 1.5,
-      scoreMul: 1.5,
-      enemySpeed: 0.0,
-      gridSize: 'medium',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'none',
-      tileRespawn: false,
-      powerupsEnabled: false,
-      bossEnabled: false,
-      moveLimit: 50,
-      showOptimalPath: true,
-      undoEnabled: true,
-    }
+  // 4. PUZZLE — Strategic planning, limited moves
+  puzzle: {
+    id: 'puzzle', name: 'Puzzle Master', emoji: '🧩',
+    desc: 'No enemies — but only 50 moves to collect all peace nodes',
+    config: { peaceMul: 1.0, hazardMul: 0.8, insightMul: 1.5, scoreMul: 1.5, enemySpeed: 0.0, timeLimit: null },
+    mechanics: { enemyBehavior: 'none', zenMode: true, moveLimit: 50, reverseMode: false, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 5. SURVIVAL HORROR - High stakes
-  // ────────────────────────────────────────────────────────────────────
-  SURVIVAL_HORROR: {
-    id: 'horror',
-    name: "Survival Horror",
-    desc: "One life, darkness, relentless enemies",
-    config: {
-      peaceMul: 0.5,
-      hazardMul: 1.5,
-      insightMul: 0.8,
-      scoreMul: 3.0,
-      enemySpeed: 0.8,
-      gridSize: 'large',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'hunt',
-      tileRespawn: false,
-      powerupsEnabled: true,
-      bossEnabled: true,
-      permadeath: true,
-      limitedVision: 4,
-      stamina: true,
-      hidingSpots: true,
-    }
+  // 5. SURVIVAL HORROR — High stakes, permadeath
+  horror: {
+    id: 'horror', name: 'Survival Horror', emoji: '💀',
+    desc: 'High damage, fast enemies — permadeath; maximum score multiplier',
+    config: { peaceMul: 0.5, hazardMul: 1.8, insightMul: 0.8, scoreMul: 3.0, enemySpeed: 1.4, timeLimit: null },
+    mechanics: { enemyBehavior: 'hunt', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 6. ROGUELIKE - Procedural death
-  // ────────────────────────────────────────────────────────────────────
-  ROGUELIKE: {
-    id: 'roguelike',
-    name: "Roguelike Descent",
-    desc: "Procedural levels, permanent upgrades",
-    config: {
-      peaceMul: 0.7,
-      hazardMul: 1.3,
-      insightMul: 1.2,
-      scoreMul: 1.0,
-      enemySpeed: 1.1,
-      gridSize: 'random',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'random',
-      tileRespawn: false,
-      powerupsEnabled: true,
-      bossEnabled: true,
-      permadeath: true,
-      randomTileEffects: true,
-      metaProgression: true,
-      eliteEnemies: true,
-    }
+  // 6. ROGUELIKE — Procedural, no saves
+  roguelike: {
+    id: 'roguelike', name: 'Roguelike Descent', emoji: '🎲',
+    desc: 'Randomised dreamscape sequence — harder with each dream',
+    config: { peaceMul: 0.7, hazardMul: 1.3, insightMul: 1.2, scoreMul: 1.0, enemySpeed: 1.1, timeLimit: null },
+    mechanics: { enemyBehavior: 'random', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 7. PATTERN TRAINING - Addiction recovery
-  // ────────────────────────────────────────────────────────────────────
-  PATTERN_TRAINING: {
-    id: 'training',
-    name: "Pattern Recognition Training",
-    desc: "Therapeutic mode for addiction recovery",
-    config: {
-      peaceMul: 1.3,
-      hazardMul: 0.7,
-      insightMul: 1.5,
-      scoreMul: 0.8,
-      enemySpeed: 0.7,
-      gridSize: 'medium',
-      timeLimit: 45,
-    },
-    mechanics: {
-      enemyBehavior: 'passive',
-      tileRespawn: true,
-      powerupsEnabled: true,
-      bossEnabled: false,
-      hazardPull: true,
-      impulseBuffer: true,
-      consequencePreview: true,
-      patternEcho: true,
-      routeAlternatives: true,
-      compassionateRelapse: true,
-      thresholdMonitor: true,
-      realityChecks: true,
-      sessionBreaks: [15, 30],
-    }
+  // 7. PATTERN TRAINING — Therapeutic recovery support
+  training: {
+    id: 'training', name: 'Pattern Training', emoji: '🌱',
+    desc: 'Therapeutic mode — slow enemies, all recovery tools active, gentle hazards',
+    config: { peaceMul: 1.3, hazardMul: 0.6, insightMul: 1.5, scoreMul: 0.8, enemySpeed: 0.6, timeLimit: null },
+    mechanics: { enemyBehavior: 'passive', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 8. BOSS RUSH - All bosses
-  // ────────────────────────────────────────────────────────────────────
-  BOSS_RUSH: {
-    id: 'bosses',
-    name: "Boss Rush",
-    desc: "All bosses, no breaks, ultimate challenge",
-    config: {
-      peaceMul: 2.0,
-      hazardMul: 0.5,
-      insightMul: 3.0,
-      scoreMul: 5.0,
-      enemySpeed: 1.5,
-      gridSize: 'large',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'none',
-      tileRespawn: true,
-      powerupsEnabled: true,
-      bossEnabled: true,
-      bossOnly: true,
-      bossHealthScaling: 1.5,
-      noPeaceRequirement: true,
-    }
+  // 8. BOSS RUSH — All bosses, no breaks
+  bosses: {
+    id: 'bosses', name: 'Boss Rush', emoji: '🐉',
+    desc: 'All dreamscapes spawn a boss immediately — maximum challenge',
+    config: { peaceMul: 2.0, hazardMul: 0.5, insightMul: 3.0, scoreMul: 5.0, enemySpeed: 1.5, timeLimit: null },
+    mechanics: { enemyBehavior: 'none', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0, forceBoss: true },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 9. PACIFIST - No combat
-  // ────────────────────────────────────────────────────────────────────
-  PACIFIST: {
-    id: 'pacifist',
-    name: "Pacifist Path",
-    desc: "Avoid all enemies, pure navigation",
-    config: {
-      peaceMul: 1.5,
-      hazardMul: 0.3,
-      insightMul: 2.0,
-      scoreMul: 2.0,
-      enemySpeed: 1.2,
-      gridSize: 'large',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'patrol',
-      tileRespawn: false,
-      powerupsEnabled: true,
-      bossEnabled: false,
-      noCombat: true,
-      scoreForStealth: true,
-      enemyVisionCones: true,
-      hidingSpots: true,
-    }
+  // 9. PACIFIST — Navigate without harming enemies
+  pacifist: {
+    id: 'pacifist', name: 'Pacifist Path', emoji: '☮️',
+    desc: 'Avoid all enemies — score bonus for never touching them',
+    config: { peaceMul: 1.5, hazardMul: 0.4, insightMul: 2.0, scoreMul: 2.0, enemySpeed: 1.2, timeLimit: null },
+    mechanics: { enemyBehavior: 'patrol', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 10. REVERSE MODE - Inverted mechanics
-  // ────────────────────────────────────────────────────────────────────
-  REVERSE: {
-    id: 'reverse',
-    name: "Reverse Polarity",
-    desc: "Peace hurts, hazards heal - everything inverted",
-    config: {
-      peaceMul: 1.0,
-      hazardMul: 1.0,
-      insightMul: 1.0,
-      scoreMul: 1.5,
-      enemySpeed: 1.0,
-      gridSize: 'medium',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'chase',
-      tileRespawn: false,
-      powerupsEnabled: true,
-      bossEnabled: true,
-      reversedTiles: true,
-      reversedControls: false,
-      mindfuck: true,
-    }
+  // 10. REVERSE — Peace hurts, hazards heal
+  reverse: {
+    id: 'reverse', name: 'Reverse Polarity', emoji: '🔄',
+    desc: 'Everything inverted — peace tiles damage, hazard tiles heal',
+    config: { peaceMul: 1.0, hazardMul: 1.0, insightMul: 1.0, scoreMul: 1.5, enemySpeed: 1.0, timeLimit: null },
+    mechanics: { enemyBehavior: 'chase', zenMode: false, moveLimit: null, reverseMode: true, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 11. CO-OP (Future)
-  // ────────────────────────────────────────────────────────────────────
-  COOP: {
-    id: 'coop',
-    name: "Co-operative Field",
-    desc: "Two players, shared emotional field — coming soon",
-    disabled: true,
-    config: {
-      peaceMul: 1.2,
-      hazardMul: 1.2,
-      insightMul: 1.0,
-      scoreMul: 1.0,
-      enemySpeed: 1.1,
-      gridSize: 'large',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'split',
-      tileRespawn: false,
-      powerupsEnabled: true,
-      bossEnabled: true,
-      playerCount: 2,
-      sharedEmotionalField: true,
-      reviveSystem: true,
-      teamScoring: true,
-    }
+  // 11. CO-OP — Shared emotional field (placeholder — Phase M8)
+  coop: {
+    id: 'coop', name: 'Co-op Field (soon)', emoji: '🤝',
+    desc: 'Two players, shared emotional field — coming in Phase M8',
+    config: { peaceMul: 1.2, hazardMul: 1.2, insightMul: 1.0, scoreMul: 1.0, enemySpeed: 1.1, timeLimit: null },
+    mechanics: { enemyBehavior: 'split', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 12. RITUAL MODE - Ceremonial gameplay
-  // ────────────────────────────────────────────────────────────────────
-  RITUAL: {
-    id: 'ritual',
-    name: "Ritual Practice",
-    desc: "Slow, intentional, ceremonial gameplay",
-    config: {
-      peaceMul: 1.0,
-      hazardMul: 1.0,
-      insightMul: 1.5,
-      scoreMul: 1.0,
-      enemySpeed: 0.5,
-      gridSize: 'medium',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'orbit',
-      tileRespawn: true,
-      powerupsEnabled: false,
-      bossEnabled: true,
-      slowMotion: 0.7,
-      breathingPauses: true,
-      intentionalMovement: true,
-      sacredGeometry: true,
-    }
+  // 12. RITUAL — Slow, ceremonial, intentional
+  ritual: {
+    id: 'ritual', name: 'Ritual Practice', emoji: '🕯️',
+    desc: 'Slow motion — intentional movement, extended enemy intervals',
+    config: { peaceMul: 1.0, hazardMul: 1.0, insightMul: 1.5, scoreMul: 1.0, enemySpeed: 0.45, timeLimit: null },
+    mechanics: { enemyBehavior: 'orbit', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 0.55 },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 13. DAILY CHALLENGE - Seeded daily
-  // ────────────────────────────────────────────────────────────────────
-  DAILY: {
-    id: 'daily',
-    name: "Daily Challenge",
-    desc: "New procedural challenge every 24 hours",
-    config: {
-      peaceMul: 'random',
-      hazardMul: 'random',
-      insightMul: 'random',
-      scoreMul: 1.0,
-      enemySpeed: 'random',
-      gridSize: 'random',
-      timeLimit: 600,
-    },
-    mechanics: {
-      enemyBehavior: 'random',
-      tileRespawn: 'random',
-      powerupsEnabled: 'random',
-      bossEnabled: 'random',
-      seed: 'daily',
-      leaderboard: true,
-      oneAttempt: true,
-    }
+  // 13. DAILY CHALLENGE — Seeded random daily
+  daily: {
+    id: 'daily', name: 'Daily Challenge', emoji: '📅',
+    desc: 'New seeded configuration every 24 hours — unique each day',
+    config: { peaceMul: 1.0, hazardMul: 1.0, insightMul: 1.0, scoreMul: 1.0, enemySpeed: 1.0, timeLimit: 600 },
+    mechanics: { enemyBehavior: 'random', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0, daily: true },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 15. CAMPAIGN - 30-level narrative arc in 3 acts
-  // ────────────────────────────────────────────────────────────────────
-  CAMPAIGN: {
-    id: 'campaign',
-    name: "Campaign",
-    desc: "30-level story: Awakening · Descent · Integration",
-    config: {
-      peaceMul: 1.0,
-      hazardMul: 1.0,
-      insightMul: 1.5,
-      scoreMul: 1.2,
-      enemySpeed: 1.0,
-      gridSize: 'medium',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'chase',
-      tileRespawn: false,
-      powerupsEnabled: true,
-      bossEnabled: true,
-      compassionateRelapse: true,
-      patternEcho: true,
-      realityChecks: false, // enabled per-level by campaign data
-    }
+  // 14. ORNITHOLOGY — Bird-watching / nature observation
+  ornithology: {
+    id: 'ornithology', name: 'Bird Watching', emoji: '🐦',
+    desc: 'Track bird migrations — somatic tiles become habitat spots; no hazards; meditative observation',
+    config: { peaceMul: 1.8, hazardMul: 0.0, insightMul: 3.0, scoreMul: 1.2, enemySpeed: 0.0, timeLimit: null },
+    mechanics: { enemyBehavior: 'none', zenMode: true, moveLimit: null, reverseMode: false, autoHeal: 1, slowMul: 0.75, ornithology: true },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 16. NIGHTMARE 🌑 - Unforgiving maximum difficulty
-  //  2× damage multiplier, predictive "hunt" enemies, 5× score reward.
-  //  No compassion, no recovery tools. Not for the faint of heart.
-  //  Research: optimal challenge theory (Csikszentmihalyi, 1990) —
-  //  high difficulty produces peak-flow when skill matches challenge.
-  // ────────────────────────────────────────────────────────────────────
-  NIGHTMARE: {
-    id: 'nightmare',
-    name: "🌑 Nightmare",
-    desc: "2× damage · predictive enemies · 5× score · no mercy",
-    config: {
-      peaceMul: 0.6,
-      hazardMul: 2.0,
-      insightMul: 0.8,
-      scoreMul: 5.0,
-      enemySpeed: 1.6,
-      gridSize: 'large',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'hunt',   // predictive pathfinding
-      tileRespawn: false,
-      powerupsEnabled: false,
-      bossEnabled: true,
-      permadeath: true,        // one life
-      limitedVision: 5,        // fog of war
-      impulseBuffer: false,
-      consequencePreview: false,
-      compassionateRelapse: false,
-    }
+  // 15. MYCOLOGY — Mycelium network mapping
+  mycology: {
+    id: 'mycology', name: 'Mycelium Network', emoji: '🍄',
+    desc: 'Map the fungal network — hazard tiles become energy nodes; slow meditative pace; deep healing',
+    config: { peaceMul: 2.0, hazardMul: 0.0, insightMul: 2.5, scoreMul: 1.0, enemySpeed: 0.0, timeLimit: null },
+    mechanics: { enemyBehavior: 'none', zenMode: true, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 0.45, mycology: true },
   },
 
-  // ────────────────────────────────────────────────────────────────────
-  // 17. RHYTHM_FLOW 🎵 - Move on the beat for bonus score
-  //  80 BPM metronome tick. Move ON the beat → ×2 score per node.
-  //  Miss the beat → no bonus (still safe, just fewer points).
-  //  Research: beat-synchronised movement (Thaut et al., 2015) improves
-  //  motor precision and emotional regulation.
-  // ────────────────────────────────────────────────────────────────────
-  RHYTHM_FLOW: {
-    id: 'rhythm_flow',
-    name: "🎵 Rhythm Flow",
-    desc: "Move on the beat (80 BPM) for ×2 score bonus",
-    config: {
-      peaceMul: 1.2,
-      hazardMul: 0.8,
-      insightMul: 1.5,
-      scoreMul: 2.0,
-      enemySpeed: 0.9,
-      gridSize: 'medium',
-      timeLimit: null,
-    },
-    mechanics: {
-      enemyBehavior: 'chase',
-      tileRespawn: true,
-      powerupsEnabled: true,
-      bossEnabled: false,
-      rhythmMode: true,        // enable BPM beat-sync scoring
-      rhythmBpm: 80,           // 80 BPM = 750ms beat interval
-      beatBonusMul: 2.0,       // score multiplier when moving on beat
-      patternEcho: true,
-    }
+  // 16. ARCHITECTURE — Sacred builder mode
+  architecture: {
+    id: 'architecture', name: 'Sacred Architecture', emoji: '🏛️',
+    desc: 'Build sacred structures — GROUNDING tiles are foundations; INSIGHT unlocks blueprints; 80-move budget',
+    config: { peaceMul: 1.0, hazardMul: 0.0, insightMul: 2.0, scoreMul: 1.5, enemySpeed: 0.0, timeLimit: null },
+    mechanics: { enemyBehavior: 'none', zenMode: true, moveLimit: 80, reverseMode: false, autoHeal: 0, slowMul: 0.7, architecture: true },
+  },
+
+  // 17. ALCHEMIST — Elemental transmutation mode
+  alchemist: {
+    id: 'alchemist', name: 'Alchemist', emoji: '⚗️',
+    desc: 'Collect elemental seeds from somatic tiles and transmute hazards into peace — the Great Work in action',
+    config: { peaceMul: 1.2, hazardMul: 0.4, insightMul: 2.0, scoreMul: 1.8, enemySpeed: 0.75, timeLimit: null },
+    mechanics: { enemyBehavior: 'passive', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 0.85, alchemist: true },
+  },
+
+  // 18. SKYMAP — Constellation navigation (Phase M6)
+  skymap: {
+    id: 'skymap', name: 'Constellation Path', emoji: '✦',
+    desc: 'Navigate by star constellations — connect STAR tiles to reveal sacred patterns; meditative star-gazing pace',
+    config: { peaceMul: 1.5, hazardMul: 0.0, insightMul: 2.5, scoreMul: 1.3, enemySpeed: 0.0, timeLimit: null },
+    mechanics: { enemyBehavior: 'none', zenMode: true, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 0.6, skymap: true },
+  },
+
+  // 19. RITUAL SPACE — Somatic + alchemy fusion (Phase M6.5)
+  ritual_space: {
+    id: 'ritual_space', name: 'Ritual Space', emoji: '🕯️',
+    desc: 'Somatic-alchemical practice — element seeds ×2, half hazard damage, transmutation enabled; intentional movement',
+    config: { peaceMul: 1.4, hazardMul: 0.3, insightMul: 2.2, scoreMul: 1.6, enemySpeed: 0.5, timeLimit: null },
+    mechanics: { enemyBehavior: 'wander', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 0.7, ritual_space: true, alchemist: true },
+  },
+
+  // 20. NIGHTMARE — Maximum difficulty, no mercy
+  nightmare: {
+    id: 'nightmare', name: 'Nightmare', emoji: '🌑',
+    desc: 'Maximum intensity — 2× damage, fast predictive enemies, no healing from peace, max score reward',
+    config: { peaceMul: 0.4, hazardMul: 2.0, insightMul: 1.0, scoreMul: 5.0, enemySpeed: 1.65, timeLimit: null },
+    mechanics: { enemyBehavior: 'predictive', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0, nightmare: true },
+  },
+
+  // 21. RHYTHM — Beat-synchronised movement scoring
+  rhythm: {
+    id: 'rhythm', name: 'Rhythm Flow', emoji: '🎵',
+    desc: 'Move in sync with the beat for bonus score — 80 BPM pulse, on-beat movement ×2 score',
+    config: { peaceMul: 1.3, hazardMul: 0.8, insightMul: 1.5, scoreMul: 1.8, enemySpeed: 0.9, timeLimit: null },
+    mechanics: { enemyBehavior: 'patrol', zenMode: false, moveLimit: null, reverseMode: false, autoHeal: 0, slowMul: 1.0, rhythm: true },
   },
 };
 
-// Helper to get mode config
-// Accepts both the outer key ('ARCADE') and the inner id ('arcade')
-export function getModeConfig(modeName) {
-  if (!modeName) return PLAY_MODES.ARCADE;
-  return PLAY_MODES[modeName]
-    || PLAY_MODES[String(modeName).toUpperCase()]
-    || Object.values(PLAY_MODES).find(m => m.id === modeName)
-    || PLAY_MODES.ARCADE;
-}
+// Ordered list for options cycling
+export const PLAY_MODE_LIST = Object.keys(PLAY_MODES);
 
-// Apply mode settings to game
-/**
- * Get today's Daily Challenge seed — a deterministic integer derived from the
- * ISO date string (YYYY-MM-DD). Same seed for all players on the same calendar day.
- * Uses a simple djb2-style hash so no external dependency is needed.
- * @returns {number} Seed in range [0, 2^31)
- */
-export function getDailyChallengeSeed() {
-  const dateStr = new Date().toISOString().slice(0, 10); // 'YYYY-MM-DD'
-  let hash = 5381;
-  for (let i = 0; i < dateStr.length; i++) {
-    // djb2: hash * 33 XOR charCode
-    hash = ((hash << 5) + hash) ^ dateStr.charCodeAt(i);
-    hash = hash & 0x7fffffff; // keep positive 31-bit integer
+// Apply mode settings to an initialised game object
+export function applyPlayMode(game, modeId) {
+  const mode = PLAY_MODES[modeId] || PLAY_MODES.arcade;
+  const cfg  = mode.config;
+  const mech = mode.mechanics;
+
+  // Daily challenge: seed with today's date to get deterministic modifiers
+  if (mech.daily) {
+    const seed = parseInt(new Date().toISOString().slice(0, 10).replace(/-/g, ''), 10) % 1000;
+    const rngVal = (x) => 0.5 + 0.5 * Math.sin(seed * x);
+    cfg.hazardMul  = 0.6 + rngVal(2.1) * 1.4;
+    cfg.peaceMul   = 0.7 + rngVal(3.7) * 1.0;
+    cfg.enemySpeed = 0.6 + rngVal(5.3) * 1.2;
   }
-  return hash;
-}
 
-export function applyMode(game, mode) {
-  const cfg = getModeConfig(mode);
-  if (!cfg) return game;
+  game.playModeId      = mode.id;
+  game.playModeName    = mode.name;
+  game.dmgMul          = typeof cfg.hazardMul  === 'number' ? cfg.hazardMul  : 1.0;
+  game.insightMulMode  = typeof cfg.insightMul === 'number' ? cfg.insightMul : 1.0;
+  game.scoreMulMode    = typeof cfg.scoreMul   === 'number' ? cfg.scoreMul   : 1.0;
+  game.enemySpeedMul   = typeof cfg.enemySpeed === 'number' ? cfg.enemySpeed : 1.0;
+  game.zenMode         = !!mech.zenMode;
+  game.autoHealRate    = mech.autoHeal || 0;
+  game.reverseMode     = !!mech.reverseMode;
+  game.ritualSlowMul   = mech.slowMul || 1.0;
+  game.forceBoss       = !!mech.forceBoss;
 
-  // Apply config multipliers
-  game.peaceMul = typeof cfg.config.peaceMul === 'string' ? 1.0 : cfg.config.peaceMul;
-  game.hazardMul = typeof cfg.config.hazardMul === 'string' ? 1.0 : cfg.config.hazardMul;
-  game.insightMul = typeof cfg.config.insightMul === 'string' ? 1.0 : cfg.config.insightMul;
-  game.scoreMul = cfg.config.scoreMul;
-  
-  // Apply mechanics
-  if (!game.mechanics) game.mechanics = {};
-  Object.assign(game.mechanics, cfg.mechanics);
+  // Move limit (puzzle mode)
+  if (mech.moveLimit) {
+    game.moveLimit = mech.moveLimit;
+    game.movesRemaining = mech.moveLimit;
+  }
 
-  // Daily Challenge: apply deterministic seed so tile layout is reproducible for the day
-  if (cfg.mechanics?.seed === 'daily') {
-    game._dailySeed = getDailyChallengeSeed();
-    // Use seed to deterministically pick multipliers for 'random' fields
-    const rng = (offset = 0) => {
-      const s = (game._dailySeed + offset) & 0x7fffffff;
-      return (s % 100) / 100; // 0.0–0.99
+  // Speedrun countdown (convert seconds to ms)
+  if (cfg.timeLimit) {
+    game.speedrunTimer  = cfg.timeLimit * 1000;
+    game.speedrunActive = true;
+  }
+
+  // Zen mode: remove all enemies and hazard damage
+  if (game.zenMode) {
+    game.enemies = [];
+    game.dmgMul  = 0;
+  }
+
+  // Force boss spawn in Boss Rush — use proper boss system type
+  if (game.forceBoss && !game.boss) {
+    const sz = game.sz;
+    const totalHp = 1010 + game.level * 40; // matches fear_guardian total
+    game.boss = {
+      y: Math.floor(sz / 2), x: Math.floor(sz / 2),
+      hp: totalHp, maxHp: totalHp,
+      timer: 0, stunTimer: 0, phase: 'chase', phaseTimer: 600, type: 'fear_guardian',
+      phaseIdx: 0, phaseLabel: 'AWAKENING', color: '#ff00aa', glow: '#ff00aa', speedMs: 340,
     };
-    if (typeof cfg.config.peaceMul  === 'string') game.peaceMul   = 0.5 + rng(1);
-    if (typeof cfg.config.hazardMul === 'string') game.hazardMul  = 0.5 + rng(2);
-    if (typeof cfg.config.insightMul === 'string') game.insightMul = 0.5 + rng(3);
-  }
-  
-  // Apply special rules
-  if (cfg.mechanics.permadeath) {
-    game.maxLives = 1;
-  }
-  
-  if (cfg.mechanics.limitedVision) {
-    game.visionRadius = cfg.mechanics.limitedVision;
-  }
-  
-  if (cfg.mechanics.moveLimit) {
-    game.movesRemaining = cfg.mechanics.moveLimit;
   }
 
-  if (cfg.mechanics.moveSpeedBoost) {
-    // Grid move delay is halved by speed multiplier (faster = lower delay)
-    game.moveSpeedBoost = cfg.mechanics.moveSpeedBoost;
+  // ── Ornithology: clear hazards, add habitat spots ──────────────────
+  if (mech.ornithology && game.grid) {
+    const sz = game.sz;
+    const habTiles = [17, 18, 19, 20]; // somatic tiles
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        const v = game.grid[y][x];
+        if ([1,2,3,8,9,10,14,16].includes(v)) game.grid[y][x] = 0; // clear hazards
+      }
+    }
+    // Seed habitat spots
+    let hab = 0, itr = 0;
+    while (hab < 6 && itr < 999) {
+      itr++;
+      const hy = Math.floor(Math.random() * sz), hx = Math.floor(Math.random() * sz);
+      if (game.grid[hy][hx] === 0) { game.grid[hy][hx] = habTiles[hab % habTiles.length]; hab++; }
+    }
+    game.playModeLabel = '🐦  BIRD WATCHING  ·  observe · be still · notice';
   }
 
-  if (cfg.config.timeLimit) {
-    game.mechanics.timeLimit = cfg.config.timeLimit;
+  // ── Mycology: replace hazards with energy/breath tiles ────────────
+  if (mech.mycology && game.grid) {
+    const sz = game.sz;
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        const v = game.grid[y][x];
+        if ([1,2,3,8,9,10,14,16].includes(v)) {
+          game.grid[y][x] = Math.random() < 0.5 ? 19 : 18; // ENERGY_NODE or BREATH_SYNC
+        }
+      }
+    }
+    game.playModeLabel = '🍄  MYCELIUM  ·  grow · connect · integrate';
   }
-  
+
+  // ── Architecture: replace hazards with GROUNDING / COVER ──────────
+  if (mech.architecture && game.grid) {
+    const sz = game.sz;
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        const v = game.grid[y][x];
+        if ([1,2,3,8,9,14,16].includes(v)) {
+          game.grid[y][x] = Math.random() < 0.6 ? 20 : 13; // GROUNDING or COVER
+        }
+      }
+    }
+    game.playModeLabel = '🏛️  ARCHITECTURE  ·  build · ground · endure';
+  }
+
+  // ── Alchemist: seed element tiles from somatic pool; keep some hazards ─
+  if (mech.alchemist && game.grid) {
+    const sz = game.sz;
+    // Replace SELF_HARM/RAGE with somatic element tiles (gentler hazard set)
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        const v = game.grid[y][x];
+        if (v === 3 || v === 8) { // SELF_HARM or RAGE → element seed tiles
+          const pick = [17, 18, 19, 20][Math.floor(Math.random() * 4)];
+          game.grid[y][x] = pick;
+        }
+      }
+    }
+    // Seed extra somatic tiles as element sources
+    let el = 0, itr = 0;
+    const elTiles = [19, 18, 20, 17]; // ENERGY_NODE, BREATH_SYNC, GROUNDING, BODY_SCAN
+    while (el < 8 && itr < 999) {
+      itr++;
+      const ey = Math.floor(Math.random() * sz), ex = Math.floor(Math.random() * sz);
+      if (game.grid[ey][ex] === 0) { game.grid[ey][ex] = elTiles[el % elTiles.length]; el++; }
+    }
+    game.playModeLabel = '⚗️  ALCHEMIST  ·  collect · transmute · the Great Work';
+  }
+
+  // ── Skymap: clear all hazards; seed INSIGHT + ARCHETYPE as star nodes ─
+  if (mech.skymap && game.grid) {
+    const sz = game.sz;
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        const v = game.grid[y][x];
+        if ([1,2,3,8,9,10,14,16].includes(v)) game.grid[y][x] = 0; // clear all hazards
+      }
+    }
+    // Seed constellation star nodes (INSIGHT) and archetype nodes (ARCHETYPE)
+    let stars = 0, itr = 0;
+    while (stars < 10 && itr < 999) {
+      itr++;
+      const starY = Math.floor(Math.random() * sz), sx = Math.floor(Math.random() * sz);
+      if (game.grid[starY][sx] === 0) {
+        game.grid[starY][sx] = stars % 3 === 0 ? 11 : 6; // ARCHETYPE or INSIGHT
+        stars++;
+      }
+    }
+    game.playModeLabel = '✦  CONSTELLATION PATH  ·  navigate · connect · skymap';
+  }
+
+  // ── Ritual Space: somatic + alchemy hybrid ─────────────────────────────
+  if (mech.ritual_space && game.grid) {
+    const sz = game.sz;
+    const elTiles = [17, 18, 19, 20]; // T.BODY_SCAN, T.BREATH_SYNC, T.ENERGY_NODE, T.GROUNDING (somatic, each maps to an element)
+    for (let y = 0; y < sz; y++) {
+      for (let x = 0; x < sz; x++) {
+        const v = game.grid[y][x];
+        // Replace the most severe hazards with somatic/element tiles; keep mild hazards
+        if (v === 3 || v === 8) { // SELF_HARM, RAGE → somatic element tile
+          game.grid[y][x] = elTiles[Math.floor(Math.random() * elTiles.length)];
+        }
+      }
+    }
+    // Seed extra somatic element tiles (more than alchemist alone)
+    let el = 0, itr2 = 0;
+    const elCycle = [19, 18, 20, 17, 19, 18]; // ENERGY_NODE, BREATH_SYNC, GROUNDING, BODY_SCAN ×2 (element tiles; 12 total)
+    while (el < 12 && itr2 < 999) {
+      itr2++;
+      const ey = Math.floor(Math.random() * sz), ex = Math.floor(Math.random() * sz);
+      if (game.grid[ey][ex] === 0) { game.grid[ey][ex] = elCycle[el % elCycle.length]; el++; }
+    }
+    game.playModeLabel = '🕯️  RITUAL SPACE  ·  somatic · alchemical · seeds ×2';
+    // Double element seed yield flag (checked in main.js during tile step)
+    game.ritualSeedMultiplier = 2;
+  }
+
+  // ── Nightmare: ultra-hard — scale spread timer, reinforce enemy count ──
+  if (mech.nightmare && game.grid) {
+    // Halve spread timer so DESPAIR/HOPELESS spread twice as fast
+    game.spreadTimer = 1000;
+    // Peace tiles don't heal in nightmare mode
+    game.nightmareMode = true;
+    game.playModeLabel = '🌑  NIGHTMARE  ·  no mercy · maximum intensity';
+  }
+
+  // ── Rhythm: seed beat state for on-beat scoring bonus ──────────────────
+  if (mech.rhythm) {
+    // 80 BPM = 750ms per beat
+    game.rhythmBpm     = 80;
+    game.rhythmBeatMs  = 750;
+    game.rhythmTimer   = 750; // countdown to next beat
+    game.rhythmWindow  = 140; // ±140ms counts as "on beat"
+    game.rhythmStreak  = 0;
+    game.playModeLabel = '🎵  RHYTHM FLOW  ·  move on the beat · bonus ×2';
+  }
+
   return game;
 }
 
-// Get list of all available modes
-export function getAvailableModes() {
-  return Object.keys(PLAY_MODES).map(key => ({
-    id: PLAY_MODES[key].id,
-    name: PLAY_MODES[key].name,
-    desc: PLAY_MODES[key].desc,
-    disabled: PLAY_MODES[key].disabled || false,
-  }));
+export function getPlayModeMeta(modeId) {
+  const m = PLAY_MODES[modeId] || PLAY_MODES.arcade;
+  return { id: m.id, name: m.name, emoji: m.emoji, desc: m.desc };
 }

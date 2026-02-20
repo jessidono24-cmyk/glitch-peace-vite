@@ -1,1487 +1,1155 @@
-// ═══════════════════════════════════════════════════════════════════════
-//  UI MENUS - Title / Pause / Options / Tutorial
-//  Ported from: _archive/glitch-peace-v5/src/ui/menus.js
-// ═══════════════════════════════════════════════════════════════════════
+'use strict';
+import { DREAMSCAPES, ARCHETYPES, UPGRADE_SHOP, MAIN_MENU, PAUSE_MENU, OPT_GRID, OPT_DIFF } from '../core/constants.js';
+import { CFG, PLAYER_PROFILE } from '../core/state.js';
+import { LANGUAGES, LANGUAGE_PATHS, LANG_LIST } from '../systems/learning/language-system.js';
+import { DIFFICULTY_TIERS } from '../systems/difficulty/adaptive-difficulty.js';
+import { PLAY_MODES, PLAY_MODE_LIST, getPlayModeMeta } from '../systems/play-modes.js';
+import { getCosmologyForDreamscape } from '../systems/cosmology/cosmologies.js';
+function stars(ctx, backgroundStars, ts) {
+  for (const s of backgroundStars) {
+    ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(ts * 0.0008 + s.phase));
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
 
-import { GRID_SIZES, DIFF_CFG } from '../core/constants.js';
-import { TUTORIAL_PAGES } from './tutorial-content.js';
-import { listDreamscapes } from '../systems/dreamscapes.js';
-import { getAvailableModes } from '../systems/play-modes.js';
-import { getAvailableCosmologies } from '../systems/cosmologies.js';
-import { LANGUAGES, CEFR_LEVELS, getLanguageProgression, getLearnableLanguages, getLangProgress, setLangLevel } from '../systems/languages.js';
-import { getGlobalTopScores } from '../systems/leaderboard.js';
+// ─── Mode select definitions ──────────────────────────────────────────
+export const GAME_MODES = [
+  { id: 'grid',          label: '🗂️  GRID MODE',          sub: 'tactical tile navigation · original',         color: '#00ff88' },
+  { id: 'shooter',       label: '🔫  SHOOTER MODE',        sub: 'fast-paced arena combat · reflex',            color: '#ff6622' },
+  { id: 'rhythm',        label: '🎵  RHYTHM MODE',         sub: 'note-fall · beat timing · 5 dreamscapes  M7', color: '#ffaa44' },
+  { id: 'constellation', label: '✦   CONSTELLATION MODE',  sub: 'connect star nodes · meditative puzzle  M6',  color: '#aaddff' },
+  { id: 'meditation',    label: '🌸  MEDITATION MODE',     sub: 'breathing & awareness · no enemies',          color: '#88ffcc' },
+  { id: 'coop',          label: '🤝  CO-OP MODE',          sub: 'two-player journey · shared dreamscape  M8',  color: '#ffcc44' },
+  { id: 'challenge',     label: '📅  DAILY CHALLENGE',     sub: 'new seeded run every 24 hours',               color: '#cc88ff' },
+];
 
-function listFromObjKeys(obj) { return Object.keys(obj); }
-function clampInt(n, a, b) { return Math.max(a, Math.min(b, n)); }
+export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
+  // Deep dark background
+  ctx.fillStyle = '#01010a'; ctx.fillRect(0, 0, w, h);
+  for (let y2 = 0; y2 < h; y2 += 4) { ctx.fillStyle = 'rgba(0,0,0,0.10)'; ctx.fillRect(0, y2, w, 1); }
+  if (backgroundStars) stars(ctx, backgroundStars, ts);
 
-// Language Immersion: translate common menu labels to the target language
-function immersionLabel(key, settings) {
-  if (!settings?.langImmersion || !settings?.targetLanguage) return key;
-  const translations = {
-    'es': { 'NEW GAME': 'NUEVO JUEGO', 'CONTINUE': 'CONTINUAR', 'OPTIONS': 'OPCIONES', 'TUTORIAL': 'TUTORIAL', 'CREDITS': 'CRÉDITOS', 'EXIT': 'SALIR', 'RESUME': 'REANUDAR', 'RESTART RUN': 'REINICIAR', 'QUIT TO TITLE': 'SALIR AL MENÚ', 'HIGH SCORES': 'PUNTUACIONES' },
-    'fr': { 'NEW GAME': 'NOUVEAU JEU', 'CONTINUE': 'CONTINUER', 'OPTIONS': 'OPTIONS', 'TUTORIAL': 'TUTORIEL', 'CREDITS': 'CRÉDITS', 'EXIT': 'QUITTER', 'RESUME': 'REPRENDRE', 'RESTART RUN': 'RECOMMENCER', 'QUIT TO TITLE': 'MENU PRINCIPAL', 'HIGH SCORES': 'SCORES' },
-    'de': { 'NEW GAME': 'NEUES SPIEL', 'CONTINUE': 'WEITER', 'OPTIONS': 'OPTIONEN', 'TUTORIAL': 'TUTORIAL', 'CREDITS': 'CREDITS', 'EXIT': 'BEENDEN', 'RESUME': 'FORTSETZEN', 'RESTART RUN': 'NEUSTART', 'QUIT TO TITLE': 'HAUPTMENÜ', 'HIGH SCORES': 'BESTENLISTE' },
-    'ja': { 'NEW GAME': '新しいゲーム', 'CONTINUE': '続ける', 'OPTIONS': '設定', 'TUTORIAL': 'チュートリアル', 'CREDITS': 'クレジット', 'EXIT': '終了', 'RESUME': '再開', 'RESTART RUN': '再スタート', 'QUIT TO TITLE': 'メニューへ', 'HIGH SCORES': 'ハイスコア' },
-    'zh': { 'NEW GAME': '新游戏', 'CONTINUE': '继续', 'OPTIONS': '选项', 'TUTORIAL': '教程', 'CREDITS': '致谢', 'EXIT': '退出', 'RESUME': '恢复', 'RESTART RUN': '重新开始', 'QUIT TO TITLE': '返回菜单', 'HIGH SCORES': '高分榜' },
+  // Corner brackets matching title screen style
+  const cSz = 14, cPad = 10, cAlpha = 0.2 + 0.1 * Math.sin(ts * 0.003);
+  ctx.globalAlpha = cAlpha; ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 1.5;
+  [[cPad, cPad, 1, 1], [w - cPad, cPad, -1, 1], [cPad, h - cPad, 1, -1], [w - cPad, h - cPad, -1, -1]].forEach(([cx, cy, dx, dy]) => {
+    ctx.beginPath(); ctx.moveTo(cx + dx * cSz, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * cSz); ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT GAME MODE', w / 2, 52); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#223322'; ctx.font = '9px Courier New';
+  ctx.fillText('choose your path through the dreamscapes', w / 2, 70);
+
+  const rowH = 70, startY = 100;
+  GAME_MODES.forEach((mode, i) => {
+    const sel  = i === modeIdx;
+    const ry   = startY + i * rowH;
+    const col  = mode.color;
+    const pulse = sel ? 0.5 + 0.5 * Math.sin(ts * 0.005) : 0;
+    if (sel) {
+      // Animated glow background for selected mode
+      const bgAlpha   = Math.round(18 + pulse * 14).toString(16).padStart(2, '0');
+      const bordAlpha = Math.round(60 + pulse * 40).toString(16).padStart(2, '0');
+      const selGrd = ctx.createLinearGradient(w / 2 - 200, ry, w / 2 + 200, ry);
+      selGrd.addColorStop(0, 'rgba(0,0,0,0)');
+      selGrd.addColorStop(0.5, col + bgAlpha);
+      selGrd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = selGrd; ctx.fillRect(w / 2 - 200, ry - 12, 400, 52);
+      ctx.strokeStyle = col + bordAlpha;
+      ctx.lineWidth = 1; ctx.strokeRect(w / 2 - 200, ry - 12, 400, 52);
+      // Selection arrow
+      ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6;
+      ctx.font = 'bold 11px Courier New'; ctx.fillText('▶', w / 2 - 210, ry + 12); ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = sel ? col : '#2a3a2a';
+    ctx.shadowColor = sel ? col : 'transparent'; ctx.shadowBlur = sel ? 10 : 0;
+    ctx.font = sel ? 'bold 14px Courier New' : '12px Courier New';
+    ctx.fillText(mode.label, w / 2, ry + 8);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = sel ? '#445566' : '#1a2a1a'; ctx.font = '9px Courier New';
+    ctx.fillText(mode.sub, w / 2, ry + 26);
+  });
+
+  ctx.fillStyle = '#0d1a0d'; ctx.font = '8px Courier New';
+  ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
+  // Deep space background
+  const bgGrd = ctx.createLinearGradient(0, 0, 0, h);
+  bgGrd.addColorStop(0, '#01010a');
+  bgGrd.addColorStop(0.5, '#02020e');
+  bgGrd.addColorStop(1, '#010108');
+  ctx.fillStyle = bgGrd; ctx.fillRect(0, 0, w, h);
+  for (let y = 0; y < h; y += 4) { ctx.fillStyle = 'rgba(0,0,0,0.12)'; ctx.fillRect(0, y, w, 1); }
+  stars(ctx, backgroundStars, ts);
+
+  // Animated horizontal scan line
+  const scanY = ((ts * 0.06) % h);
+  ctx.globalAlpha = 0.04; ctx.fillStyle = '#00ff88';
+  ctx.fillRect(0, scanY, w, 2);
+  ctx.globalAlpha = 1;
+
+  // Corner decorations (L-shaped brackets)
+  const cornerSize = 18, cornerPad = 12;
+  const cornerAlpha = 0.28 + 0.12 * Math.sin(ts * 0.003);
+  ctx.globalAlpha = cornerAlpha; ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 1.5;
+  [[cornerPad, cornerPad, 1, 1], [w - cornerPad, cornerPad, -1, 1],
+   [cornerPad, h - cornerPad, 1, -1], [w - cornerPad, h - cornerPad, -1, -1]].forEach(([cx, cy, dx, dy]) => {
+    ctx.beginPath(); ctx.moveTo(cx + dx * cornerSize, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy + dy * cornerSize); ctx.stroke();
+  });
+  ctx.globalAlpha = 1;
+
+  ctx.textAlign = 'center';
+
+  // Subtitle above title
+  ctx.fillStyle = '#0d1a0d'; ctx.font = '8px Courier New';
+  ctx.fillText('⬦  A BEING NAVIGATES THE DREAMSCAPES  ⬦', w / 2, h / 2 - 162);
+
+  // Animated glitch on title occasionally
+  const glitch = Math.sin(ts * 0.0013) > 0.97;
+  if (glitch) {
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = '#ff0055'; ctx.shadowColor = '#ff0055'; ctx.shadowBlur = 20;
+    ctx.font = 'bold 36px Courier New'; ctx.fillText('GLITCH·PEACE', w / 2 + 2, h / 2 - 122);
+    ctx.globalAlpha = 1;
+  }
+  // Title
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 36;
+  ctx.font = 'bold 36px Courier New'; ctx.fillText('GLITCH·PEACE', w / 2, h / 2 - 120); ctx.shadowBlur = 0;
+
+  // Tagline with animated glow
+  const tlPulse = 0.5 + 0.5 * Math.sin(ts * 0.002);
+  ctx.fillStyle = `rgba(0,80,40,${0.6 + 0.4 * tlPulse})`;
+  ctx.font = '9px Courier New'; ctx.fillText('v4  ·  dreamscape consciousness simulation  ·  18 dreamscapes  ·  6 modes', w / 2, h / 2 - 98);
+
+  // Mode indicator with pulsing background
+  const MODE_COLORS = { grid:'#00ff88', shooter:'#ff6622', constellation:'#aaddff', meditation:'#88ffcc', coop:'#ffcc44', challenge:'#cc88ff' };
+  const MODE_LABELS = { grid:'GRID', shooter:'SHOOTER', constellation:'CONSTELLATION', meditation:'MEDITATION', coop:'CO-OP', challenge:'CHALLENGE' };
+  const modeColor = MODE_COLORS[gameMode] || '#00ff88';
+  const modeLabel = '[ ' + (MODE_LABELS[gameMode] || gameMode.toUpperCase()) + ' MODE ]';
+  ctx.fillStyle = modeColor + '18'; ctx.fillRect(w / 2 - 80, h / 2 - 92, 160, 18);
+  ctx.fillStyle = modeColor; ctx.shadowColor = modeColor; ctx.shadowBlur = 8;
+  ctx.font = '10px Courier New'; ctx.fillText(modeLabel, w / 2, h / 2 - 79); ctx.shadowBlur = 0;
+
+  // Menu items
+  const menuTop = h / 2 - 58;
+  MAIN_MENU.forEach((opt, i) => {
+    const sel = i === menuIdx, y = menuTop + i * 32;
+    if (sel) {
+      const selGrd = ctx.createLinearGradient(w / 2 - 130, y - 18, w / 2 + 130, y - 18);
+      selGrd.addColorStop(0, 'rgba(0,255,136,0.01)');
+      selGrd.addColorStop(0.5, 'rgba(0,255,136,0.09)');
+      selGrd.addColorStop(1, 'rgba(0,255,136,0.01)');
+      ctx.fillStyle = selGrd; ctx.fillRect(w / 2 - 130, y - 18, 260, 26);
+      ctx.strokeStyle = 'rgba(0,255,136,0.35)'; ctx.strokeRect(w / 2 - 130, y - 18, 260, 26);
+    }
+    ctx.fillStyle = sel ? '#00ff88' : '#2a3a2a'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 10 : 0;
+    ctx.font = sel ? 'bold 13px Courier New' : '11px Courier New'; ctx.fillText(opt, w / 2, y); ctx.shadowBlur = 0;
+  });
+
+  // Footer
+  ctx.fillStyle = '#0d1a0d'; ctx.font = '8px Courier New';
+  ctx.fillText('↑↓ navigate  ·  ENTER select  ·  gamepad supported', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+export function drawDreamSelect(ctx, w, h, dreamIdx) {
+  ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT DREAMSCAPE', w / 2, 50); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#223322'; ctx.font = '9px Courier New'; ctx.fillText('journey begins from your chosen entry point', w / 2, 68);
+  const visible = Math.min(DREAMSCAPES.length, 6);
+  const startI = Math.max(0, Math.min(dreamIdx - Math.floor(visible / 2), DREAMSCAPES.length - visible));
+  for (let i = 0; i < visible; i++) {
+    const di = startI + i, ds = DREAMSCAPES[di], sel = di === dreamIdx, y = 95 + i * 55;
+    if (sel) {
+      ctx.fillStyle = 'rgba(0,255,136,0.06)'; ctx.fillRect(w / 2 - 160, y - 18, 320, 46);
+      ctx.strokeStyle = 'rgba(0,255,136,0.25)'; ctx.strokeRect(w / 2 - 160, y - 18, 320, 46);
+    }
+    ctx.fillStyle = sel ? '#00ff88' : '#2a3a2a'; ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New';
+    ctx.fillText((di + 1) + '.  ' + ds.name, w / 2, y);
+    ctx.fillStyle = sel ? '#334455' : '#1a2a1a'; ctx.font = '9px Courier New';
+    ctx.fillText(ds.subtitle + '  ·  ' + ds.emotion, w / 2, y + 16);
+    if (sel) {
+      if (ds.archetype && ARCHETYPES[ds.archetype]) {
+        const arch = ARCHETYPES[ds.archetype];
+        ctx.fillStyle = '#665522'; ctx.fillText('archetype: ' + arch.name + ' — ' + arch.powerDesc, w / 2, y + 30);
+      }
+      // Show cosmological theme for selected dreamscape
+      const cosmo = getCosmologyForDreamscape(ds.id);
+      if (cosmo) {
+        ctx.fillStyle = '#334466'; ctx.font = '8px Courier New';
+        ctx.fillText((cosmo.emoji || '') + ' ' + cosmo.name + '  ·  ' + cosmo.tradition, w / 2, y + 42);
+      }
+    }
+  }
+  ctx.fillStyle = '#131328'; ctx.font = '8px Courier New'; ctx.fillText('↑↓ select  ·  ENTER start here  ·  ESC back', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+export function drawOptions(ctx, w, h, optIdx) {
+  const OPT_START_Y   = 48;  // y of first row label
+  const OPT_ROW_H     = 46;  // vertical spacing between rows
+  const OPT_BTN_SPACE = 90;  // horizontal spacing between option buttons
+  const OPT_BTN_W     = 90;  // button width
+  const OPT_BTN_HALF  = 44;  // half button width (for fillRect offset)
+  const OPT_BTN_H     = 22;  // button height
+  ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 16;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('OPTIONS', w / 2, 50); ctx.shadowBlur = 0;
+  const langMeta  = LANGUAGES[PLAYER_PROFILE.nativeLang] || {};
+  const tgtMeta   = LANGUAGES[PLAYER_PROFILE.targetLang]  || {};
+  const playMeta  = getPlayModeMeta(CFG.playMode || 'arcade');
+  // SFX volume display  (PLAYER_PROFILE.sfxVol 0-1 → percentage label)
+  const sfxPct   = Math.round((PLAYER_PROFILE.sfxVol !== undefined ? PLAYER_PROFILE.sfxVol : 0.3) * 100);
+  const sfxMuted = PLAYER_PROFILE.sfxMuted || false;
+  const FONT_SCALE_LABELS = { 0.8: 'S', 1.0: 'M', 1.2: 'L', 1.4: 'XL' };
+  const fontScaleLabel = FONT_SCALE_LABELS[CFG.fontScale] || 'M';
+  const rows = [
+    { label:'GRID SIZE',      opts:OPT_GRID, cur:CFG.gridSize },
+    { label:'DIFFICULTY',     opts:OPT_DIFF, cur:CFG.difficulty },
+    { label:'PARTICLES',      opts:['on','off'], cur:CFG.particles ? 'on' : 'off' },
+    { label:'PLAY STYLE',     opts:['‹ ' + (playMeta.emoji||'') + ' ' + playMeta.name + ' ›'], cur:'‹ ' + (playMeta.emoji||'') + ' ' + playMeta.name + ' ›',
+      hint: playMeta.desc },
+    { label:'VIEW MODE',      opts:['flat','iso'], cur: CFG.viewMode || 'flat', hint: 'flat = grid · iso = isometric 2.5D' },
+    { label:'SFX VOLUME',     opts:['0%','25%','50%','75%','100%'], cur: sfxPct + '%', hint: sfxMuted ? 'muted — ←→ adjust volume  ENTER=toggle mute' : '←→ adjust volume  ENTER=toggle mute' },
+    { label:'HIGH CONTRAST',  opts:['off','on'], cur: CFG.highContrast ? 'on' : 'off', hint: 'colorblind-friendly palette' },
+    { label:'REDUCED MOTION', opts:['off','on'], cur: CFG.reducedMotion ? 'on' : 'off', hint: 'no screen shake or flash' },
+    { label:'FONT SCALE',     opts:['S','M','L','XL'], cur: fontScaleLabel, hint: 'text size: S=80%  M=100%  L=120%  XL=140%' },
+    { label:'LANGUAGES',      opts:['OPEN →'], cur:'OPEN →', hint: (langMeta.emoji||'') + ' → ' + (tgtMeta.emoji||'') + ' ' + (tgtMeta.name||'') },
+    { label:'',               opts:['← BACK'], cur:'← BACK' },
+  ];
+  rows.forEach((row, i) => {
+    const sel = i === optIdx, baseY = OPT_START_Y + i * OPT_ROW_H;
+    if (row.label) {
+      ctx.fillStyle = '#334455'; ctx.font = '9px Courier New'; ctx.fillText(row.label, w / 2, baseY);
+      if (row.hint) { ctx.fillStyle = '#445566'; ctx.font = '8px Courier New'; ctx.fillText(row.hint.slice(0, 60), w / 2, baseY + 12); }
+    }
+    const rowOpts = row.opts;
+    rowOpts.forEach((opt, j) => {
+      const active = opt === row.cur;
+      const oy_off = row.hint ? 30 : 22;
+      const ox = w / 2 + (j - (rowOpts.length - 1) / 2) * OPT_BTN_SPACE, oy = baseY + oy_off;
+      ctx.fillStyle = (sel && active) ? 'rgba(0,255,136,0.12)' : 'rgba(255,255,255,0.02)'; ctx.fillRect(ox - OPT_BTN_HALF, oy - OPT_BTN_H + 8, OPT_BTN_W, OPT_BTN_H);
+      ctx.strokeStyle = (sel && active) ? 'rgba(0,255,136,0.5)' : active ? 'rgba(0,255,136,0.18)' : 'rgba(255,255,255,0.04)'; ctx.strokeRect(ox - OPT_BTN_HALF, oy - OPT_BTN_H + 8, OPT_BTN_W, OPT_BTN_H);
+      ctx.fillStyle = active ? '#00ff88' : '#334455'; ctx.shadowColor = active ? '#00ff88' : 'transparent'; ctx.shadowBlur = active ? 5 : 0;
+      ctx.font = active ? 'bold 10px Courier New' : '9px Courier New'; ctx.fillText(opt.toUpperCase().slice(0, 22), ox, oy); ctx.shadowBlur = 0;
+    });
+    if (sel) { ctx.fillStyle = '#00ff88'; ctx.font = '12px Courier New'; ctx.fillText('▶', w / 2 - 154, baseY + (row.hint ? 30 : 22)); }
+    // SFX row: draw a live volume bar
+    if (row.label === 'SFX VOLUME' && sel) {
+      const barX = w / 2 - 110, barY = baseY + (row.hint ? 30 : 22) - 6, barW = 220, barH = 6;
+      ctx.fillStyle = '#111122'; ctx.fillRect(barX, barY, barW, barH);
+      ctx.fillStyle = sfxMuted ? '#443344' : '#00cc77';
+      ctx.fillRect(barX, barY, barW * (sfxPct / 100), barH);
+      ctx.strokeStyle = 'rgba(0,255,136,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(barX, barY, barW, barH);
+    }
+  });
+  ctx.fillStyle = '#131328'; ctx.font = '8px Courier New'; ctx.fillText('↑↓ row  ·  ←→ value  ·  ENTER action  ·  ESC back', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+export function drawHighScores(ctx, w, h, highScores) {
+  ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 16;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('HIGH SCORES', w / 2, 50); ctx.shadowBlur = 0;
+  if (!highScores.length) { ctx.fillStyle = '#223322'; ctx.font = '12px Courier New'; ctx.fillText('no scores yet…', w / 2, h / 2); }
+  else {
+    highScores.slice(0, 8).forEach((s, i) => {
+      const y = 95 + i * 38, med = i === 0 ? '◈' : i === 1 ? '◇' : '·';
+      ctx.fillStyle = i === 0 ? '#ffdd00' : i === 1 ? '#aaaaaa' : i === 2 ? '#cc8833' : '#334455';
+      ctx.font = i < 3 ? 'bold 12px Courier New' : '11px Courier New';
+      ctx.fillText(`${med}  ${String(s.score).padStart(7,'0')}   LVL${String(s.level).padStart(2,'0')}   ${s.dreamscape}   ${s.date}`, w / 2, y);
+    });
+  }
+  ctx.fillStyle = '#131328'; ctx.font = '8px Courier New'; ctx.fillText('ENTER / ESC back', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+export function drawUpgradeShop(ctx, w, h, shopIdx, insightTokens, checkOwned) {
+  ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00eeff'; ctx.shadowColor = '#00eeff'; ctx.shadowBlur = 16;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('UPGRADES', w / 2, 50); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.fillText('◆ insight tokens: ' + insightTokens, w / 2, 68);
+  UPGRADE_SHOP.forEach((up, i) => {
+    const sel = i === shopIdx, owned = checkOwned(up.id), canBuy = insightTokens >= up.cost && !owned;
+    const y = 92 + i * 48;
+    if (sel) {
+      ctx.fillStyle = 'rgba(0,238,255,0.06)'; ctx.fillRect(w / 2 - 155, y - 14, 310, 40);
+      ctx.strokeStyle = 'rgba(0,238,255,0.22)'; ctx.strokeRect(w / 2 - 155, y - 14, 310, 40);
+    }
+    ctx.fillStyle = owned ? '#00ff88' : canBuy ? '#00ccdd' : '#334455';
+    ctx.shadowColor = owned ? '#00ff88' : sel ? '#00ccdd' : 'transparent'; ctx.shadowBlur = (sel && !owned) ? 5 : 0;
+    ctx.font = 'bold 11px Courier New'; ctx.fillText(up.name, w / 2 - 55, y); ctx.shadowBlur = 0;
+    ctx.fillStyle = '#334'; ctx.font = '9px Courier New'; ctx.fillText(up.desc, w / 2 - 55, y + 14);
+    ctx.fillStyle = owned ? '#005533' : canBuy ? '#006677' : '#221122';
+    ctx.font = '10px Courier New'; ctx.fillText(owned ? 'OWNED' : '◆×' + up.cost, w / 2 + 88, y + 4);
+  });
+  ctx.fillStyle = '#131328'; ctx.font = '8px Courier New'; ctx.fillText('↑↓ select  ·  ENTER buy  ·  ESC back', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+export function drawPause(ctx, w, h, game, pauseIdx) {
+  ctx.fillStyle = 'rgba(0,0,0,0.87)'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 14;
+  ctx.font = 'bold 24px Courier New'; ctx.fillText('PAUSED', w / 2, h / 2 - 82); ctx.shadowBlur = 0;
+  if (game) {
+    ctx.fillStyle = '#223322'; ctx.font = '9px Courier New'; ctx.fillText(game.ds.name + '  ·  LEVEL ' + game.level, w / 2, h / 2 - 60);
+    ctx.fillStyle = '#334455'; ctx.fillText(game.ds.narrative, w / 2, h / 2 - 46);
+  } else {
+    // Shooter mode pause
+    const ss = window._shooterState;
+    if (ss) {
+      ctx.fillStyle = '#ff6622'; ctx.shadowColor = '#ff6622'; ctx.shadowBlur = 6;
+      ctx.font = '9px Courier New'; ctx.fillText('SHOOTER ARENA  ·  WAVE ' + ss.wave, w / 2, h / 2 - 60);
+      ctx.shadowBlur = 0; ctx.fillStyle = '#664422';
+      ctx.fillText('SCORE: ' + ss.score + '  ·  HP: ' + ss.health, w / 2, h / 2 - 46);
+    }
+  }
+
+  // Phase 7: Session wellness display
+  const wellness = window._sessionWellness;
+  const duration = window._sessionDuration || '00:00';
+  const learnStats = window._learnStats || { words: 0, patterns: 0 };
+  if (wellness) {
+    ctx.fillStyle = wellness.color; ctx.shadowColor = wellness.color; ctx.shadowBlur = 4;
+    ctx.font = '9px Courier New';
+    ctx.fillText('SESSION · ' + duration + ' · ' + wellness.label, w / 2, h / 2 - 30);
+    ctx.shadowBlur = 0;
+  }
+  // Phase 6: Learning stats
+  ctx.fillStyle = '#335533'; ctx.font = '8px Courier New';
+  ctx.fillText('WORDS: ' + learnStats.words + '  ·  PATTERNS: ' + learnStats.patterns, w / 2, h / 2 - 18);
+
+  // Phase 8: Emergence level
+  const em = window._emergence;
+  if (em) {
+    ctx.fillStyle = '#445566'; ctx.font = '8px Courier New';
+    ctx.fillText('EMERGENCE · ' + em.label, w / 2, h / 2 - 6);
+  }
+
+  // Phase 9: Strategic coaching tip + EQ insight
+  const iqData = window._iqData;
+  if (iqData) {
+    ctx.fillStyle = '#223340'; ctx.font = '7px Courier New';
+    ctx.fillText('IQ ' + iqData.iqScore + '  EQ ' + iqData.eqScore + '  STRATEGY ' + iqData.strategicScore + '  EMPATHY ' + iqData.empathyScore, w / 2, h / 2 + 6);
+    ctx.fillStyle = '#334455'; ctx.font = 'italic 7px Courier New';
+    const tipText = iqData.strategicTip
+      ? (iqData.strategicTip.length > 54 ? iqData.strategicTip.slice(0, 54) + '…' : iqData.strategicTip)
+      : '';
+    ctx.fillText(tipText, w / 2, h / 2 + 18);
+  }
+
+  // Phase 7: Breathing panel (if active)
+  const breath = window._breathState;
+  if (breath && breath.isActive) {
+    const cx = w / 2, cy = h / 2 + 90;
+    const maxR = 28, minR = 8;
+    const r = minR + (maxR - minR) * breath.radius;
+    // Outer glow ring
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = breath.color; ctx.beginPath(); ctx.arc(cx, cy, r + 10, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    // Main circle
+    ctx.fillStyle = breath.color; ctx.shadowColor = breath.color; ctx.shadowBlur = 12;
+    ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = '#000'; ctx.font = 'bold 9px Courier New';
+    ctx.fillText(breath.label, cx, cy + 4);
+    // Phrase below
+    ctx.fillStyle = '#667788'; ctx.font = '7px Courier New';
+    ctx.fillText(breath.phrase || '', cx, cy + 50);
+    ctx.fillStyle = '#223344'; ctx.font = '7px Courier New';
+    ctx.fillText('CYCLES: ' + (breath.cycles || 0) + '  ·  B=stop breathing', cx, h / 2 + 150);
+  } else {
+    ctx.fillStyle = '#223344'; ctx.font = '7px Courier New';
+    ctx.fillText('B = start breathing exercise (Box / 4-7-8 / Coherent)', w / 2, h - 34);
+  }
+
+  PAUSE_MENU.forEach((txt, i) => {
+    const sel = i === pauseIdx, y = h / 2 + 30 + i * 32;
+    if (sel) {
+      ctx.fillStyle = 'rgba(0,255,136,0.07)'; ctx.fillRect(w / 2 - 110, y - 16, 220, 24);
+      ctx.strokeStyle = 'rgba(0,255,136,0.26)'; ctx.strokeRect(w / 2 - 110, y - 16, 220, 24);
+    }
+    ctx.fillStyle = sel ? '#00ff88' : '#334433'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 6 : 0;
+    ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New'; ctx.fillText(txt, w / 2, y); ctx.shadowBlur = 0;
+  });
+  ctx.fillStyle = '#131328'; ctx.font = '8px Courier New'; ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC resume', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+export function drawInterlude(ctx, w, h, interludeState, ts) {
+  // ── Timing (ms-based, frame-rate independent) ─────────────────────────
+  const elapsed   = interludeState.elapsed  || 0;
+  const duration  = interludeState.duration || 10000;
+  const minAdv    = interludeState.minAdvanceMs || 3500;
+
+  // Global fade-in (first 600 ms) and fade-out (last 800 ms)
+  const FADE_IN  = 600;
+  const FADE_OUT = 800;
+  let alpha;
+  if      (elapsed < FADE_IN)             alpha = elapsed / FADE_IN;
+  else if (elapsed > duration - FADE_OUT) alpha = Math.max(0, (duration - elapsed) / FADE_OUT);
+  else                                    alpha = 1;
+
+  // Helper: per-element fade-in starting at `startMs`, taking 350 ms
+  const elemAlpha = (startMs) => Math.min(1, Math.max(0, (elapsed - startMs) / 350));
+
+  const ds = interludeState.ds || DREAMSCAPES[0];
+  // Rich background: blend dreamscape color with animated radial gradient
+  ctx.fillStyle = ds.bgColor || '#02020a'; ctx.fillRect(0, 0, w, h);
+  const bgAccent = ds.bgAccent || '#002810';
+  const bgGrd2 = ctx.createRadialGradient(w * 0.5, h * 0.4, 0, w * 0.5, h * 0.4, w * 0.8);
+  bgGrd2.addColorStop(0, bgAccent + '44'); bgGrd2.addColorStop(1, 'transparent');
+  ctx.fillStyle = bgGrd2; ctx.fillRect(0, 0, w, h);
+
+  // Animated scan lines
+  for (let i = 0; i < 7; i++) {
+    const lx = (ts * 0.02 + i * w / 7) % w;
+    ctx.strokeStyle = `rgba(0,255,136,${0.025 * alpha})`; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(lx, 0); ctx.lineTo(lx - 100, h); ctx.stroke();
+  }
+  ctx.globalAlpha = alpha; ctx.textAlign = 'center';
+
+  // ── Completion text (immediate) ────────────────────────────────────────
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 20;
+  ctx.font = 'bold 16px Courier New'; ctx.fillText(interludeState.text, w / 2, h / 2 - 76); ctx.shadowBlur = 0;
+
+  // ── Reflection prompt (1.0 s) ──────────────────────────────────────────
+  if (interludeState.reflectionPrompt) {
+    const rp = interludeState.reflectionPrompt;
+    ctx.globalAlpha = alpha * elemAlpha(1000);
+    ctx.fillStyle = '#aaffcc'; ctx.shadowColor = '#00cc88'; ctx.shadowBlur = 8;
+    ctx.font = 'italic 13px Courier New';
+    ctx.fillText('\u201c' + rp.prompt + '\u201d', w / 2, h / 2 - 42); ctx.shadowBlur = 0;
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── Affirmation (1.8 s) ────────────────────────────────────────────────
+  if (interludeState.affirmation) {
+    ctx.globalAlpha = alpha * elemAlpha(1800);
+    ctx.fillStyle = '#446644'; ctx.font = '9px Courier New';
+    ctx.fillText(interludeState.affirmation, w / 2, h / 2 - 18);
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── Next dreamscape info (2.2 s) ──────────────────────────────────────
+  ctx.globalAlpha = alpha * elemAlpha(2200);
+  ctx.fillStyle = '#223322'; ctx.font = '12px Courier New'; ctx.fillText('ENTERING: ' + ds.name, w / 2, h / 2 + 6);
+  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.fillText(ds.narrative, w / 2, h / 2 + 24);
+  ctx.globalAlpha = alpha;
+
+  // ── Vocabulary word (2.8 s) ───────────────────────────────────────────
+  if (interludeState.vocabWord) {
+    const vw = interludeState.vocabWord;
+    ctx.globalAlpha = alpha * elemAlpha(2800);
+    ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 6;
+    ctx.font = 'bold 12px Courier New';
+    ctx.fillText(vw.word + '  [' + vw.pos + ']', w / 2, h / 2 + 50); ctx.shadowBlur = 0;
+    ctx.fillStyle = '#554422'; ctx.font = '9px Courier New';
+    ctx.fillText(vw.def, w / 2, h / 2 + 66);
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── Archetype (3.1 s) ─────────────────────────────────────────────────
+  if (ds.archetype && ARCHETYPES[ds.archetype]) {
+    const arch = ARCHETYPES[ds.archetype];
+    ctx.globalAlpha = alpha * elemAlpha(3100);
+    ctx.fillStyle = arch.glow; ctx.shadowColor = arch.glow; ctx.shadowBlur = 10;
+    ctx.font = '10px Courier New'; ctx.fillText('archetype: ' + arch.name, w / 2, h / 2 + 86); ctx.shadowBlur = 0;
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── Empathy reflection (3.5 s) ────────────────────────────────────────
+  if (interludeState.empathyReflection) {
+    ctx.globalAlpha = alpha * elemAlpha(3500);
+    ctx.fillStyle = '#887755'; ctx.font = 'italic 9px Courier New';
+    ctx.fillText(interludeState.empathyReflection, w / 2, h / 2 + 104);
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── Cosmology info (4.2 s) ────────────────────────────────────────────
+  const cosmo = getCosmologyForDreamscape(ds.id);
+  if (cosmo) {
+    ctx.globalAlpha = alpha * elemAlpha(4200);
+    ctx.fillStyle = '#4a4a66'; ctx.font = '8px Courier New';
+    ctx.fillText((cosmo.emoji || '') + '  ' + cosmo.name + '  ·  ' + cosmo.tradition, w / 2, h / 2 + 120);
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── RPG level + active quest (4.8 s) ─────────────────────────────────
+  const cs = window._characterStats;
+  const qd = window._questData;
+  if (cs || qd) {
+    ctx.globalAlpha = alpha * elemAlpha(4800);
+    const parts = [];
+    if (cs && cs.level > 1) parts.push('RPG LVL ' + cs.level);
+    if (qd) {
+      const activeQ = qd.find(q => !q.done);
+      if (activeQ) {
+        const obj = activeQ.objectives.find(o => o.current < o.max);
+        if (obj) parts.push(activeQ.emoji + ' ' + activeQ.name + ': ' + obj.current + '/' + obj.max);
+      } else {
+        parts.push('✦ All quests complete');
+      }
+    }
+    if (parts.length) {
+      ctx.fillStyle = '#445555'; ctx.font = '8px Courier New';
+      ctx.fillText(parts.join('  ·  '), w / 2, h / 2 + 136);
+    }
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── Campaign milestone (5.2 s) ────────────────────────────────────────
+  if (interludeState.milestone) {
+    ctx.globalAlpha = alpha * elemAlpha(5200);
+    ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 8;
+    ctx.font = 'bold 10px Courier New';
+    ctx.fillText('✦  ' + interludeState.milestone, w / 2, h / 2 + 152); ctx.shadowBlur = 0;
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── "Continue" prompt — appears once all content is visible ───────────
+  if (elapsed >= minAdv) {
+    const contAlpha = Math.min(1, (elapsed - minAdv) / 400);
+    const pulse = 0.65 + 0.35 * Math.sin(ts * 0.003);
+    ctx.globalAlpha = alpha * contAlpha * pulse;
+    ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 5;
+    ctx.font = '10px Courier New';
+    ctx.fillText('ENTER · SPACE  to continue', w / 2, h - 20); ctx.shadowBlur = 0;
+    ctx.globalAlpha = alpha;
+  }
+
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
+}
+
+export function drawDead(ctx, w, h, game, highScores, dreamHistory, insightTokens, sessionRep) {
+  // Animated scanline vignette for death screen
+  const pulse = 0.7 + 0.3 * Math.sin(Date.now() * 0.004);
+  ctx.fillStyle = 'rgba(8,0,0,0.97)'; ctx.fillRect(0, 0, w, h);
+  for (let y2 = 0; y2 < h; y2 += 3) { ctx.fillStyle = 'rgba(40,0,0,0.06)'; ctx.fillRect(0, y2, w, 1); }
+  // Red vignette
+  const vg = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.8);
+  vg.addColorStop(0, 'rgba(80,0,0,0)'); vg.addColorStop(1, 'rgba(80,0,0,0.35)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, w, h);
+
+  ctx.textAlign = 'center';
+  const ds = game?.ds;
+  ctx.fillStyle = '#330000'; ctx.font = '8px Courier New'; ctx.fillText('THE BEING DISSOLVES IN ' + (ds?.name || 'THE VOID').toUpperCase(), w / 2, h / 2 - 140);
+  // "ERASED" with glitch/shimmer
+  ctx.fillStyle = '#ff0000'; ctx.shadowColor = '#ff2222'; ctx.shadowBlur = 40 * pulse;
+  ctx.font = 'bold 44px Courier New'; ctx.fillText('ERASED', w / 2, h / 2 - 88); ctx.shadowBlur = 0;
+  // Dreamscape emotion
+  if (ds?.emotion) {
+    ctx.fillStyle = '#440000'; ctx.font = 'italic 9px Courier New';
+    ctx.fillText('"' + ds.emotion + '"  ·  ' + (ds.narrative || ''), w / 2, h / 2 - 64);
+  }
+
+  // Score box
+  ctx.strokeStyle = `rgba(0,255,136,${0.3 * pulse})`; ctx.lineWidth = 1;
+  ctx.strokeRect(w / 2 - 80, h / 2 - 50, 160, 34);
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 14 * pulse;
+  ctx.font = 'bold 28px Courier New'; ctx.fillText(String(game.score).padStart(7, '0'), w / 2, h / 2 - 22); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334455'; ctx.font = '9px Courier New'; ctx.fillText('FINAL SCORE  ·  LEVEL ' + game.level, w / 2, h / 2 - 4);
+
+  // Session stats row
+  ctx.fillStyle = '#223322'; ctx.font = '8px Courier New';
+  ctx.fillText('DREAMS  ' + dreamHistory.length + '/' + DREAMSCAPES.length + '  ·  REP ' + (sessionRep >= 0 ? '+' : '') + sessionRep + '  ·  ◆×' + insightTokens, w / 2, h / 2 + 16);
+
+  // Run stats from window globals
+  const learnStats = window._learnStats || { words: 0, patterns: 0 };
+  if (learnStats.words > 0 || learnStats.patterns > 0) {
+    ctx.fillStyle = '#224422'; ctx.font = '8px Courier New';
+    ctx.fillText('WORDS LEARNED: ' + learnStats.words + '  ·  PATTERNS: ' + learnStats.patterns, w / 2, h / 2 + 32);
+  }
+
+  // ── RPG stats snapshot ──────────────────────────────────────────────
+  const cs = window._characterStats;
+  if (cs && cs.level > 1) {
+    ctx.fillStyle = '#ffdd88'; ctx.font = '8px Courier New';
+    ctx.fillText('RPG  LVL ' + cs.level + '  STR ' + (cs.str||1) + '  INT ' + (cs.int||1) + '  WIS ' + (cs.wis||1) + '  VIT ' + (cs.vit||1), w / 2, h / 2 + 48);
+  }
+  // ── Quest summary ───────────────────────────────────────────────────
+  const qd = window._questData;
+  if (qd) {
+    const qDone = qd.filter(q => q.done).length;
+    ctx.fillStyle = qDone > 0 ? '#ddcc66' : '#223322'; ctx.font = '8px Courier New';
+    ctx.fillText('QUESTS  ' + qDone + '/5 complete', w / 2, cs && cs.level > 1 ? h / 2 + 62 : h / 2 + 48);
+  }
+  // ── Alchemy phase ───────────────────────────────────────────────────
+  const al = window._alchemy;
+  let alY = h / 2 + 48;
+  if (cs && cs.level > 1) alY = h / 2 + 62;
+  if (qd) alY = h / 2 + (cs && cs.level > 1 ? 76 : 62);
+  if (al && al.transmutations > 0) {
+    const phaseLabel = { nigredo: '🜏 Nigredo', albedo: '🜃 Albedo', rubedo: '🜔 Rubedo', aurora: '✦ Aurora' }[al.phase] || al.phase;
+    ctx.fillStyle = '#cc88ff'; ctx.font = '8px Courier New';
+    ctx.fillText('ALCHEMY  ' + phaseLabel + '  ·  ' + al.transmutations + ' transmutation' + (al.transmutations !== 1 ? 's' : ''), w / 2, alY);
+  }
+
+  // ── High score rank ──────────────────────────────────────────────────
+  const rankY = alY + (al && al.transmutations > 0 ? 18 : 0);
+  if (highScores.length > 0) {
+    const rank = highScores.findIndex(s => s.score === game.score);
+    if (rank === 0) {
+      ctx.fillStyle = '#ffdd00'; ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 8;
+      ctx.font = 'bold 11px Courier New'; ctx.fillText('🏆  NEW HIGH SCORE!  RANK #1', w / 2, rankY); ctx.shadowBlur = 0;
+    } else if (rank >= 0) {
+      ctx.fillStyle = '#ffdd00'; ctx.font = 'bold 11px Courier New'; ctx.fillText('RANK #' + (rank + 1) + ' ALL TIME', w / 2, rankY);
+    }
+  }
+
+  // ── Continue prompt ──────────────────────────────────────────────────
+  const btnY = rankY + 22;
+  ctx.fillStyle = `rgba(255,34,34,${0.07 * pulse})`; ctx.fillRect(w / 2 - 110, btnY, 220, 34);
+  ctx.strokeStyle = `rgba(255,34,34,${0.45 * pulse})`; ctx.strokeRect(w / 2 - 110, btnY, 220, 34);
+  ctx.fillStyle = '#ff2222'; ctx.font = '12px Courier New'; ctx.fillText('↺  ENTER TO TRY AGAIN', w / 2, btnY + 22);
+  ctx.fillStyle = '#221122'; ctx.font = '9px Courier New'; ctx.fillText('ESC → TITLE', w / 2, btnY + 40);
+  ctx.textAlign = 'left';
+}
+
+// ─── Onboarding screen ────────────────────────────────────────────────
+// Shown once on first launch. Asks age group, native language, and
+// preferred learning language. Choices are persisted in PLAYER_PROFILE.
+//
+// onboardCursor layout:
+//   0 = age group selection
+//   1 = native language selection
+//   2 = target language selection
+//   3 = confirm / start
+//
+const AGE_OPTS = [
+  { key: 'child5',  label: '🌱  5 – 7',    tier: 'tiny',     desc: 'Safe & playful — very gentle pace' },
+  { key: 'child8',  label: '🌿  8 – 11',   tier: 'gentle',   desc: 'Friendly challenge, encouraging words' },
+  { key: 'teen12',  label: '⚡  12 – 15',  tier: 'explorer', desc: 'Moderate challenge, rich vocabulary' },
+  { key: 'teen16',  label: '🔷  16 – 19',  tier: 'standard', desc: 'Full experience, all dreamscapes' },
+  { key: 'adult',   label: '🔥  20 +',     tier: 'standard', desc: 'Full experience (change in Options)' },
+];
+
+// LANG_LIST is imported from language-system.js — no local duplicate
+
+export function drawOnboarding(ctx, w, h, ob) {
+  ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center';
+
+  // Title
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('WELCOME TO GLITCH·PEACE', w / 2, 44); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#223322'; ctx.font = '9px Courier New';
+  ctx.fillText('let\'s set up your personal experience  ·  all settings changeable later', w / 2, 62);
+
+  // Step indicator
+  const steps = ['age', 'language', 'learning', 'confirm'];
+  steps.forEach((s, i) => {
+    const active = i === ob.step;
+    const done   = i < ob.step;
+    const x = w / 2 - 90 + i * 60;
+    ctx.fillStyle   = done ? '#00aa44' : active ? '#00ff88' : '#223322';
+    ctx.shadowColor = active ? '#00ff88' : 'transparent'; ctx.shadowBlur = active ? 6 : 0;
+    ctx.font = '8px Courier New'; ctx.fillText((done ? '✓' : String(i + 1)) + ' ' + s.toUpperCase(), x, 82);
+    ctx.shadowBlur = 0;
+  });
+
+  const cy = 110;
+
+  if (ob.step === 0) {
+    // ── Step 0: Age group ──────────────────────────────────────────────
+    ctx.fillStyle = '#334455'; ctx.font = '11px Courier New'; ctx.fillText('How old are you?', w / 2, cy);
+    ctx.fillStyle = '#223322'; ctx.font = '8px Courier New'; ctx.fillText('(difficulty adjusts automatically — you can always change it later)', w / 2, cy + 16);
+    AGE_OPTS.forEach((opt, i) => {
+      const sel = i === ob.ageIdx;
+      const y = cy + 44 + i * 44;
+      if (sel) {
+        ctx.fillStyle = 'rgba(0,255,136,0.07)'; ctx.fillRect(w / 2 - 150, y - 16, 300, 36);
+        ctx.strokeStyle = 'rgba(0,255,136,0.3)'; ctx.strokeRect(w / 2 - 150, y - 16, 300, 36);
+      }
+      ctx.fillStyle = sel ? '#00ff88' : '#334455'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 5 : 0;
+      ctx.font = sel ? 'bold 13px Courier New' : '12px Courier New'; ctx.fillText(opt.label, w / 2, y);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = sel ? '#446655' : '#1a2a1a'; ctx.font = '8px Courier New'; ctx.fillText(opt.desc, w / 2, y + 14);
+    });
+
+  } else if (ob.step === 1) {
+    // ── Step 1: Native language ────────────────────────────────────────
+    ctx.fillStyle = '#334455'; ctx.font = '11px Courier New'; ctx.fillText('What is your native language?', w / 2, cy);
+    ctx.fillStyle = '#223322'; ctx.font = '8px Courier New'; ctx.fillText('Game will teach vocabulary with your language as the anchor', w / 2, cy + 16);
+    const perRow = 4, colW = 140, rowH = 48;
+    const startX = w / 2 - (perRow / 2) * colW + colW / 2;
+    LANG_LIST.forEach((code, i) => {
+      const lang = LANGUAGES[code];
+      if (!lang) return;
+      const col = i % perRow, row = Math.floor(i / perRow);
+      const lx = startX + col * colW, ly = cy + 42 + row * rowH;
+      const sel = i === ob.nativeIdx;
+      if (sel) {
+        ctx.fillStyle = 'rgba(0,255,136,0.08)'; ctx.fillRect(lx - 58, ly - 14, 116, 34);
+        ctx.strokeStyle = 'rgba(0,255,136,0.35)'; ctx.strokeRect(lx - 58, ly - 14, 116, 34);
+      }
+      ctx.fillStyle = sel ? '#00ff88' : '#334455'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 4 : 0;
+      ctx.font = sel ? 'bold 10px Courier New' : '9px Courier New';
+      ctx.fillText(lang.emoji + '  ' + lang.name, lx, ly); ctx.shadowBlur = 0;
+      ctx.fillStyle = sel ? '#335544' : '#1a2020'; ctx.font = '7px Courier New';
+      ctx.fillText(lang.nativeName, lx, ly + 12);
+    });
+
+  } else if (ob.step === 2) {
+    // ── Step 2: Target learning language ──────────────────────────────
+    const nativeCode = LANG_LIST[ob.nativeIdx] || 'en';
+    const path = LANGUAGE_PATHS[nativeCode] || LANGUAGE_PATHS.en;
+    ctx.fillStyle = '#334455'; ctx.font = '11px Courier New'; ctx.fillText('Which language would you like to start learning?', w / 2, cy);
+    ctx.fillStyle = '#223322'; ctx.font = '8px Courier New'; ctx.fillText('Ordered by ease for ' + (LANGUAGES[nativeCode]?.name || 'English') + ' speakers  ·  more unlock as you play', w / 2, cy + 16);
+
+    const perRow = 2, colW = 210, rowH = 52;
+    const startX = w / 2 - colW / 2;
+    path.slice(0, 8).forEach((code, i) => {
+      const lang = LANGUAGES[code];
+      if (!lang) return;
+      const col = i % perRow, row = Math.floor(i / perRow);
+      const lx = startX + col * colW, ly = cy + 44 + row * rowH;
+      const sel = i === ob.targetIdx;
+      if (sel) {
+        ctx.fillStyle = 'rgba(100,200,255,0.07)'; ctx.fillRect(lx - 90, ly - 14, 180, 42);
+        ctx.strokeStyle = 'rgba(100,200,255,0.3)'; ctx.strokeRect(lx - 90, ly - 14, 180, 42);
+      }
+      ctx.fillStyle = sel ? '#aaddff' : '#334455'; ctx.shadowColor = sel ? '#aaddff' : 'transparent'; ctx.shadowBlur = sel ? 4 : 0;
+      ctx.font = sel ? 'bold 10px Courier New' : '9px Courier New';
+      ctx.fillText(lang.emoji + '  ' + lang.name + '  ' + lang.nativeName, lx, ly); ctx.shadowBlur = 0;
+      ctx.fillStyle = sel ? '#224455' : '#111a20'; ctx.font = '7px Courier New';
+      const dist = Math.round(lang.distance * 100);
+      const fsi  = lang.fsiHours ? lang.fsiHours + 'h' : '—';
+      ctx.fillText('distance ' + dist + '%  ·  ~' + fsi + ' to fluency', lx, ly + 13);
+      ctx.fillStyle = '#1a2520'; ctx.font = '6px Courier New';
+      ctx.fillText(lang.description.slice(0, 48) + (lang.description.length > 48 ? '…' : ''), lx, ly + 25);
+    });
+
+  } else if (ob.step === 3) {
+    // ── Step 3: Confirm ────────────────────────────────────────────────
+    const nCode = LANG_LIST[ob.nativeIdx] || 'en';
+    const tCode = (LANGUAGE_PATHS[nCode] || LANGUAGE_PATHS.en)[ob.targetIdx] || 'no';
+    const age   = AGE_OPTS[ob.ageIdx] || AGE_OPTS[4];
+    const tier  = DIFFICULTY_TIERS[age.tier] || DIFFICULTY_TIERS.standard;
+    ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 14;
+    ctx.font = 'bold 16px Courier New'; ctx.fillText('YOUR PROFILE', w / 2, cy + 10); ctx.shadowBlur = 0;
+
+    const rows = [
+      ['AGE GROUP',        age.label],
+      ['DIFFICULTY TIER',  tier.label],
+      ['NATIVE LANGUAGE',  LANGUAGES[nCode]?.emoji + ' ' + LANGUAGES[nCode]?.name],
+      ['LEARNING',         LANGUAGES[tCode]?.emoji + ' ' + LANGUAGES[tCode]?.name],
+      ['',                 ''],
+      ['FIRST LANGUAGE',   LANGUAGES[nCode]?.description?.slice(0, 52) + '…'],
+      ['LEARNING PATH',    LANGUAGES[tCode]?.description?.slice(0, 52) + '…'],
+    ];
+    rows.forEach(([label, val], i) => {
+      if (!label && !val) return;
+      const y = cy + 44 + i * 28;
+      ctx.fillStyle = '#334455'; ctx.font = '8px Courier New'; ctx.textAlign = 'right';
+      ctx.fillText(label, w / 2 - 10, y);
+      ctx.fillStyle = '#00ff88'; ctx.font = '9px Courier New'; ctx.textAlign = 'left';
+      ctx.fillText(val, w / 2 + 10, y);
+    });
+    ctx.textAlign = 'center';
+    const pulse = 0.7 + 0.3 * Math.sin(Date.now() * 0.003);
+    ctx.fillStyle = `rgba(0,255,136,${0.08 * pulse})`; ctx.fillRect(w / 2 - 120, h / 2 + 78, 240, 34);
+    ctx.strokeStyle = `rgba(0,255,136,${0.5 * pulse})`; ctx.strokeRect(w / 2 - 120, h / 2 + 78, 240, 34);
+    ctx.fillStyle = '#00ff88'; ctx.font = 'bold 13px Courier New';
+    ctx.fillText('ENTER  ·  BEGIN JOURNEY', w / 2, h / 2 + 100);
+  }
+
+  ctx.fillStyle = '#131328'; ctx.font = '8px Courier New'; ctx.textAlign = 'center';
+  if (ob.step < 3) ctx.fillText('↑↓ select  ·  ENTER next  ·  BACKSPACE back', w / 2, h - 20);
+  else             ctx.fillText('ENTER confirm  ·  BACKSPACE back', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+// ─── Language options overlay (accessible from Options screen) ────────
+export function drawLanguageOptions(ctx, w, h, langOb) {
+  ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 14;
+  ctx.font = 'bold 18px Courier New'; ctx.fillText('LANGUAGE SETTINGS', w / 2, 50); ctx.shadowBlur = 0;
+
+  // Display mode human labels
+  const DISPLAY_LABELS = {
+    native:    'NATIVE ONLY',
+    bilingual: 'BILINGUAL',
+    target:    'IMMERSION (target only)',
   };
-  const lang = settings.targetLanguage;
-  const dict = translations[lang] || (typeof lang === 'string' && translations[lang.substring(0, 2)]) || {};
-  return dict[key] || key;
+
+  const sections = [
+    { label: 'NATIVE LANGUAGE', idx: langOb.nativeIdx, list: LANG_LIST, col: '#00ff88' },
+    { label: 'LEARNING TARGET', idx: langOb.targetIdx, list: (LANGUAGE_PATHS[LANG_LIST[langOb.nativeIdx]] || LANGUAGE_PATHS.en), col: '#aaddff' },
+    { label: 'DISPLAY MODE',    idx: langOb.modeIdx,   list: ['native','bilingual','target'], col: '#ffdd88',
+      hintFn: (code) => DISPLAY_LABELS[code] || code },
+  ];
+
+  sections.forEach((sec, si) => {
+    const baseY = 80 + si * 110;
+    const sel = langOb.row === si;
+    ctx.fillStyle = sec.col; ctx.font = (sel ? 'bold ' : '') + '9px Courier New';
+    ctx.fillText((sel ? '▶ ' : '  ') + sec.label, w / 2, baseY);
+    const opts = sec.list.slice(0, 8);
+    opts.forEach((code, i) => {
+      const lang = LANGUAGES[code];
+      const label = sec.hintFn ? sec.hintFn(code) : (lang ? lang.emoji + ' ' + lang.name : code.toUpperCase());
+      const active = i === sec.idx;
+      const ox = w / 2 + (i - (opts.length - 1) / 2) * 78;
+      ctx.fillStyle = (sel && active) ? 'rgba(0,255,136,0.12)' : 'rgba(255,255,255,0.02)';
+      ctx.fillRect(ox - 34, baseY + 14, 68, 22);
+      ctx.strokeStyle = active ? 'rgba(0,255,136,0.5)' : 'rgba(255,255,255,0.06)';
+      ctx.strokeRect(ox - 34, baseY + 14, 68, 22);
+      ctx.fillStyle = active ? sec.col : '#334455';
+      ctx.font = active ? 'bold 9px Courier New' : '8px Courier New';
+      ctx.fillText(label.slice(0, 20), ox, baseY + 29);
+    });
+  });
+
+  // Mode description hint
+  const modeList = ['native','bilingual','target'];
+  const modeDescriptions = {
+    native:    'Shows words in your native language only.',
+    bilingual: 'Shows both native + target language words.',
+    target:    'Full immersion — target language only. Sink or swim.',
+  };
+  const curMode = modeList[langOb.modeIdx] || 'bilingual';
+  ctx.fillStyle = '#334455'; ctx.font = '8px Courier New';
+  ctx.fillText(modeDescriptions[curMode] || '', w / 2, h - 36);
+
+  ctx.fillStyle = '#131328'; ctx.font = '8px Courier New';
+  ctx.fillText('↑↓ row  ·  ←→ value  ·  ENTER/ESC back', w / 2, h - 20);
+  ctx.textAlign = 'left';
 }
 
-export class MenuSystem {
-  constructor({ CFG, onStartNew, onContinue, onQuitToTitle, onRestart, onSelectDreamscape, onResume }) {
-    this.CFG = CFG;
-
-    this.onStartNew = onStartNew;
-    this.onContinue = onContinue;
-    this.onQuitToTitle = onQuitToTitle;
-    this.onRestart = onRestart;
-    this.onSelectDreamscape = onSelectDreamscape;
-    this.onResume = onResume || (() => {});
-
-    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology' | 'gamemode' | 'onboarding' | 'highscores'
-    this.sel = 0;
-    this.tutPage = 0;
-    this.dreamscapeSel = 0;
-    this.playmodeSel = 0;
-    this.cosmologySel = 0;
-    this.gamemodeSel = 0;
-    this._pendingDreamscape = null; // dreamscape id chosen before play mode
-    this._pendingPlaymode = null;   // play mode id chosen before cosmology
-    this._pendingCosmology = null;  // cosmology id chosen before game mode
-
-    // Onboarding state
-    this._onboardingStep = 0;      // 0=welcome 1=age 2=nativeLang 3=targetLang
-    this._onboardingAge = 1;       // index into AGE_GROUPS
-    this._nativeLangSel = 0;       // index into LANGUAGES
-    this._targetLangSel = 0;       // index into learnable languages
-    this._learnableLangs = [];     // filled when native is chosen
-
-    this.hasSave = false;
-    this.saveMeta = null;
-
-    this._difficultyKeys = listFromObjKeys(DIFF_CFG);
-    this._gridKeys = listFromObjKeys(GRID_SIZES);
-
-    this._pulseT = 0;
-  }
-
-  // Call this after boot (or when a save happens)
-  setSaveState({ hasSave, meta }) {
-    this.hasSave = !!hasSave;
-    this.saveMeta = meta || null;
-  }
-
-  open(screen) {
-    // Track where we came from so ESC from sub-screens returns correctly
-    if ((screen === 'options' || screen === 'credits' || screen === 'highscores') &&
-        (this.screen === 'title' || this.screen === 'pause')) {
-      this._subScreenReturn = this.screen; // remember 'title' or 'pause'
-    }
-    this.screen = screen;
-    this.sel = 0;
-    if (screen === 'tutorial') this.tutPage = 0;
-    if (screen === 'dreamscape') this.dreamscapeSel = 0;
-    if (screen === 'playmode') this.playmodeSel = 0;
-    if (screen === 'cosmology') this.cosmologySel = 0;
-    if (screen === 'gamemode') this.gamemodeSel = 0;
-    if (screen === 'onboarding') { this._onboardingStep = 0; this._onboardingAge = 1; this._nativeLangSel = 0; this._targetLangSel = 0; }
-    // Note: Canvas-based rendering happens in draw() method, not _render()
-  }
-
-  // ────────────────────────────────────────────────────────────────────
-  //  INPUT
-  // ────────────────────────────────────────────────────────────────────
-
-  handleKey(e) {
-    const k = e.key;
-
-    // Global escapes
-    if (k === 'Escape') {
-      if (this.screen === 'options' || this.screen === 'credits' || this.screen === 'dreamscape' || this.screen === 'highscores') {
-        const returnTo = this._subScreenReturn || 'title';
-        this._subScreenReturn = null;
-        this.open(returnTo);
-        return { consumed: true };
-      }
-      if (this.screen === 'tutorial') {
-        // 'resume' sentinel: ESC from tutorial (opened via H key) → signal main.js to resume PLAYING
-        const ret = this._tutorialReturnScreen || 'title';
-        this._tutorialReturnScreen = null;
-        if (ret === 'resume') {
-          return { consumed: true, resumeGame: true };
-        }
-        this.open(ret);
-        return { consumed: true };
-      }
-      if (this.screen === 'playmode') {
-        this.open('dreamscape');
-        return { consumed: true };
-      }
-      if (this.screen === 'cosmology') {
-        this.open('playmode');
-        return { consumed: true };
-      }
-      if (this.screen === 'gamemode') {
-        this.open('cosmology');
-        return { consumed: true };
-      }
-      if (this.screen === 'onboarding') {
-        // ESC during onboarding = skip setup and go to title
-        this._finaliseOnboarding();
-        return { consumed: true };
-      }
-      return { consumed: false };
-    }
-
-    if (this.screen === 'title' || this.screen === 'pause') {
-      return this._handleListMenu(k);
-    }
-
-    if (this.screen === 'options') {
-      return this._handleOptions(k);
-    }
-
-    if (this.screen === 'tutorial') {
-      return this._handleTutorial(k);
-    }
-
-    if (this.screen === 'dreamscape') {
-      return this._handleDreamscape(k);
-    }
-
-    if (this.screen === 'playmode') {
-      return this._handlePlaymode(k);
-    }
-
-    if (this.screen === 'cosmology') {
-      return this._handleCosmology(k);
-    }
-
-    if (this.screen === 'gamemode') {
-      return this._handleGamemode(k);
-    }
-
-    if (this.screen === 'credits') {
-      if (k === 'Enter' || k === ' ') this.open('title');
-      return { consumed: true };
-    }
-
-    if (this.screen === 'onboarding') {
-      return this._handleOnboarding(k);
-    }
-
-    return { consumed: false };
-  }
-
-  _handleListMenu(k) {
-    const items = this.getItems();
-    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
-      this.sel = (this.sel - 1 + items.length) % items.length;
-      try { window.AudioManager?.play('nav'); } catch (e) {}
-      return { consumed: true };
-    }
-    if (k === 'ArrowDown' || k === 's' || k === 'S') {
-      this.sel = (this.sel + 1) % items.length;
-      try { window.AudioManager?.play('nav'); } catch (e) {}
-      return { consumed: true };
-    }
-    if (k === 'Enter' || k === ' ') {
-      const item = items[this.sel];
-      if (item && !item.disabled && item.action) item.action();
-      try { window.AudioManager?.play('select'); } catch (e) {}
-      return { consumed: true };
-    }
-    return { consumed: false };
-  }
-
-  _handleOptions(k) {
-    const rows = this.getOptionRows();
-
-    const go = (dir) => {
-      this.sel = clampInt(this.sel + dir, 0, rows.length - 1);
-    };
-
-    if (k === 'ArrowUp' || k === 'w' || k === 'W') { go(-1); return { consumed: true }; }
-    if (k === 'ArrowDown' || k === 's' || k === 'S') { go(+1); return { consumed: true }; }
-
-    const row = rows[this.sel];
-    if (!row) return { consumed: true };
-
-    if (k === 'ArrowLeft' || k === 'a' || k === 'A') {
-      if (row.left) row.left();
-      else if (row.toggle) row.toggle();
-      try { window.AudioManager?.play('nav'); } catch (e) {}
-      return { consumed: true };
-    }
-    if (k === 'ArrowRight' || k === 'd' || k === 'D') {
-      if (row.right) row.right();
-      else if (row.toggle) row.toggle();
-      try { window.AudioManager?.play('nav'); } catch (e) {}
-      return { consumed: true };
-    }
-    if (k === 'Enter' || k === ' ') {
-      if (row.toggle) row.toggle();
-      if (row.action) row.action();
-      try { window.AudioManager?.play('select'); } catch (e) {}
-      return { consumed: true };
-    }
-    if (k === 'Backspace') {
-      this.open('title');
-      return { consumed: true };
-    }
-    return { consumed: false };
-  }
-
-  _handleTutorial(k) {
-    if (k === 'ArrowLeft' || k === 'a' || k === 'A') {
-      this.tutPage = Math.max(0, this.tutPage - 1);
-      return { consumed: true };
-    }
-    if (k === 'ArrowRight' || k === 'd' || k === 'D') {
-      this.tutPage = Math.min(TUTORIAL_PAGES.length - 1, this.tutPage + 1);
-      return { consumed: true };
-    }
-    if (k === 'Enter' || k === ' ') {
-      const last = TUTORIAL_PAGES.length - 1;
-      if (this.tutPage >= last) this.open('title');
-      else this.tutPage++;
-      return { consumed: true };
-    }
-    if (k === 'Backspace') {
-      this.open('title');
-      return { consumed: true };
-    }
-    return { consumed: true };
-  }
-
-  _handleDreamscape(k) {
-    const dreams = this.getDreamscapeOptions();
-    if (k === 'ArrowUp' || k === 'ArrowLeft' || k === 'w' || k === 'W' || k === 'a' || k === 'A') {
-      this.dreamscapeSel = (this.dreamscapeSel - 1 + dreams.length) % dreams.length;
-      return { consumed: true };
-    }
-    if (k === 'ArrowDown' || k === 'ArrowRight' || k === 's' || k === 'S' || k === 'd' || k === 'D') {
-      this.dreamscapeSel = (this.dreamscapeSel + 1) % dreams.length;
-      return { consumed: true };
-    }
-    if (k === 'Enter' || k === ' ') {
-      const dream = dreams[this.dreamscapeSel];
-      if (dream) {
-        this._pendingDreamscape = dream.id;
-        this.open('playmode');
-      }
-      return { consumed: true };
-    }
-    if (k === 'Backspace') {
-      this.open('title');
-      return { consumed: true };
-    }
-    return { consumed: false };
-  }
-
-  _handlePlaymode(k) {
-    const modes = this.getPlaymodeOptions();
-    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
-      this.playmodeSel = (this.playmodeSel - 1 + modes.length) % modes.length;
-      return { consumed: true };
-    }
-    if (k === 'ArrowDown' || k === 's' || k === 'S') {
-      this.playmodeSel = (this.playmodeSel + 1) % modes.length;
-      return { consumed: true };
-    }
-    if (k === 'Enter' || k === ' ') {
-      const mode = modes[this.playmodeSel];
-      if (mode && !mode.disabled) {
-        this._pendingPlaymode = mode.id;
-        this.open('cosmology'); // proceed to cosmology selection
-      }
-      return { consumed: true };
-    }
-    if (k === 'Backspace') {
-      this.open('dreamscape');
-      return { consumed: true };
-    }
-    return { consumed: false };
-  }
-
-  _handleCosmology(k) {
-    const cosmologies = this.getCosmologyOptions();
-    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
-      this.cosmologySel = (this.cosmologySel - 1 + cosmologies.length) % cosmologies.length;
-      return { consumed: true };
-    }
-    if (k === 'ArrowDown' || k === 's' || k === 'S') {
-      this.cosmologySel = (this.cosmologySel + 1) % cosmologies.length;
-      return { consumed: true };
-    }
-    if (k === 'Enter' || k === ' ') {
-      const cosmo = cosmologies[this.cosmologySel];
-      this._pendingCosmology = cosmo?.id || null;
-      this.open('gamemode'); // proceed to game mode selection
-      return { consumed: true };
-    }
-    if (k === 'Backspace') {
-      this.open('playmode');
-      return { consumed: true };
-    }
-    return { consumed: false };
-  }
-
-  _handleGamemode(k) {
-    const modes = this.getGamemodeOptions();
-    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
-      this.gamemodeSel = (this.gamemodeSel - 1 + modes.length) % modes.length;
-      return { consumed: true };
-    }
-    if (k === 'ArrowDown' || k === 's' || k === 'S') {
-      this.gamemodeSel = (this.gamemodeSel + 1) % modes.length;
-      return { consumed: true };
-    }
-    if (k === 'Enter' || k === ' ') {
-      const gm = modes[this.gamemodeSel];
-      if (this.onSelectDreamscape) {
-        this.onSelectDreamscape(
-          this._pendingDreamscape || 'RIFT',
-          this._pendingPlaymode || 'ARCADE',
-          this._pendingCosmology || null,
-          gm?.id || 'grid-classic',
-        );
-      }
-      return { consumed: true };
-    }
-    if (k === 'Backspace') {
-      this.open('cosmology');
-      return { consumed: true };
-    }
-    return { consumed: false };
-  }
-
-  // ─── AGE GROUP DEFINITIONS ──────────────────────────────────────────
-  static get AGE_GROUPS() {
-    return [
-      { label: 'Little Explorer  (age 5–7)',  difficulty: 'sprout',   emoji: '🌱' },
-      { label: 'Young Adventurer (age 8–12)', difficulty: 'seedling', emoji: '🌿' },
-      { label: 'Teen Explorer    (age 13–17)', difficulty: 'easy',     emoji: '✦' },
-      { label: 'Adult            (age 18+)',   difficulty: 'normal',   emoji: '◆' },
-    ];
-  }
-
-  /**
-   * Handle the first-run onboarding flow.
-   * Steps: 0=welcome, 1=age group, 2=native language, 3=target language
-   */
-  _handleOnboarding(k) {
-    const up    = k === 'ArrowUp'   || k === 'w' || k === 'W';
-    const down  = k === 'ArrowDown' || k === 's' || k === 'S';
-    const ok    = k === 'Enter'     || k === ' ';
-    const skip  = k === 'Escape'    || k === 'Backspace';
-
-    const ageGroups = MenuSystem.AGE_GROUPS;
-
-    if (skip) {
-      // Skip remaining onboarding and go straight to title
-      this._finaliseOnboarding();
-      return { consumed: true };
-    }
-
-    if (this._onboardingStep === 0) {
-      // Welcome — any key advances
-      if (ok || down) { this._onboardingStep = 1; return { consumed: true }; }
-      return { consumed: true };
-    }
-
-    if (this._onboardingStep === 1) {
-      // Age group
-      if (up)   this._onboardingAge = (this._onboardingAge - 1 + ageGroups.length) % ageGroups.length;
-      if (down) this._onboardingAge = (this._onboardingAge + 1) % ageGroups.length;
-      if (ok) {
-        // Apply difficulty from age group
-        const chosen = ageGroups[this._onboardingAge];
-        this.CFG.difficulty = chosen.difficulty;
-        this._onboardingStep = 2;
-      }
-      return { consumed: true };
-    }
-
-    if (this._onboardingStep === 2) {
-      // Native language
-      if (up)   this._nativeLangSel = (this._nativeLangSel - 1 + LANGUAGES.length) % LANGUAGES.length;
-      if (down) this._nativeLangSel = (this._nativeLangSel + 1) % LANGUAGES.length;
-      if (ok) {
-        const native = LANGUAGES[this._nativeLangSel];
-        this.CFG.nativeLanguage = native.id;
-        // Pre-compute recommended learning order, filter to our 14
-        this._learnableLangs = getLanguageProgression(native.id)
-          .map(id => LANGUAGES.find(l => l.id === id))
-          .filter(Boolean);
-        this._targetLangSel = 0;
-        this._onboardingStep = 3;
-      }
-      return { consumed: true };
-    }
-
-    if (this._onboardingStep === 3) {
-      // Target language
-      const langs = this._learnableLangs;
-      if (up)   this._targetLangSel = (this._targetLangSel - 1 + langs.length) % langs.length;
-      if (down) this._targetLangSel = (this._targetLangSel + 1) % langs.length;
-      if (ok) {
-        const target = langs[this._targetLangSel];
-        this.CFG.targetLanguage = target.id;
-        this._finaliseOnboarding();
-      }
-      return { consumed: true };
-    }
-
-    return { consumed: true };
-  }
-
-  /** Save onboarding selections to localStorage and navigate to title */
-  _finaliseOnboarding() {
-    try {
-      localStorage.setItem('glitchpeace.firstRun', 'done');
-      if (this.CFG.nativeLanguage) localStorage.setItem('glitchpeace.nativeLang', this.CFG.nativeLanguage);
-      if (this.CFG.targetLanguage) localStorage.setItem('glitchpeace.targetLang', this.CFG.targetLanguage);
-      if (this.CFG.difficulty) localStorage.setItem('glitchpeace.difficulty', this.CFG.difficulty);
-    } catch (e) {}
-    this.open('title');
-  }
-
-  /** Returns true if first-run onboarding has never been completed */
-  static isFirstRun() {
-    try { return !localStorage.getItem('glitchpeace.firstRun'); } catch (e) { return false; }
-  }
-
-  getItems() {
-    const isPause = this.screen === 'pause';
-
-    const common = [];
-    if (isPause) {
-      common.push({ label: 'RESUME', action: () => this.onResume() });
-      common.push({ label: 'RESTART RUN', action: () => this.onRestart() });
-    } else {
-      common.push({ label: 'NEW GAME', action: () => this.onStartNew() });
-      common.push({
-        label: this.hasSave ? 'CONTINUE' : 'CONTINUE (NO SAVE)',
-        disabled: !this.hasSave,
-        action: () => this.hasSave && this.onContinue(),
-      });
-    }
-
-    common.push({ label: 'TUTORIAL', action: () => this.open('tutorial') });
-    common.push({ label: 'HIGH SCORES', action: () => this.open('highscores') });
-    common.push({ label: 'OPTIONS', action: () => this.open('options') });
-    common.push({ label: 'CREDITS', action: () => this.open('credits') });
-    common.push({
-      label: isPause ? 'QUIT TO TITLE' : 'EXIT',
-      action: () => this.onQuitToTitle({ to: 'title' }),
-    });
-
-    return common;
-  }
-
-  getOptionRows() {
-    const cfg = this.CFG;
-
-    const nextIn = (arr, cur, dir) => {
-      const idx = Math.max(0, arr.indexOf(cur));
-      const ni = (idx + dir + arr.length) % arr.length;
-      return arr[ni];
-    };
-
-    // Cache language map for O(1) lookups inside option row value getters
-    const langMap = new Map(LANGUAGES.map(l => [l.id, l]));
-
-    return [
-      {
-        label: 'DIFFICULTY',
-        value: cfg.difficulty,
-        left: () => (cfg.difficulty = nextIn(this._difficultyKeys, cfg.difficulty, -1)),
-        right: () => (cfg.difficulty = nextIn(this._difficultyKeys, cfg.difficulty, +1)),
-      },
-      {
-        label: 'GRID SIZE',
-        value: cfg.gridSize,
-        left: () => (cfg.gridSize = nextIn(this._gridKeys, cfg.gridSize, -1)),
-        right: () => (cfg.gridSize = nextIn(this._gridKeys, cfg.gridSize, +1)),
-      },
-      {
-        label: 'PARTICLES',
-        value: cfg.particles ? 'ON' : 'OFF',
-        toggle: () => (cfg.particles = !cfg.particles),
-      },
-      {
-        label: 'HIGH CONTRAST',
-        value: cfg.highContrast ? 'ON' : 'OFF',
-        toggle: () => (cfg.highContrast = !cfg.highContrast),
-      },
-      {
-        label: 'REDUCED MOTION',
-        value: cfg.reducedMotion ? 'ON' : 'OFF',
-        toggle: () => (cfg.reducedMotion = !cfg.reducedMotion),
-      },
-      {
-        label: 'AUDIO',
-        value: cfg.audio ? 'ON' : 'OFF',
-        toggle: () => { cfg.audio = !cfg.audio; try { if (window && window.AudioManager) window.AudioManager.setEnabled(cfg.audio); } catch (e) {} },
-      },
-      {
-        label: 'SOUND EFFECTS',
-        value: cfg.audioAmbient ? 'ON' : 'OFF',
-        toggle: () => { cfg.audioAmbient = !cfg.audioAmbient; try { if (window && window.AudioManager) window.AudioManager.setAmbientEnabled(cfg.audioAmbient); } catch (e) {} },
-      },
-      {
-        label: 'INTENSITY',
-        value: (cfg.intensityMul || 1.0).toFixed(2),
-        left: () => (cfg.intensityMul = Math.max(0.5, +(cfg.intensityMul - 0.1).toFixed(2))),
-        right: () => (cfg.intensityMul = Math.min(1.5, +(cfg.intensityMul + 0.1).toFixed(2))),
-      },
-      {
-        label: 'TIME ZONE',
-        value: cfg.timezone || 'AUTO',
-        left: () => {
-          const local = (typeof Intl !== 'undefined') ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Local';
-          const tzOptions = Array.from(new Set(['AUTO', 'UTC', local, 'America/New_York', 'Europe/London', 'Asia/Tokyo']));
-          const idx = Math.max(0, tzOptions.indexOf(cfg.timezone || 'AUTO'));
-          cfg.timezone = tzOptions[(idx - 1 + tzOptions.length) % tzOptions.length];
-          try { localStorage.setItem('glitchpeace.timezone', cfg.timezone); } catch (e) {}
-          try { if (window && window.GlitchPeaceGame && window.GlitchPeaceGame.temporalSystem) window.GlitchPeaceGame.temporalSystem.setTimeZone(cfg.timezone === 'AUTO' ? null : cfg.timezone); } catch (e) {}
-        },
-        right: () => {
-          const local = (typeof Intl !== 'undefined') ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'Local';
-          const tzOptions = Array.from(new Set(['AUTO', 'UTC', local, 'America/New_York', 'Europe/London', 'Asia/Tokyo']));
-          const idx = Math.max(0, tzOptions.indexOf(cfg.timezone || 'AUTO'));
-          cfg.timezone = tzOptions[(idx + 1) % tzOptions.length];
-          try { localStorage.setItem('glitchpeace.timezone', cfg.timezone); } catch (e) {}
-          try { if (window && window.GlitchPeaceGame && window.GlitchPeaceGame.temporalSystem) window.GlitchPeaceGame.temporalSystem.setTimeZone(cfg.timezone === 'AUTO' ? null : cfg.timezone); } catch (e) {}
-        },
-      },
-      {
-        label: 'HAZARD DELAY',
-        value: cfg.impulseBuffer ? 'ON' : 'OFF',
-        toggle: () => (cfg.impulseBuffer = !cfg.impulseBuffer),
-      },
-      {
-        label: 'PATTERN ECHO',
-        value: cfg.patternEcho ? 'ON' : 'OFF',
-        toggle: () => (cfg.patternEcho = !cfg.patternEcho),
-      },
-      {
-        label: 'PATH PREVIEW',
-        value: cfg.consequencePreview ? 'ON' : 'OFF',
-        toggle: () => (cfg.consequencePreview = !cfg.consequencePreview),
-      },
-      {
-        label: 'SESSION REMINDERS',
-        value: cfg.sessionReminders !== false ? 'ON' : 'OFF',
-        toggle: () => (cfg.sessionReminders = cfg.sessionReminders === false ? true : false),
-      },
-      {
-        label: 'PAUSE FOR MESSAGES',
-        value: cfg.messagePause !== false ? 'ON' : 'OFF',
-        toggle: () => (cfg.messagePause = cfg.messagePause === false ? true : false),
-      },
-      // ── LANGUAGE SETTINGS ────────────────────────────────────────
-      {
-        label: 'NATIVE LANGUAGE',
-        value: (langMap.get(cfg.nativeLanguage) || { name: 'English' }).name,
-        left: () => {
-          const idx = Math.max(0, LANGUAGES.findIndex(l => l.id === (cfg.nativeLanguage || 'en')));
-          cfg.nativeLanguage = LANGUAGES[(idx - 1 + LANGUAGES.length) % LANGUAGES.length].id;
-          try { localStorage.setItem('glitchpeace.nativeLang', cfg.nativeLanguage); } catch (e) {}
-        },
-        right: () => {
-          const idx = Math.max(0, LANGUAGES.findIndex(l => l.id === (cfg.nativeLanguage || 'en')));
-          cfg.nativeLanguage = LANGUAGES[(idx + 1) % LANGUAGES.length].id;
-          try { localStorage.setItem('glitchpeace.nativeLang', cfg.nativeLanguage); } catch (e) {}
-        },
-      },
-      {
-        label: 'LEARNING LANGUAGE',
-        value: (langMap.get(cfg.targetLanguage) || { name: 'NONE' }).name,
-        left: () => {
-          const learnable = getLearnableLanguages(cfg.nativeLanguage || 'en');
-          const languageOptions = [{ id: null, name: 'NONE' }, ...learnable];
-          const idx = Math.max(0, languageOptions.findIndex(l => l.id === (cfg.targetLanguage || null)));
-          cfg.targetLanguage = languageOptions[(idx - 1 + languageOptions.length) % languageOptions.length].id;
-          try { localStorage.setItem('glitchpeace.targetLang', cfg.targetLanguage || ''); } catch (e) {}
-        },
-        right: () => {
-          const learnable = getLearnableLanguages(cfg.nativeLanguage || 'en');
-          const languageOptions = [{ id: null, name: 'NONE' }, ...learnable];
-          const idx = Math.max(0, languageOptions.findIndex(l => l.id === (cfg.targetLanguage || null)));
-          cfg.targetLanguage = languageOptions[(idx + 1) % languageOptions.length].id;
-          try { localStorage.setItem('glitchpeace.targetLang', cfg.targetLanguage || ''); } catch (e) {}
-        },
-      },
-      {
-        label: 'LANGUAGE LEVEL',
-        get value() {
-          // Read saved CEFR once per language selection change; manual override shows (manual)
-          if (!cfg.langLevel && cfg.targetLanguage) {
-            // Lazy cache in cfg to avoid per-render localStorage read
-            if (cfg._cachedLangLevel == null || cfg._cachedLangLevelFor !== cfg.targetLanguage) {
-              cfg._cachedLangLevel = getLangProgress(cfg.targetLanguage).level;
-              cfg._cachedLangLevelFor = cfg.targetLanguage;
-            }
-            return `${cfg._cachedLangLevel} (auto)`;
-          }
-          return cfg.langLevel ? `${cfg.langLevel} (manual)` : 'A1 (auto)';
-        },
-        left: () => {
-          const cur = cfg.langLevel || cfg._cachedLangLevel || 'A1';
-          const idx = CEFR_LEVELS.indexOf(cur);
-          cfg.langLevel = CEFR_LEVELS[Math.max(0, idx - 1)];
-          if (cfg.targetLanguage) setLangLevel(cfg.targetLanguage, cfg.langLevel);
-          try { localStorage.setItem('glitchpeace.langLevel', cfg.langLevel); } catch (e) {}
-        },
-        right: () => {
-          const cur = cfg.langLevel || cfg._cachedLangLevel || 'A1';
-          const idx = CEFR_LEVELS.indexOf(cur);
-          cfg.langLevel = CEFR_LEVELS[Math.min(CEFR_LEVELS.length - 1, idx + 1)];
-          if (cfg.targetLanguage) setLangLevel(cfg.targetLanguage, cfg.langLevel);
-          try { localStorage.setItem('glitchpeace.langLevel', cfg.langLevel); } catch (e) {}
-        },
-        extra: 'A1=Beginner · A2 · B1 · B2 · C1 · C2=Master',
-      },
-      {
-        label: 'FULL IMMERSION',
-        value: cfg.langImmersion ? 'ON' : 'OFF',
-        toggle: () => {
-          cfg.langImmersion = !cfg.langImmersion;
-          try { localStorage.setItem('glitchpeace.langImmersion', cfg.langImmersion ? '1' : '0'); } catch (e) {}
-        },
-        extra: 'ON = questions in target language only (B1+)',
-      },
-      // ── AUDIO VOLUME CONTROLS ────────────────────────────────────────
-      {
-        label: 'MUSIC VOLUME',
-        get value() { return `${Math.round((cfg.musicVolume ?? 0.5) * 100)}%`; },
-        left: () => {
-          cfg.musicVolume = Math.max(0, +((cfg.musicVolume ?? 0.5) - 0.1).toFixed(1));
-          try { if (window.AudioManager?.setMusicVolume) window.AudioManager.setMusicVolume(cfg.musicVolume); } catch (e) {}
-          try { localStorage.setItem('glitchpeace.musicVol', cfg.musicVolume); } catch (e) {}
-        },
-        right: () => {
-          cfg.musicVolume = Math.min(1.0, +((cfg.musicVolume ?? 0.5) + 0.1).toFixed(1));
-          try { if (window.AudioManager?.setMusicVolume) window.AudioManager.setMusicVolume(cfg.musicVolume); } catch (e) {}
-          try { localStorage.setItem('glitchpeace.musicVol', cfg.musicVolume); } catch (e) {}
-        },
-      },
-      {
-        label: 'SFX VOLUME',
-        get value() { return `${Math.round((cfg.sfxVolume ?? 0.7) * 100)}%`; },
-        left: () => {
-          cfg.sfxVolume = Math.max(0, +((cfg.sfxVolume ?? 0.7) - 0.1).toFixed(1));
-          try { if (window.AudioManager?.setSfxVolume) window.AudioManager.setSfxVolume(cfg.sfxVolume); } catch (e) {}
-          try { localStorage.setItem('glitchpeace.sfxVol', cfg.sfxVolume); } catch (e) {}
-        },
-        right: () => {
-          cfg.sfxVolume = Math.min(1.0, +((cfg.sfxVolume ?? 0.7) + 0.1).toFixed(1));
-          try { if (window.AudioManager?.setSfxVolume) window.AudioManager.setSfxVolume(cfg.sfxVolume); } catch (e) {}
-          try { localStorage.setItem('glitchpeace.sfxVol', cfg.sfxVolume); } catch (e) {}
-        },
-      },
-      {
-        label: 'BACK',
-        value: '',
-        action: () => this.open('title'),
-      },
-    ];
-  }
-
-  getDreamscapeOptions() {
-    return listDreamscapes();
-  }
-
-  getPlaymodeOptions() {
-    // Include co-op — it's playable as a local 2-keyboard mode
-    return getAvailableModes();
-  }
-
-  getCosmologyOptions() {
-    // "None" as first option so cosmology is optional
-    const cosmos = getAvailableCosmologies();
-    return [
-      { id: null, name: 'NO COSMOLOGY', tradition: '—', subtitle: 'Standard gameplay, no cosmology modifier' },
-      ...cosmos,
-    ];
-  }
-
-  getGamemodeOptions() {
-    return [
-      { id: 'grid-classic',   name: 'Grid Roguelike',      desc: 'Pattern-based grid exploration & peace nodes', icon: '◈' },
-      { id: 'shooter',        name: 'Twin-Stick Shooter',  desc: 'Bullet-hell wave survival with 4 weapons',     icon: '⚡' },
-      { id: 'rpg',            name: 'RPG Adventure',       desc: 'Dialogue trees, quests, and character growth',  icon: '⚔' },
-      { id: 'ornithology',    name: 'Ornithology',         desc: 'Explore biomes and observe rare bird species',  icon: '🦅' },
-      { id: 'mycology',       name: 'Mycology',            desc: 'Forage mushrooms and identify toxic species',   icon: '🍄' },
-      { id: 'architecture',   name: 'Architecture',        desc: 'Design and build tile-based structures',        icon: '🏛' },
-      { id: 'constellation',  name: 'Constellation',       desc: 'Navigate stars and activate sequences',         icon: '✦' },
-      { id: 'alchemy',        name: 'Alchemy',             desc: 'Collect elements and transmute them in the Athanor', icon: '⚗' },
-      { id: 'rhythm',         name: 'Rhythm',              desc: 'Move to the beat and build score multipliers',  icon: '♪' },
-      { id: 'constellation-3d', name: 'Constellation 3D',  desc: 'Stars & Myth with Three.js 3D starfield',       icon: '🌌' },
-    ];
-  }
-
-  // ────────────────────────────────────────────────────────────────────
-  //  DRAWING
-  // ────────────────────────────────────────────────────────────────────
-
-  draw(ctx, w, h, dtMs = 16) {
-    this._pulseT += dtMs;
-
-    // Background
-    ctx.fillStyle = '#02020a';
-    ctx.fillRect(0, 0, w, h);
-
-    // Subtle scanlines
-    for (let y = 0; y < h; y += 3) {
-      ctx.fillStyle = 'rgba(0,0,0,0.06)';
-      ctx.fillRect(0, y, w, 1);
-    }
-
-    if (this.screen === 'title' || this.screen === 'pause') return this._drawList(ctx, w, h);
-    if (this.screen === 'options') return this._drawOptions(ctx, w, h);
-    if (this.screen === 'tutorial') return this._drawTutorial(ctx, w, h);
-    if (this.screen === 'dreamscape') return this._drawDreamscape(ctx, w, h);
-    if (this.screen === 'playmode') return this._drawPlaymode(ctx, w, h);
-    if (this.screen === 'cosmology') return this._drawCosmology(ctx, w, h);
-    if (this.screen === 'gamemode') return this._drawGamemode(ctx, w, h);
-    if (this.screen === 'credits') return this._drawCredits(ctx, w, h);
-    if (this.screen === 'onboarding') return this._drawOnboarding(ctx, w, h);
-    if (this.screen === 'highscores') return this._drawHighScores(ctx, w, h);
-  }
-
-  _drawHeader(ctx, w, h, subtitle) {
-    ctx.textAlign = 'center';
-
-    ctx.fillStyle = '#667099';
-    ctx.font = '8px Courier New';
-    ctx.fillText('A CONSCIOUSNESS SIMULATION', w / 2, h / 2 - 170);
-
-    ctx.fillStyle = '#00ff88';
-    ctx.shadowColor = '#00ff88';
-    ctx.shadowBlur = 28;
-    ctx.font = 'bold 38px Courier New';
-    ctx.fillText('GLITCH·PEACE', w / 2, h / 2 - 130);
-    ctx.shadowBlur = 0;
-
-    ctx.fillStyle = '#667099';
-    ctx.font = '9px Courier New';
-    ctx.fillText(subtitle, w / 2, h / 2 - 108);
-
+// ─── How To Play screen ───────────────────────────────────────────────
+// A first-time-player reference: objective, tile guide, controls, matrix.
+export function drawHowToPlay(ctx, w, h) {
+  ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
+  for (let y = 0; y < h; y += 3) { ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(0, y, w, 1); }
+  ctx.textAlign = 'center';
+
+  // ── Title ──────────────────────────────────────────────────────────────
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
+  ctx.font = 'bold 22px Courier New'; ctx.fillText('HOW TO PLAY', w / 2, 40); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#1a3a1a'; ctx.font = '9px Courier New';
+  ctx.fillText('a consciousness engine disguised as a tile game  ·  18 dreamscapes · 21 play modes · gamepad supported', w / 2, 56);
+
+  // ── Objective ─────────────────────────────────────────────────────────
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('OBJECTIVE', w / 2, 78);
+  ctx.fillStyle = '#334455'; ctx.font = '9px Courier New';
+  ctx.fillText('Use WASD or Arrow Keys to move through the dreamscape grid.', w / 2, 93);
+  ctx.fillText('Collect ◈ PEACE tiles to fill your bar and clear the level.', w / 2, 107);
+  ctx.fillText('Avoid hazard tiles. Reach the exit to enter the next dreamscape.', w / 2, 121);
+  ctx.fillText('Press ESC any time to pause — your state is always safe to leave.', w / 2, 135);
+
+  // ── Divider ───────────────────────────────────────────────────────────
+  ctx.strokeStyle = 'rgba(0,255,136,0.12)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(w / 2 - 200, 144); ctx.lineTo(w / 2 + 200, 144); ctx.stroke();
+
+  // ── Tile Guide ────────────────────────────────────────────────────────
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('TILE GUIDE', w / 2, 158);
+
+  const TILES_HELP = [
+    { sym: '◈', name: 'PEACE',      col: '#00ffaa', desc: 'Collect to progress' },
+    { sym: '◆', name: 'INSIGHT',    col: '#00eeff', desc: 'Earn upgrade tokens' },
+    { sym: '↓', name: 'DESPAIR',    col: '#5566ff', desc: 'Hazard — spreads' },
+    { sym: '!', name: 'TERROR',     col: '#ff3333', desc: 'High damage' },
+    { sym: '✕', name: 'SELF-HARM',  col: '#cc2222', desc: 'Moderate damage' },
+    { sym: '~', name: 'HOPELESS',   col: '#2266ff', desc: 'Spreads slowly' },
+    { sym: '▲', name: 'RAGE',       col: '#ff2266', desc: 'Damage + pushback' },
+    { sym: '?', name: 'GLITCH',     col: '#dd00ff', desc: 'Random teleport' },
+    { sym: '⇒', name: 'TELEPORT',   col: '#00ccff', desc: 'Fast travel portal' },
+    { sym: '☆', name: 'ARCHETYPE',  col: '#ffdd00', desc: 'Guardian power — J' },
+    { sym: '◯', name: 'BODY SCAN',  col: '#00aa44', desc: 'Somatic restore' },
+    { sym: '≋', name: 'BREATH',     col: '#6688ff', desc: 'Energy / calm sync' },
+    { sym: '✦', name: 'ENERGY NODE',col: '#cc44ff', desc: 'Energy boost' },
+    { sym: '⊕', name: 'GROUNDING',  col: '#886644', desc: 'Root / heal' },
+  ];
+
+  const tStartY = 172, rowH = 21, colL = w / 2 - 205, colR = w / 2 + 5;
+  TILES_HELP.forEach((t, i) => {
+    const col = i % 2 === 0 ? colL : colR;
+    const ty = tStartY + Math.floor(i / 2) * rowH;
     ctx.textAlign = 'left';
-  }
+    ctx.fillStyle = t.col; ctx.font = 'bold 9px Courier New';
+    ctx.fillText(t.sym + ' ' + t.name, col, ty);
+    ctx.fillStyle = '#445566'; ctx.font = '8px Courier New';
+    ctx.fillText('— ' + t.desc, col + 76, ty);
+  });
+  ctx.textAlign = 'center';
 
-  /** Compact header for selection screens — no large glow so it doesn't bleed through the panel */
-  _drawCompactHeader(ctx, w, subtitle) {
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#00cc66';
-    ctx.shadowColor = '#00ff88';
-    ctx.shadowBlur = 6;
-    ctx.font = 'bold 16px Courier New';
-    ctx.fillText('GLITCH·PEACE', w / 2, 28);
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#445566';
-    ctx.font = '9px Courier New';
-    ctx.fillText(subtitle, w / 2, 46);
+  // ── Divider ───────────────────────────────────────────────────────────
+  const afterTiles = tStartY + Math.ceil(TILES_HELP.length / 2) * rowH + 4;
+  ctx.strokeStyle = 'rgba(0,255,136,0.12)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(w / 2 - 200, afterTiles); ctx.lineTo(w / 2 + 200, afterTiles); ctx.stroke();
+
+  // ── Controls ─────────────────────────────────────────────────────────
+  const ctrlY = afterTiles + 14;
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('CONTROLS', w / 2, ctrlY);
+
+  const CONTROLS_HELP = [
+    ['WASD / ↑↓←→', 'Move',                 'ESC',   'Pause (always safe)'],
+    ['SHIFT',        'Switch Matrix A ↔ B',  'H',     'Toggle dashboard'],
+    ['J',            'Archetype power',       'R',     'Glitch Pulse (charged)'],
+    ['Q',            'Freeze enemies',        'C',     'Containment zone (2◆)'],
+    ['X',            'Transmute (Alchemist/Ritual)', 'Gamepad', 'Left stick=move  A=arch  Y=pulse  LB=freeze'],
+  ];
+  CONTROLS_HELP.forEach(([k1, v1, k2, v2], i) => {
+    const cy2 = ctrlY + 16 + i * 18;
     ctx.textAlign = 'left';
-  }
-
-  _drawList(ctx, w, h) {
-    const isPause = this.screen === 'pause';
-    this._drawHeader(ctx, w, h, isPause ? 'PAUSED' : 'v2.1 · 9 modes · 18 dreamscapes · 17 play styles');
-
-    const items = this.getItems();
-    const boxW = 360;
-    const boxH = 240;
-    const bx = (w - boxW) / 2;
-    const by = h / 2 - 60;
-
-    // Panel
-    ctx.fillStyle = 'rgba(7,7,20,0.9)';
-    ctx.fillRect(bx, by, boxW, boxH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, boxW, boxH);
-
-    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
-
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      const y = by + 34 + i * 30;
-
-      const isSel = i === this.sel;
-      const disabled = !!it.disabled;
-
-      if (isSel) {
-        ctx.fillStyle = `rgba(0,255,136,${0.08 + pulse * 0.10})`;
-        ctx.fillRect(bx + 18, y - 18, boxW - 36, 24);
-        ctx.strokeStyle = `rgba(0,255,136,${0.20 + pulse * 0.20})`;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 18, y - 18, boxW - 36, 24);
-      }
-
-      ctx.fillStyle = disabled ? '#2a2a3a' : (isSel ? '#00ff88' : '#b8b8d0');
-      ctx.font = isSel ? 'bold 14px Courier New' : '13px Courier New';
-      ctx.textAlign = 'center';
-      ctx.fillText((isSel ? '▶ ' : '  ') + immersionLabel(it.label, this.CFG), w / 2, y);
-      ctx.textAlign = 'left';
-    }
-
-    // Footer hint
-    ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ to select · ENTER to confirm · ESC to ' + (isPause ? 'pause' : 'exit'), w / 2, by + boxH + 24);
-    ctx.textAlign = 'left';
-  }
-
-  _drawOptions(ctx, w, h) {
-    this._drawHeader(ctx, w, h, 'OPTIONS');
-
-    const rows = this.getOptionRows();
-
-    const ROW_H = 28;
-    const VISIBLE = Math.min(rows.length, Math.floor((h * 0.68) / ROW_H));
-    const boxW = Math.min(520, w * 0.88);
-    const boxH = VISIBLE * ROW_H + 20;
-    const bx = (w - boxW) / 2;
-    const by = Math.max(60, h / 2 - boxH / 2);
-
-    // Scroll offset: keep selected row in view
-    const scrollStart = Math.max(0, Math.min(this.sel - Math.floor(VISIBLE / 2), rows.length - VISIBLE));
-
-    ctx.fillStyle = 'rgba(7,7,20,0.92)';
-    ctx.fillRect(bx, by, boxW, boxH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, boxW, boxH);
-
-    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
-
-    for (let vi = 0; vi < VISIBLE; vi++) {
-      const i = scrollStart + vi;
-      if (i >= rows.length) break;
-      const r = rows[i];
-      const y = by + 16 + vi * ROW_H;
-      const isSel = i === this.sel;
-
-      if (isSel) {
-        ctx.fillStyle = `rgba(0,255,136,${0.08 + pulse * 0.10})`;
-        ctx.fillRect(bx + 10, y - 16, boxW - 20, ROW_H - 2);
-        ctx.strokeStyle = `rgba(0,255,136,${0.20 + pulse * 0.20})`;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 10, y - 16, boxW - 20, ROW_H - 2);
-      }
-
-      ctx.fillStyle = isSel ? '#00ff88' : '#b8b8d0';
-      ctx.font = isSel ? 'bold 12px Courier New' : '11px Courier New';
-      ctx.textAlign = 'left';
-      ctx.fillText(r.label, bx + 22, y);
-
-      // Value + extra hint on same row
-      const valStr = String(r.value || '');
-      ctx.fillStyle = isSel ? '#00eeff' : '#667099';
-      ctx.textAlign = 'right';
-      ctx.fillText(valStr, bx + boxW - 22, y);
-      ctx.textAlign = 'left';
-
-      // Extra hint below selected row
-      if (isSel && r.extra) {
-        ctx.fillStyle = '#446666';
-        ctx.font = '9px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText(r.extra, bx + boxW / 2, y + 11);
-      }
-    }
-
-    // Scroll indicator
-    if (rows.length > VISIBLE) {
-      const pct = scrollStart / (rows.length - VISIBLE);
-      const trackH = boxH - 20;
-      const thumbH = Math.max(20, (VISIBLE / rows.length) * trackH);
-      const thumbY = by + 10 + pct * (trackH - thumbH);
-      ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.fillRect(bx + boxW - 10, by + 10, 4, trackH);
-      ctx.fillStyle = 'rgba(0,255,136,0.4)';
-      ctx.fillRect(bx + boxW - 10, thumbY, 4, thumbH);
-    }
-
-    ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ select · ←/→ adjust · ENTER toggle · ESC back', w / 2, by + boxH + 18);
-    ctx.textAlign = 'left';
-  }
-
-  _drawTutorial(ctx, w, h) {
-    this._drawHeader(ctx, w, h, 'TUTORIAL');
-
-    const p = TUTORIAL_PAGES[this.tutPage];
-    if (!p) return;
-
-    const boxW = 460;
-    const boxH = 280;
-    const bx = (w - boxW) / 2;
-    const by = h / 2 - 70;
-
-    ctx.fillStyle = 'rgba(7,7,20,0.92)';
-    ctx.fillRect(bx, by, boxW, boxH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, boxW, boxH);
-
-    ctx.fillStyle = '#00ff88';
-    ctx.font = 'bold 14px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText(p.title, w / 2, by + 42);
-
-    ctx.fillStyle = '#b8b8d0';
-    ctx.font = '12px Courier New';
-    let y = by + 78;
-    const lineHeight = 22;
-    for (const line of p.body) {
-      ctx.fillText(line, w / 2, y);
-      y += lineHeight;
-    }
-
-    ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.fillText(`Page ${this.tutPage + 1}/${TUTORIAL_PAGES.length} · ←/→ page · ENTER next · ESC back`, w / 2, by + boxH - 22);
-
-    ctx.textAlign = 'left';
-  }
-
-  _drawDreamscape(ctx, w, h) {
-    this._drawCompactHeader(ctx, w, "SELECT DREAMSCAPE");
-
-    const dreams = this.getDreamscapeOptions();
-    const boxW = 460;
-    const rowH = 42;
-    const paddingV = 16;
-    const boxH = dreams.length * rowH + paddingV * 2;
-    const bx = (w - boxW) / 2;
-    const by = h / 2 - boxH / 2 + 10;
-
-    ctx.fillStyle = 'rgba(7,7,20,0.92)';
-    ctx.fillRect(bx, by, boxW, boxH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, boxW, boxH);
-
-    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
-
-    for (let i = 0; i < dreams.length; i++) {
-      const dream = dreams[i];
-      const isSel = i === this.dreamscapeSel;
-      const rowY = by + paddingV + i * rowH;
-
-      if (isSel) {
-        ctx.fillStyle = `rgba(0,255,136,${0.08 + pulse * 0.10})`;
-        ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
-        ctx.strokeStyle = `rgba(0,255,136,${0.30 + pulse * 0.20})`;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
-      }
-
-      // Label
-      ctx.fillStyle = isSel ? '#00ff88' : '#b8b8d0';
-      ctx.font = isSel ? 'bold 13px Courier New' : '12px Courier New';
-      ctx.textAlign = 'left';
-      ctx.fillText((isSel ? '▶ ' : '  ') + dream.label, bx + 26, rowY + rowH / 2 - 3);
-
-      // Flavor (single line, truncated with ellipsis if needed)
-      const rawFlavor = dream.flavor.replace(/\n/g, ' ');
-      const flavorLine = rawFlavor.length > 40 ? rawFlavor.slice(0, 38) + '…' : rawFlavor;
-      ctx.fillStyle = isSel ? '#00eeff' : '#445566';
-      ctx.font = '9px Courier New';
-      ctx.textAlign = 'right';
-      ctx.fillText(flavorLine, bx + boxW - 20, rowY + rowH / 2 - 3);
-      ctx.textAlign = 'left';
-    }
-
-    ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ choose · ENTER confirm · ESC back', w / 2, by + boxH + 22);
-    ctx.textAlign = 'left';
-  }
-
-  _drawPlaymode(ctx, w, h) {
-    const dreamId = this._pendingDreamscape || 'RIFT';
-    this._drawCompactHeader(ctx, w, `SELECT PLAY MODE · ${dreamId}`);
-
-    const modes = this.getPlaymodeOptions();
-    const boxW = 480;
-    const rowH = 40;
-    const paddingV = 14;
-    const boxH = modes.length * rowH + paddingV * 2;
-    const bx = (w - boxW) / 2;
-    const by = h / 2 - boxH / 2 + 10;
-
-    ctx.fillStyle = 'rgba(7,7,20,0.92)';
-    ctx.fillRect(bx, by, boxW, boxH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, boxW, boxH);
-
-    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
-
-    for (let i = 0; i < modes.length; i++) {
-      const mode = modes[i];
-      const isSel = i === this.playmodeSel;
-      const isDisabled = !!mode.disabled;
-      const rowY = by + paddingV + i * rowH;
-
-      if (isSel && !isDisabled) {
-        ctx.fillStyle = `rgba(0,229,255,${0.07 + pulse * 0.10})`;
-        ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
-        ctx.strokeStyle = `rgba(0,229,255,${0.28 + pulse * 0.20})`;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
-      }
-
-      ctx.fillStyle = isDisabled ? '#3a3a4a' : (isSel ? '#00e5ff' : '#b8b8d0');
-      ctx.font = isSel && !isDisabled ? 'bold 12px Courier New' : '11px Courier New';
-      ctx.textAlign = 'left';
-      ctx.fillText((isSel && !isDisabled ? '▶ ' : '  ') + mode.name + (isDisabled ? ' 🔒' : ''), bx + 26, rowY + rowH / 2 - 2);
-
-      const descLine = mode.desc.length > 42 ? mode.desc.slice(0, 40) + '…' : mode.desc;
-      ctx.fillStyle = isDisabled ? '#2a2a3a' : (isSel ? '#88ffcc' : '#445566');
-      ctx.font = '9px Courier New';
-      ctx.textAlign = 'right';
-      ctx.fillText(descLine, bx + boxW - 20, rowY + rowH / 2 - 2);
-      ctx.textAlign = 'left';
-    }
-
-    ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ choose · ENTER confirm · ESC back', w / 2, by + boxH + 22);
-    ctx.textAlign = 'left';
-  }
-
-  _drawCosmology(ctx, w, h) {
-    const dreamId = this._pendingDreamscape || 'RIFT';
-    const playMode = this._pendingPlaymode || 'ARCADE';
-    this._drawCompactHeader(ctx, w, `CHOOSE COSMOLOGY · ${dreamId} · ${playMode}`);
-
-    const cosmologies = this.getCosmologyOptions();
-    const boxW = 500;
-    const rowH = 38;
-    const paddingV = 14;
-    const boxH = Math.min(cosmologies.length * rowH + paddingV * 2, h * 0.75);
-    const visibleRows = Math.floor((boxH - paddingV * 2) / rowH);
-    const bx = (w - boxW) / 2;
-    const by = h / 2 - boxH / 2 + 10;
-
-    // Scroll so selected item is visible
-    const scrollStart = Math.max(0, Math.min(
-      this.cosmologySel - Math.floor(visibleRows / 2),
-      cosmologies.length - visibleRows,
-    ));
-
-    ctx.fillStyle = 'rgba(7,7,20,0.92)';
-    ctx.fillRect(bx, by, boxW, boxH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, boxW, boxH);
-
-    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(bx, by, boxW, boxH);
-    ctx.clip();
-
-    for (let i = 0; i < cosmologies.length; i++) {
-      const cosmo = cosmologies[i];
-      const isSel = i === this.cosmologySel;
-      const rowY = by + paddingV + (i - scrollStart) * rowH;
-      if (rowY + rowH < by || rowY > by + boxH) continue;
-
-      if (isSel) {
-        ctx.fillStyle = `rgba(0,229,255,${0.07 + pulse * 0.10})`;
-        ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
-        ctx.strokeStyle = `rgba(0,229,255,${0.28 + pulse * 0.20})`;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
-      }
-
-      const label = cosmo.id === null ? cosmo.name : `${cosmo.name}`;
-      ctx.fillStyle = isSel ? '#00e5ff' : '#b8b8d0';
-      ctx.font = isSel ? 'bold 11px Courier New' : '11px Courier New';
-      ctx.textAlign = 'left';
-      ctx.fillText((isSel ? '▶ ' : '  ') + label, bx + 26, rowY + rowH / 2 - 4);
-
-      // tradition + subtitle
-      const tradLabel = cosmo.tradition ? `${cosmo.tradition}` : '';
-      ctx.fillStyle = isSel ? '#88ffcc' : '#445566';
-      ctx.font = '8px Courier New';
-      const sub = (cosmo.subtitle || '').length > 38 ? cosmo.subtitle.slice(0, 36) + '…' : (cosmo.subtitle || '');
-      ctx.fillText(sub, bx + 26, rowY + rowH / 2 + 8);
-      if (tradLabel) {
-        ctx.textAlign = 'right';
-        ctx.fillStyle = isSel ? '#ccaaff' : '#334';
-        ctx.fillText(tradLabel, bx + boxW - 20, rowY + rowH / 2 - 4);
-        ctx.textAlign = 'left';
-      }
-    }
-
-    ctx.restore();
-
-    ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ choose · ENTER start · Backspace: back', w / 2, by + boxH + 22);
-    ctx.textAlign = 'left';
-  }
-
-  _drawGamemode(ctx, w, h) {
-    const dreamId = this._pendingDreamscape || 'RIFT';
-    const playMode = this._pendingPlaymode || 'ARCADE';
-    this._drawCompactHeader(ctx, w, `SELECT GAME MODE · ${dreamId} · ${playMode}`);
-
-    const modes = this.getGamemodeOptions();
-    const boxW = 500;
-    const rowH = 44;
-    const paddingV = 14;
-    const boxH = modes.length * rowH + paddingV * 2;
-    const bx = (w - boxW) / 2;
-    const by = h / 2 - boxH / 2 + 10;
-
-    ctx.fillStyle = 'rgba(7,7,20,0.92)';
-    ctx.fillRect(bx, by, boxW, boxH);
-    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(bx, by, boxW, boxH);
-
-    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
-
-    for (let i = 0; i < modes.length; i++) {
-      const gm = modes[i];
-      const isSel = i === this.gamemodeSel;
-      const rowY = by + paddingV + i * rowH;
-
-      if (isSel) {
-        ctx.fillStyle = `rgba(0,255,136,${0.07 + pulse * 0.10})`;
-        ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
-        ctx.strokeStyle = `rgba(0,255,136,${0.28 + pulse * 0.20})`;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
-      }
-
-      // Icon + name
-      ctx.fillStyle = isSel ? '#00ff88' : '#b8b8d0';
-      ctx.font = isSel ? 'bold 12px Courier New' : '11px Courier New';
-      ctx.textAlign = 'left';
-      ctx.fillText((isSel ? '▶ ' : '  ') + gm.icon + '  ' + gm.name, bx + 26, rowY + rowH / 2 - 3);
-
-      // Description
-      const descLine = gm.desc.length > 44 ? gm.desc.slice(0, 42) + '…' : gm.desc;
-      ctx.fillStyle = isSel ? '#88ffcc' : '#445566';
-      ctx.font = '9px Courier New';
-      ctx.textAlign = 'right';
-      ctx.fillText(descLine, bx + boxW - 20, rowY + rowH / 2 - 3);
-      ctx.textAlign = 'left';
-    }
-
-    ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.textAlign = 'center';
-    ctx.fillText('↑/↓ choose · ENTER start · Backspace: back', w / 2, by + boxH + 22);
-    ctx.textAlign = 'left';
-  }
-
-  _drawCredits(ctx, w, h) {
-    this._drawHeader(ctx, w, h, 'CREDITS');
-
-    ctx.textAlign = 'center';
-
-    // Tagline
-    ctx.fillStyle = '#00e5ff';
-    ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
-    ctx.shadowColor = '#00e5ff';
-    ctx.shadowBlur = 10;
-    ctx.fillText('Begin in stillness. Emerge through pattern.', w / 2, h * 0.28);
-    ctx.shadowBlur = 0;
-
-    // Description rows
-    const lines = [
-      { text: 'GLITCH·PEACE is free — always. No ads, no trackers, no cost.', col: '#b8b8d0' },
-      { text: 'A consciousness engine built on neuroscience, wisdom traditions,', col: '#778899' },
-      { text: 'and compassionate game design. Suitable for all ages.', col: '#778899' },
-      { text: '', col: '' },
-      { text: '9 gameplay modes  ·  18 dreamscapes  ·  17 play styles', col: '#88ffcc' },
-      { text: '12 cosmological frameworks  ·  19-language vocabulary system', col: '#88ffcc' },
-      { text: '', col: '' },
-      { text: 'Research base: Kaplan (1989) · LaBerge (1990) · Csikszentmihalyi (1990)', col: '#445566' },
-      { text: 'Thaut (2015) · Mahasi Sayadaw (1971) · Jung (1951) · Rogers (1961)', col: '#445566' },
-      { text: '', col: '' },
-      { text: 'Source code: github.com/jessidono24-cmyk/glitch-peace-vite', col: '#334455' },
-      { text: 'License: MIT — free forever', col: '#334455' },
-    ];
-
-    ctx.font = `${Math.floor(w / 42)}px Courier New`;
-    lines.forEach((line, i) => {
-      if (!line.text) return;
-      ctx.fillStyle = line.col;
-      ctx.fillText(line.text, w / 2, h * 0.36 + i * (h * 0.045));
-    });
-
-    ctx.fillStyle = '#445566';
-    ctx.font = '9px Courier New';
-    ctx.fillText('ENTER or ESC to return', w / 2, h * 0.92);
-    ctx.textAlign = 'left';
-  }
-
-  _drawHighScores(ctx, w, h) {
-    this._drawHeader(ctx, w, h, 'HIGH SCORES');
-
-    const entries = getGlobalTopScores(10);
-    const bx = w / 2 - 180;
-    const by = h / 2 - 120;
-
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#00ff88';
-    ctx.shadowColor = '#00ff88';
-    ctx.shadowBlur = 8;
-    ctx.font = 'bold 11px Courier New';
-    ctx.fillText('TOP 10  —  All Modes', w / 2, by + 2);
-    ctx.shadowBlur = 0;
-
-    // Column header
-    ctx.fillStyle = '#334466';
-    ctx.font = '8px Courier New';
-    ctx.fillText('#   Score          Level   Mode         Dreamscape', w / 2, by + 20);
-
-    // Separator line
-    ctx.strokeStyle = '#1a2a3a';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(bx, by + 26); ctx.lineTo(bx + 360, by + 26); ctx.stroke();
-
-    if (entries.length === 0) {
-      ctx.fillStyle = '#334466';
-      ctx.font = '10px Courier New';
-      ctx.fillText('No scores yet — play to record your first run!', w / 2, by + 60);
-    } else {
-      entries.forEach((e, i) => {
-        const ey = by + 42 + i * 20;
-        const isTop3 = i < 3;
-        ctx.fillStyle = isTop3 ? '#ffcc44' : (i < 7 ? '#88aacc' : '#445566');
-        ctx.font = isTop3 ? 'bold 10px Courier New' : '9px Courier New';
-        const mode = (e.mode || 'ARCADE').slice(0, 10).padEnd(10);
-        const ds   = (e.dreamscape || 'RIFT').slice(0, 10);
-        const score = e.score.toLocaleString().padStart(10);
-        const level = String(e.level).padStart(4);
-        ctx.fillText(`${String(i + 1).padStart(2)}.  ${score}    ${level}   ${mode}  ${ds}`, w / 2, ey);
-      });
-    }
-
-    ctx.fillStyle = '#334466';
-    ctx.font = '8px Courier New';
-    ctx.fillText('ESC · back to menu', w / 2, by + 260);
-    ctx.textAlign = 'left';
-  }
-
-  _drawOnboarding(ctx, w, h) {
-    const step = this._onboardingStep;
-    const ageGroups = MenuSystem.AGE_GROUPS;
-
-    // Background
-    ctx.fillStyle = '#030312';
-    ctx.fillRect(0, 0, w, h);
-
-    // Title
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#00e5ff';
-    ctx.font = `bold ${Math.floor(w / 12)}px Courier New`;
-    ctx.shadowColor = '#00e5ff';
-    ctx.shadowBlur = 20;
-    ctx.fillText('GLITCH·PEACE', w / 2, h * 0.12);
-    ctx.shadowBlur = 0;
-
-    const stepLabels = ['WELCOME', 'YOUR AGE', 'YOUR LANGUAGE', 'LEARN LANGUAGE'];
-    ctx.fillStyle = '#334466';
-    ctx.font = '8px Courier New';
-    ctx.fillText(`SETUP  ${step + 1} / 4  ·  ${stepLabels[step]}`, w / 2, h * 0.18);
-
-    // Step dots
-    for (let i = 0; i < 4; i++) {
-      ctx.fillStyle = i === step ? '#00e5ff' : i < step ? '#226644' : '#223344';
-      ctx.fillRect(w / 2 - 28 + i * 18, h * 0.21, 10, 3);
-    }
-
-    if (step === 0) {
-      // Welcome
-      ctx.fillStyle = '#8899bb';
-      ctx.font = `${Math.floor(w / 30)}px Courier New`;
-      ctx.fillText('Welcome, explorer.', w / 2, h * 0.35);
-      ctx.font = `${Math.floor(w / 36)}px Courier New`;
-      ctx.fillStyle = '#556677';
-      const lines = [
-        'GLITCH·PEACE is a consciousness game about',
-        'pattern recognition, learning, and peace.',
-        '',
-        'We\'ll set up the game for you in 3 quick steps.',
-      ];
-      lines.forEach((line, i) => ctx.fillText(line, w / 2, h * 0.45 + i * (h * 0.065)));
-      ctx.fillStyle = '#00cc88';
-      ctx.font = `bold ${Math.floor(w / 34)}px Courier New`;
-      ctx.fillText('Press ENTER to begin  ·  ESC to skip', w / 2, h * 0.80);
-
-    } else if (step === 1) {
-      // Age group
-      ctx.fillStyle = '#aabbcc';
-      ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
-      ctx.fillText('How old are you?', w / 2, h * 0.30);
-      ctx.fillStyle = '#556677';
-      ctx.font = `${Math.floor(w / 38)}px Courier New`;
-      ctx.fillText('(this sets a starting difficulty — you can change it later)', w / 2, h * 0.36);
-
-      for (let i = 0; i < ageGroups.length; i++) {
-        const ag = ageGroups[i];
-        const y = h * 0.46 + i * (h * 0.105);
-        const sel = i === this._onboardingAge;
-        ctx.fillStyle = sel ? '#001a33' : 'transparent';
-        ctx.fillRect(w * 0.18, y - 14, w * 0.64, 26);
-        ctx.strokeStyle = sel ? '#00aaff' : '#223344';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(w * 0.18, y - 14, w * 0.64, 26);
-        ctx.fillStyle = sel ? '#00e5ff' : '#667788';
-        ctx.font = `${sel ? 'bold ' : ''}${Math.floor(w / 32)}px Courier New`;
-        ctx.fillText(`${ag.emoji}  ${ag.label}`, w / 2, y + 4);
-      }
-      ctx.fillStyle = '#445566';
-      ctx.font = '8px Courier New';
-      ctx.fillText('↑/↓ to choose  ·  ENTER to confirm  ·  ESC to skip', w / 2, h * 0.90);
-
-    } else if (step === 2) {
-      // Native language
-      ctx.fillStyle = '#aabbcc';
-      ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
-      ctx.fillText('What is your native language?', w / 2, h * 0.28);
-
-      const visCount = 6;
-      const startIdx = Math.max(0, Math.min(this._nativeLangSel - Math.floor(visCount / 2), LANGUAGES.length - visCount));
-      for (let i = 0; i < visCount; i++) {
-        const idx = startIdx + i;
-        if (idx >= LANGUAGES.length) break;
-        const lang = LANGUAGES[idx];
-        const y = h * 0.38 + i * (h * 0.085);
-        const sel = idx === this._nativeLangSel;
-        ctx.fillStyle = sel ? '#001a33' : 'transparent';
-        ctx.fillRect(w * 0.15, y - 12, w * 0.70, 24);
-        ctx.strokeStyle = sel ? '#00aaff' : '#1a2233';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(w * 0.15, y - 12, w * 0.70, 24);
-        ctx.fillStyle = sel ? '#00e5ff' : '#667788';
-        ctx.font = `${sel ? 'bold ' : ''}${Math.floor(w / 34)}px Courier New`;
-        ctx.textAlign = 'left';
-        ctx.fillText(lang.name, w * 0.22, y + 4);
-        ctx.textAlign = 'right';
-        ctx.fillStyle = sel ? '#aaccee' : '#445566';
-        ctx.font = `${Math.floor(w / 38)}px Courier New`;
-        ctx.fillText(lang.nativeName, w * 0.83, y + 4);
-        ctx.textAlign = 'center';
-      }
-      ctx.fillStyle = '#445566';
-      ctx.font = '8px Courier New';
-      ctx.fillText('↑/↓ to scroll  ·  ENTER to confirm  ·  ESC to skip', w / 2, h * 0.90);
-
-    } else if (step === 3) {
-      // Target language
-      const langs = this._learnableLangs;
-      ctx.fillStyle = '#aabbcc';
-      ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
-      ctx.fillText('Which language would you like to learn?', w / 2, h * 0.27);
-      ctx.fillStyle = '#445566';
-      ctx.font = `${Math.floor(w / 38)}px Courier New`;
-      ctx.fillText('(ordered by how similar they are to your native language)', w / 2, h * 0.33);
-
-      const visCount = 6;
-      const startIdx = Math.max(0, Math.min(this._targetLangSel - Math.floor(visCount / 2), langs.length - visCount));
-      for (let i = 0; i < visCount; i++) {
-        const idx = startIdx + i;
-        if (idx >= langs.length) break;
-        const lang = langs[idx];
-        const y = h * 0.41 + i * (h * 0.085);
-        const sel = idx === this._targetLangSel;
-        ctx.fillStyle = sel ? '#001a33' : 'transparent';
-        ctx.fillRect(w * 0.15, y - 12, w * 0.70, 24);
-        ctx.strokeStyle = sel ? '#00aaff' : '#1a2233';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(w * 0.15, y - 12, w * 0.70, 24);
-        ctx.fillStyle = sel ? '#00e5ff' : '#667788';
-        ctx.font = `${sel ? 'bold ' : ''}${Math.floor(w / 34)}px Courier New`;
-        ctx.textAlign = 'left';
-        ctx.fillText(lang.name, w * 0.22, y + 4);
-        ctx.textAlign = 'right';
-        ctx.fillStyle = sel ? '#aaccee' : '#445566';
-        ctx.font = `${Math.floor(w / 38)}px Courier New`;
-        ctx.fillText(lang.nativeName, w * 0.83, y + 4);
-        ctx.textAlign = 'center';
-      }
-      ctx.fillStyle = '#00cc88';
-      ctx.font = `bold ${Math.floor(w / 36)}px Courier New`;
-      ctx.fillText('Vocabulary challenges will appear in this language!', w / 2, h * 0.88);
-      ctx.fillStyle = '#445566';
-      ctx.font = '8px Courier New';
-      ctx.fillText('↑/↓ to scroll  ·  ENTER to confirm  ·  ESC to skip', w / 2, h * 0.90);
-    }
-
-    ctx.textAlign = 'left';
-  }
-
-  _render() {
-    const overlay = document.getElementById('menu-overlay');
-    if (!overlay) {
-      return;
-    }
-    // Always clear overlay before rendering to prevent stacking
-    overlay.innerHTML = '';
-    overlay.classList.remove('hidden');
-    if (this.screen === 'hidden') {
-      overlay.classList.add('hidden');
-      return;
-    }
-    let html = '';
-    if (this.screen === 'title') {
-      html = this._renderTitle();
-    } else if (this.screen === 'pause') {
-      html = this._renderPause();
-    } else if (this.screen === 'dreamscape') {
-      html = this._renderDreamscape();
-    } else if (this.screen === 'tutorial') {
-      html = this._renderTutorial();
-    } else if (this.screen === 'options') {
-      html = this._renderOptions();
-    } else if (this.screen === 'credits') {
-      html = this._renderCredits();
-    }
-    overlay.innerHTML = html;
-  }
-
-  _renderTitle() {
-    // Simple title menu HTML for overlay
-    return `
-      <div class="menu-title">GLITCH·PEACE</div>
-      <div class="menu-subtitle">A Consciousness Simulation</div>
-      <div class="menu-items">
-        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.onStartNew && window.MenuSystem.onStartNew()">NEW GAME</div>
-        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.onContinue && window.MenuSystem.onContinue()">CONTINUE</div>
-        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.open && window.MenuSystem.open('tutorial')">TUTORIAL</div>
-        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.open && window.MenuSystem.open('options')">OPTIONS</div>
-        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.open && window.MenuSystem.open('credits')">CREDITS</div>
-        <div class="menu-item" onclick="window.MenuSystem && window.MenuSystem.onQuitToTitle && window.MenuSystem.onQuitToTitle({to:'title'})">EXIT</div>
-      </div>
-    `;
-  }
+    ctx.fillStyle = '#00aa66'; ctx.font = 'bold 9px Courier New'; ctx.fillText(k1, w / 2 - 205, cy2);
+    ctx.fillStyle = '#334455'; ctx.font = '8px Courier New'; ctx.fillText(v1, w / 2 - 130, cy2);
+    ctx.fillStyle = '#00aa66'; ctx.font = 'bold 9px Courier New'; ctx.fillText(k2, w / 2 + 10, cy2);
+    ctx.fillStyle = '#334455'; ctx.font = '8px Courier New'; ctx.fillText(v2, w / 2 + 46, cy2);
+  });
+  ctx.textAlign = 'center';
+
+  // ── Matrix System ─────────────────────────────────────────────────────
+  const matY = ctrlY + 16 + CONTROLS_HELP.length * 18 + 12;
+  ctx.strokeStyle = 'rgba(0,255,136,0.12)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(w / 2 - 200, matY - 6); ctx.lineTo(w / 2 + 200, matY - 6); ctx.stroke();
+
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('MATRIX SYSTEM  (SHIFT to toggle)', w / 2, matY + 6);
+  ctx.fillStyle = '#ff3366'; ctx.font = '9px Courier New';
+  ctx.fillText('MATRIX A  ⟨ERASURE⟩   — red glow · reveals hidden tiles · more dangerous', w / 2, matY + 22);
+  ctx.fillStyle = '#00ff88';
+  ctx.fillText('MATRIX B  ⟨COHERENCE⟩ — green glow · restores health · safer recovery', w / 2, matY + 38);
+  ctx.fillStyle = '#334455'; ctx.font = '8px Courier New';
+  ctx.fillText('Holding Matrix B heals slowly. Holding Matrix A drains slowly. Choose wisely.', w / 2, matY + 54);
+
+  // ── First Steps ───────────────────────────────────────────────────────
+  const fsY = matY + 68;
+  ctx.strokeStyle = 'rgba(0,255,136,0.12)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(w / 2 - 200, fsY - 6); ctx.lineTo(w / 2 + 200, fsY - 6); ctx.stroke();
+
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('YOUR FIRST STEPS', w / 2, fsY + 6);
+  const STEPS = [
+    '1.  Choose START JOURNEY from the title — the first dreamscape is VOID STATE.',
+    '2.  Move with WASD or Arrow Keys. Collect every ◈ you see.',
+    '3.  When your HP bar gets low, switch to Matrix B (SHIFT) and move to green tiles.',
+    '4.  Collect ☆ ARCHETYPE tiles — then press J to release their power.',
+    '5.  Reach the far edge of the grid to enter the next dreamscape.',
+  ];
+  STEPS.forEach((s, i) => {
+    ctx.fillStyle = '#335544'; ctx.font = '8px Courier New';
+    ctx.fillText(s, w / 2, fsY + 22 + i * 16);
+  });
+
+  // ── Co-op Setup ───────────────────────────────────────────────────────
+  const coopY = fsY + 22 + STEPS.length * 16 + 16;
+  ctx.strokeStyle = 'rgba(255,204,68,0.15)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(w / 2 - 200, coopY - 6); ctx.lineTo(w / 2 + 200, coopY - 6); ctx.stroke();
+  ctx.fillStyle = '#ffcc44'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 8;
+  ctx.font = 'bold 11px Courier New'; ctx.fillText('🤝  CO-OP SETUP  (two players on one keyboard)', w / 2, coopY + 6);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#998844'; ctx.font = '8px Courier New';
+  ctx.fillText('From the title, choose SELECT MODE → CO-OP MODE and press ENTER.', w / 2, coopY + 22);
+  ctx.fillStyle = '#00ff88'; ctx.font = 'bold 9px Courier New';
+  ctx.fillText('PLAYER 1:', w / 2 - 100, coopY + 38);
+  ctx.fillStyle = '#ff8844';
+  ctx.fillText('PLAYER 2:', w / 2 + 60, coopY + 38);
+  ctx.fillStyle = '#aaccaa'; ctx.font = '8px Courier New';
+  ctx.fillText('Arrow Keys ↑↓←→', w / 2 - 100, coopY + 52);
+  ctx.fillStyle = '#cc9977';
+  ctx.fillText('W A S D', w / 2 + 60, coopY + 52);
+  ctx.fillStyle = '#445566'; ctx.font = '8px Courier New'; ctx.textAlign = 'center';
+  ctx.fillText('Both share the same dreamscape. Collect ◈ tiles to clear the level together.', w / 2, coopY + 68);
+  ctx.fillText('Somatic tiles (◯ ≋ ✦ ⊕) heal both players simultaneously.', w / 2, coopY + 82);
+
+  // ── Footer ────────────────────────────────────────────────────────────
+  ctx.fillStyle = '#1a2a1a'; ctx.font = 'italic 7px Courier New';
+  ctx.fillText('All data stays local · No shame spirals · Pause any time · Your identity is always safe.', w / 2, h - 30);
+  ctx.fillStyle = '#131328'; ctx.font = '9px Courier New';
+  ctx.fillText('ENTER / ESC  ·  return to title', w / 2, h - 16);
+  ctx.textAlign = 'left';
 }
 
+// ─── Achievement popup overlay (drawn over any phase) ──────────────────
+export function drawAchievementPopup(ctx, w, h, popup, ts) {
+  if (!popup) return;
+  const alpha  = Math.min(1, popup.progress);
+  const slide  = Math.min(1, popup.progress);
+  const panelW = 290, panelH = 64;
+  const px     = w - panelW - 14;
+  const py     = 14 + (1 - slide) * -80;
 
+  ctx.globalAlpha = alpha * 0.97;
+  // Animated glow behind panel
+  ctx.shadowColor = '#ffdd44'; ctx.shadowBlur = 20 * alpha;
+  ctx.fillStyle = '#060610';
+  ctx.beginPath(); ctx.roundRect(px, py, panelW, panelH, 8); ctx.fill();
+  ctx.shadowBlur = 0;
+  // Border: gold achievement color
+  ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(px + 0.5, py + 0.5, panelW - 1, panelH - 1, 8); ctx.stroke();
+  // Top "ACHIEVEMENT UNLOCKED" gold band
+  ctx.fillStyle = 'rgba(255,221,68,0.12)';
+  ctx.beginPath(); ctx.roundRect(px + 1, py + 1, panelW - 2, 22, [7, 7, 0, 0]); ctx.fill();
 
+  // Icon
+  ctx.font = '20px Courier New'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 10;
+  ctx.fillText(popup.icon || '🏆', px + 10, py + 44);
+  ctx.shadowBlur = 0;
 
+  // Labels
+  ctx.fillStyle = '#ffdd44'; ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'left';
+  ctx.fillText('✦  ACHIEVEMENT UNLOCKED  ✦', px + 42, py + 15);
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 11px Courier New';
+  ctx.fillText(popup.name, px + 42, py + 33);
+  ctx.fillStyle = '#556677'; ctx.font = '8px Courier New';
+  const descStr = popup.desc || '';
+  ctx.fillText(descStr.length > 36 ? descStr.slice(0, 34) + '…' : descStr, px + 42, py + 50);
+
+  ctx.globalAlpha = 1;
+  ctx.textAlign = 'left';
+}
+
+// ─── Achievements screen ──────────────────────────────────────────────
+export function drawAchievements(ctx, w, h, achievementSystem, scrollOffset) {
+  ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffdd44'; ctx.shadowBlur = 16;
+  ctx.font = 'bold 20px Courier New';
+  ctx.fillText('ACHIEVEMENTS', w / 2, 46);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = '#445566'; ctx.font = '10px Courier New';
+  ctx.fillText(achievementSystem.unlockedCount + ' / ' + achievementSystem.totalCount + ' unlocked', w / 2, 64);
+
+  const all = (window._achieveDefs && window._achieveDefs.ACHIEVEMENT_DEFS) || [];
+  const visible = Math.min(all.length, 8);
+  const startI  = scrollOffset || 0;
+  for (let i = 0; i < visible && startI + i < all.length; i++) {
+    const def = all[startI + i];
+    const unlocked = achievementSystem.isUnlocked(def.id);
+    const y = 90 + i * 52;
+    ctx.fillStyle = unlocked ? 'rgba(0,255,136,0.06)' : 'rgba(255,255,255,0.02)';
+    ctx.fillRect(w / 2 - 200, y - 12, 400, 42);
+    ctx.strokeStyle = unlocked ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.06)';
+    ctx.strokeRect(w / 2 - 200, y - 12, 400, 42);
+    ctx.fillStyle = unlocked ? '#ffdd44' : '#334455'; ctx.font = '16px Courier New'; ctx.textAlign = 'left';
+    ctx.fillText(def.icon || '?', w / 2 - 188, y + 14);
+    ctx.fillStyle = unlocked ? '#00ff88' : '#334455'; ctx.font = 'bold 11px Courier New';
+    ctx.fillText(unlocked ? def.name : (def.hidden ? '???' : def.name), w / 2 - 162, y + 6);
+    ctx.fillStyle = unlocked ? '#445566' : '#223322'; ctx.font = '8px Courier New';
+    const rawDesc = unlocked ? def.desc : (def.hidden ? 'Hidden achievement' : def.desc);
+    const descText = rawDesc.length > 36 ? rawDesc.slice(0, 34) + '…' : rawDesc;
+    ctx.fillText(descText, w / 2 - 162, y + 20);
+    if (unlocked) {
+      ctx.fillStyle = '#ffdd44'; ctx.textAlign = 'right'; ctx.font = '8px Courier New';
+      ctx.fillText('✓', w / 2 + 188, y + 14);
+    }
+  }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#131328'; ctx.font = '8px Courier New';
+  ctx.fillText('↑↓ scroll  ·  ENTER / ESC back', w / 2, h - 20);
+  ctx.textAlign = 'left';
+}
+
+// ─── Archetype Selector ───────────────────────────────────────────────────
+export function drawArchetypeSelect(ctx, w, h, selIdx, backgroundStars, ts) {
+  // Background
+  ctx.fillStyle = '#01010a'; ctx.fillRect(0, 0, w, h);
+  for (let y2 = 0; y2 < h; y2 += 4) { ctx.fillStyle = 'rgba(0,0,0,0.10)'; ctx.fillRect(0, y2, w, 1); }
+  if (backgroundStars) {
+    for (const s of backgroundStars) {
+      ctx.globalAlpha = s.a * (0.4 + 0.3 * Math.sin(ts * 0.0008 + s.phase));
+      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffdd44'; ctx.shadowBlur = 18;
+  ctx.font = 'bold 18px Courier New'; ctx.fillText('CHOOSE YOUR ARCHETYPE', w / 2, 44); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334422'; ctx.font = '9px Courier New';
+  ctx.fillText('your power shapes the dreamscape', w / 2, 60);
+
+  const archKeys = Object.keys(ARCHETYPES);
+  const COLS_ARCH = 3;
+  const rowH = 80, colW = Math.floor((w - 40) / COLS_ARCH);
+  const startX = 20, startY = 80;
+
+  archKeys.forEach((key, i) => {
+    const arch = ARCHETYPES[key];
+    const col  = i % COLS_ARCH;
+    const row  = Math.floor(i / COLS_ARCH);
+    const rx   = startX + col * colW;
+    const ry   = startY + row * rowH;
+    const sel  = i === selIdx;
+    const pulse = sel ? 0.5 + 0.5 * Math.sin(ts * 0.006) : 0;
+
+    // Card background
+    if (sel) {
+      const bg = ctx.createLinearGradient(rx, ry, rx + colW - 6, ry + rowH - 4);
+      bg.addColorStop(0, arch.color + '22');
+      bg.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = bg; ctx.fillRect(rx, ry, colW - 6, rowH - 4);
+      ctx.strokeStyle = arch.color + Math.round(60 + pulse * 80).toString(16).padStart(2,'0');
+      ctx.lineWidth = 1.5; ctx.strokeRect(rx, ry, colW - 6, rowH - 4);
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1; ctx.strokeRect(rx, ry, colW - 6, rowH - 4);
+    }
+
+    // Archetype name
+    ctx.fillStyle = sel ? arch.color : '#2a3a2a';
+    ctx.shadowColor = sel ? arch.color : 'transparent'; ctx.shadowBlur = sel ? 8 : 0;
+    ctx.font = sel ? 'bold 10px Courier New' : '9px Courier New';
+    ctx.textAlign = 'left';
+    ctx.fillText(arch.name, rx + 8, ry + 18); ctx.shadowBlur = 0;
+
+    // Power description (truncated)
+    ctx.fillStyle = sel ? '#88aacc' : '#1a2a1a'; ctx.font = '7px Courier New';
+    const pd = (arch.powerDesc || '').length > 32 ? arch.powerDesc.slice(0,30)+'…' : (arch.powerDesc||'');
+    ctx.fillText(pd, rx + 8, ry + 32);
+
+    // Activation message preview
+    if (sel) {
+      ctx.fillStyle = '#445533'; ctx.font = '7px Courier New';
+      const am = (arch.activationMsg || '').length > 34 ? arch.activationMsg.slice(0,32)+'…' : (arch.activationMsg||'');
+      ctx.fillText(am, rx + 8, ry + 46);
+    }
+
+    // Selection marker
+    if (sel) {
+      ctx.fillStyle = arch.color; ctx.shadowColor = arch.color; ctx.shadowBlur = 4;
+      ctx.font = 'bold 8px Courier New';
+      ctx.fillText('▶', rx + 2, ry + 18); ctx.shadowBlur = 0;
+    }
+    ctx.textAlign = 'left';
+  });
+
+  // Selected archetype details panel at bottom
+  const selKey  = archKeys[selIdx] || archKeys[0];
+  const selArch = ARCHETYPES[selKey];
+  if (selArch) {
+    const panY = h - 72;
+    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+    ctx.fillRect(20, panY, w - 40, 60);
+    ctx.strokeStyle = selArch.color + '44'; ctx.lineWidth = 1;
+    ctx.strokeRect(20, panY, w - 40, 60);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = selArch.color; ctx.font = 'bold 12px Courier New';
+    ctx.fillText(selArch.name, 32, panY + 18);
+    ctx.fillStyle = '#aabbcc'; ctx.font = '9px Courier New';
+    ctx.fillText(selArch.powerDesc || '', 32, panY + 32);
+    ctx.fillStyle = '#334455'; ctx.font = '8px Courier New';
+    ctx.fillText(selArch.completionBonus || '', 32, panY + 44);
+  }
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#0d1a0d'; ctx.font = '8px Courier New';
+  ctx.fillText('↑↓←→ navigate  ·  ENTER select  ·  ESC skip (no archetype)', w / 2, h - 10);
+  ctx.textAlign = 'left';
+}

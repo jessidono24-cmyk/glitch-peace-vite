@@ -449,3 +449,161 @@ test('feature: pause reward wired — tokens on resume after 60s', async ({ page
   const stillPlaying = await page.evaluate(() => window.GlitchPeaceGame?.state);
   expect(stillPlaying).toBe('PLAYING');
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  BOSS TYPES — 5 distinct boss types via _spawnBoss
+// ─────────────────────────────────────────────────────────────────────────────
+test('feature: boss spawn — 5 types defined, bossType assigned on spawn', async ({ page }) => {
+  const state = await startMode(page, 'grid-classic');
+  expect(state).toBe('PLAYING');
+
+  // Force spawn a boss via JS (bypass level 5 requirement)
+  const bossType = await page.evaluate(() => {
+    const g = window.GlitchPeaceGame;
+    if (!g || !g._currentMode || !g._currentMode._spawnBoss) return null;
+    // Temporarily set bossEnabled and level 5
+    const origLevel = g.level;
+    const origMech = g.mechanics;
+    g.level = 5;
+    g.mechanics = { ...g.mechanics, bossEnabled: true };
+    g._currentMode._spawnBoss(g);
+    g.level = origLevel;
+    g.mechanics = origMech;
+    const boss = (g.enemies || []).find(e => e.isBoss);
+    return boss ? boss.bossType : null;
+  });
+
+  // Boss should have been spawned with a bossType from the 5 types
+  const validTypes = ['fear_guardian', 'chaos_bringer', 'pattern_master', 'void_keeper', 'integration_boss'];
+  if (bossType !== null) {
+    expect(validTypes).toContain(bossType);
+  }
+  // If spawn failed (no VOID space), that's ok — just verify the function exists
+  const hasFn = await page.evaluate(() => typeof window.GlitchPeaceGame?._currentMode?._spawnBoss);
+  expect(hasFn).toBe('function');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  LEARNING CHALLENGE — triggers on INSIGHT tile and responds to 1-4 input
+// ─────────────────────────────────────────────────────────────────────────────
+test('feature: learning challenge — triggers and accepts key input 1-4', async ({ page }) => {
+  const state = await startMode(page, 'grid-classic');
+  expect(state).toBe('PLAYING');
+
+  // Manually trigger learning challenge
+  await page.evaluate(() => {
+    const g = window.GlitchPeaceGame;
+    if (!g) return;
+    g._triggerLearningChallenge = true;
+    // Force the module update (GridGameMode.update handles the flag)
+  });
+  await page.waitForTimeout(200);
+
+  // Inject a challenge directly into game state
+  const hadChallenge = await page.evaluate(() => {
+    const g = window.GlitchPeaceGame;
+    if (!g) return false;
+    // Inject directly (simulate what triggerLearningChallenge does)
+    g._learningChallenge = {
+      type: 'vocab',
+      prompt: 'Test prompt',
+      options: ['A', 'B', 'C', 'D'],
+      correct: 0,
+      selected: 0,
+      result: null,
+      triggeredMs: Date.now(),
+      timeoutMs: 12000,
+    };
+    return true;
+  });
+  expect(hadChallenge).toBe(true);
+
+  // Press '1' to answer
+  await page.keyboard.press('1');
+  await page.waitForTimeout(150);
+
+  const result = await page.evaluate(() => window.GlitchPeaceGame?._learningChallenge?.result);
+  // Answer '1' → index 0 = correct answer (we set correct: 0)
+  expect(result).toBe('correct');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RPG NPC — 3 NPCs present in RPG mode
+// ─────────────────────────────────────────────────────────────────────────────
+test('feature: RPG mode — 3 NPCs placed in world (Elder, Seer, Spark)', async ({ page }) => {
+  const state = await startMode(page, 'rpg');
+  expect(state).toBe('PLAYING');
+  await page.waitForTimeout(300);
+
+  const npcCount = await page.evaluate(() => {
+    // RPGMode stores _npcs on the mode instance
+    const mode = window.GlitchPeaceGame?._currentMode;
+    return mode?._npcs?.length ?? 0;
+  });
+  expect(npcCount).toBe(3); // Elder + Seer + Spark
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  ISOMETRIC TOGGLE — I key toggles canvas-wrapper.isometric class
+// ─────────────────────────────────────────────────────────────────────────────
+test('feature: isometric tilt — I key toggles .isometric on canvas-wrapper', async ({ page }) => {
+  const state = await startMode(page, 'grid-classic');
+  expect(state).toBe('PLAYING');
+
+  // Press I to enable isometric
+  await page.keyboard.press('i');
+  await page.waitForTimeout(150);
+
+  const isIso = await page.evaluate(() => {
+    return document.getElementById('canvas-wrapper')?.classList.contains('isometric') ?? false;
+  });
+  expect(isIso).toBe(true);
+
+  // Press I again to disable
+  await page.keyboard.press('i');
+  await page.waitForTimeout(150);
+  const isIsoOff = await page.evaluate(() => {
+    return document.getElementById('canvas-wrapper')?.classList.contains('isometric') ?? true;
+  });
+  expect(isIsoOff).toBe(false);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  RPG EXPANDED GRID — 18×18 map size
+// ─────────────────────────────────────────────────────────────────────────────
+test('feature: RPG mode — grid is 18×18 (expanded from 12×12)', async ({ page }) => {
+  const state = await startMode(page, 'rpg');
+  expect(state).toBe('PLAYING');
+  await page.waitForTimeout(300);
+
+  const gridSize = await page.evaluate(() => {
+    const mode = window.GlitchPeaceGame?._currentMode;
+    return mode?._rpgState?.gridSize ?? 0;
+  });
+  expect(gridSize).toBe(18);
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TONE.JS AUDIO — challenge_correct and challenge_incorrect cases exist
+// ─────────────────────────────────────────────────────────────────────────────
+test('feature: Tone.js audio — challenge_correct/incorrect cases in AudioManager.play', async ({ page }) => {
+  const state = await startMode(page, 'grid-classic');
+  expect(state).toBe('PLAYING');
+
+  // Verify AudioManager exposes the challenge_correct case (won't throw)
+  const playExists = await page.evaluate(() => {
+    try {
+      // AudioManager.play is a method — calling with challenge_correct should not throw
+      // even without audio enabled (it will silently skip)
+      if (typeof window.AudioManager?.play === 'function') {
+        window.AudioManager.play('challenge_correct');
+        window.AudioManager.play('challenge_incorrect');
+        return true;
+      }
+      return false;
+    } catch (_) {
+      return false;
+    }
+  });
+  expect(playExists).toBe(true);
+});

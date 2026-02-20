@@ -113,7 +113,10 @@ let _lastHintText = ''; // cache to avoid redundant DOM updates every frame
 function initUI() {
   const app = document.getElementById('app');
   app.innerHTML = `
-    <canvas id="canvas" width="800" height="800"></canvas>
+    <div id="canvas-wrapper" style="position:relative;display:inline-block;overflow:hidden;">
+      <canvas id="canvas" width="800" height="800"></canvas>
+      <div id="sprite-layer" aria-hidden="true"></div>
+    </div>
     <div id="hud" style="display:none">
       <div class="hud-section">
         <div class="hud-item">
@@ -348,6 +351,7 @@ function startGame() {
     if (currentMode) {
       currentMode.init(game, canvas, ctx);
       game._currentModeType = currentMode.type; // expose for HUD
+      game._currentMode = currentMode;          // expose for tests + dev tools
       console.log('[Phase 1] Game mode initialized:', currentMode.name);
     } else {
       // Fallback to legacy grid generation if mode creation fails
@@ -357,6 +361,7 @@ function startGame() {
     }
   } else {
     game._currentModeType = currentMode.type;
+    game._currentMode = currentMode;
     // Mode already exists, just generate new level
     if (currentMode.generateLevel) {
       currentMode.generateLevel(game);
@@ -517,6 +522,18 @@ document.addEventListener('keydown', e => {
     // D key: toggle live stats dashboard overlay
     if (e.key === 'd' || e.key === 'D') {
       game._showStats = !game._showStats;
+      e.preventDefault();
+      return;
+    }
+
+    // I key: toggle isometric 3D tilt on canvas wrapper
+    if (e.key === 'i' || e.key === 'I') {
+      const wrapper = document.getElementById('canvas-wrapper');
+      if (wrapper) {
+        const on = wrapper.classList.toggle('isometric');
+        game._message = on ? '⟁ Isometric view ON (I to toggle)' : '⟁ Isometric view OFF';
+        game._messageMs = Date.now();
+      }
       e.preventDefault();
       return;
     }
@@ -696,6 +713,84 @@ function render(deltaMs = 16) {
     ctx.fillText('ESC to return to menu', canvas.width / 2, canvas.height / 2 + 55);
     ctx.textAlign = 'left';
     document.querySelector('#hud').style.display = 'none';
+  }
+
+  // Update sprite layer (CSS character sprites over canvas)
+  updateSpriteLayer();
+}
+
+// ── Sprite Layer: position CSS character sprites over the canvas ────────────
+// Uses a pool of DOM elements to avoid constant createElement calls.
+const _spritePool = { player: null, enemies: [] };
+
+function updateSpriteLayer() {
+  const layer = document.getElementById('sprite-layer');
+  if (!layer || !canvas) return;
+
+  // Only show sprites in grid-based game modes (not menus/game-over)
+  if (game.state !== 'PLAYING' && game.state !== 'MESSAGE_PAUSE') {
+    layer.style.display = 'none';
+    return;
+  }
+  // Only show for grid-type modes
+  const modeType = currentMode?.type;
+  if (modeType && modeType !== 'grid' && modeType !== 'rpg') {
+    layer.style.display = 'none';
+    return;
+  }
+  layer.style.display = 'block';
+
+  const tileSize = currentMode?.tileSize || game.tileSize || 32;
+  const xOff = currentMode?._xOff || 0;
+  const yOff = currentMode?._yOff || 0;
+
+  // Player sprite
+  const px = game.player?.x;
+  const py = game.player?.y;
+  if (px !== undefined && py !== undefined) {
+    if (!_spritePool.player) {
+      _spritePool.player = document.createElement('div');
+      _spritePool.player.className = 'player-sprite';
+      layer.appendChild(_spritePool.player);
+    }
+    const sx = xOff + px * tileSize + tileSize / 2;
+    const sy = yOff + py * tileSize + tileSize;
+    _spritePool.player.style.left = `${sx}px`;
+    _spritePool.player.style.top  = `${sy}px`;
+    _spritePool.player.style.display = 'block';
+  } else if (_spritePool.player) {
+    _spritePool.player.style.display = 'none';
+  }
+
+  // Enemy sprites (pool: reuse DOM nodes)
+  const enemies = game.enemies || [];
+  // Grow pool if needed
+  while (_spritePool.enemies.length < enemies.length) {
+    const el = document.createElement('div');
+    el.className = 'enemy-sprite';
+    layer.appendChild(el);
+    _spritePool.enemies.push(el);
+  }
+  enemies.forEach((enemy, i) => {
+    const el = _spritePool.enemies[i];
+    if (!el) return;
+    const ex = xOff + enemy.x * tileSize + tileSize / 2;
+    const ey = yOff + enemy.y * tileSize + tileSize / 2;
+    el.style.left = `${ex}px`;
+    el.style.top  = `${ey}px`;
+    el.style.display = enemy.active === false ? 'none' : 'block';
+    // Boss gets bigger hexagon shape; use boss color if set
+    if (enemy.isBoss) {
+      el.classList.add('boss');
+      if (enemy.color) el.style.background = enemy.color + 'cc';
+    } else {
+      el.classList.remove('boss');
+      el.style.background = (enemy.color || '#ff6600') + 'cc';
+    }
+  });
+  // Hide unused pool slots
+  for (let i = enemies.length; i < _spritePool.enemies.length; i++) {
+    _spritePool.enemies[i].style.display = 'none';
   }
 }
 

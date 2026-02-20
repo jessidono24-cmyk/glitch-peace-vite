@@ -130,8 +130,12 @@ export function handleChallengeInput(gameState, key) {
       gameState.comboTimer = Date.now();
       gameState._challengeCorrect = true; // trigger lucidity gain in GridGameMode
       if (gameState.emotionalField?.add) gameState.emotionalField.add('curiosity', 1.0);
+      // Tone.js ascending arpeggio reward signal
+      try { window.AudioManager?.play('challenge_correct'); } catch (_) {}
     } else {
       if (gameState.emotionalField?.add) gameState.emotionalField.add('grief', 0.4);
+      // Tone.js descending minor — gentle feedback
+      try { window.AudioManager?.play('challenge_incorrect'); } catch (_) {}
     }
 
     // Record answer for CEFR level progression (language + grammar challenges)
@@ -178,6 +182,7 @@ export function updateLearningChallenge(gameState, deltaMs) {
     if (!ch.result) {
       ch.result = 'timeout';
       ch.answeredMs = Date.now();
+      try { window.AudioManager?.play('challenge_timeout'); } catch (_) {}
     }
     if (ch.answeredMs && Date.now() - ch.answeredMs > 1500) {
       delete gameState._learningChallenge;

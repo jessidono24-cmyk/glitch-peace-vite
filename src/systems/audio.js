@@ -1,9 +1,15 @@
 // Enhanced from: _archive/glitch-peace-v5/src/systems/audio.js
-// Simple audio engine using Web Audio API. Sounds are optional and muted by default.
+// Audio engine: Web Audio API (base) + Tone.js (rich synthesis for learning challenges + boss).
+// Tone.js is loaded lazily to avoid parse-time side effects in environments without AudioContext.
+import * as Tone from 'tone';
+
 export class AudioEngine {
   constructor(settings = {}) {
     this.settings = settings || {};
     this.enabled = !!this.settings.audio;
+    this._toneReady = false;
+    this._toneSynth = null;      // PolySynth for challenge feedback
+    this._toneDrone = null;      // Drone oscillator for boss spawn
     this.reduced = !!this.settings.reducedMotion;
     this.ctx = null;
     this.gain = null;
@@ -22,6 +28,33 @@ export class AudioEngine {
     } catch (e) {
       this.ctx = null;
       console.warn('Audio not available', e);
+    }
+    // Initialise Tone.js synths (lazy — needs user gesture first)
+    this._initTone();
+  }
+
+  _initTone() {
+    if (this._toneReady) return;
+    try {
+      Tone.getContext(); // ensure Tone has a context
+      // PolySynth for challenge correct/incorrect arpeggios (FM-like bell)
+      this._toneSynth = new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'triangle' },
+        envelope: { attack: 0.02, decay: 0.3, sustain: 0.1, release: 0.5 },
+        volume: -18,
+      }).toDestination();
+      // AMSynth drone for boss spawn (detuned, eerie)
+      this._toneDrone = new Tone.AMSynth({
+        oscillator: { type: 'sawtooth' },
+        envelope: { attack: 0.3, decay: 0.4, sustain: 0.5, release: 1.2 },
+        modulation: { type: 'square' },
+        modulationEnvelope: { attack: 0.5, decay: 0, sustain: 1, release: 0.5 },
+        volume: -24,
+      }).toDestination();
+      this._toneReady = true;
+    } catch (_e) {
+      // Tone.js may not be available in test environments — silent fail
+      this._toneReady = false;
     }
   }
 
@@ -298,6 +331,54 @@ export class AudioEngine {
         break;
       case 'boss':
         this._playBuffer('boss', 0.10, false);
+        // Tone.js detuned drone for boss spawn — eerie atmosphere
+        if (this._toneReady && this._toneDrone && !this.reduced) {
+          try {
+            Tone.start().then(() => {
+              this._toneDrone.triggerAttackRelease('A1', '2n');
+            }).catch(() => {});
+          } catch (_) {}
+        }
+        break;
+      case 'challenge_correct':
+        // Tone.js ascending arpeggio — reward signal
+        if (this._toneReady && this._toneSynth && !this.reduced) {
+          try {
+            Tone.start().then(() => {
+              const now = Tone.now();
+              this._toneSynth.triggerAttackRelease('E4', '16n', now);
+              this._toneSynth.triggerAttackRelease('G4', '16n', now + 0.08);
+              this._toneSynth.triggerAttackRelease('B4', '16n', now + 0.16);
+              this._toneSynth.triggerAttackRelease('E5', '8n', now + 0.24);
+            }).catch(() => {});
+          } catch (_) {}
+        } else {
+          this._playTone(660, 0.25, 'triangle', 0.07);
+        }
+        break;
+      case 'challenge_incorrect':
+        // Tone.js descending minor arpeggio — gentle negative feedback
+        if (this._toneReady && this._toneSynth && !this.reduced) {
+          try {
+            Tone.start().then(() => {
+              const now = Tone.now();
+              this._toneSynth.triggerAttackRelease('D4', '8n', now);
+              this._toneSynth.triggerAttackRelease('Bb3', '8n', now + 0.12);
+            }).catch(() => {});
+          } catch (_) {}
+        } else {
+          this._playTone(220, 0.3, 'sawtooth', 0.05);
+        }
+        break;
+      case 'challenge_timeout':
+        // Tone.js long low tone — time ran out
+        if (this._toneReady && this._toneSynth && !this.reduced) {
+          try {
+            Tone.start().then(() => {
+              this._toneSynth.triggerAttackRelease('C3', '4n', Tone.now());
+            }).catch(() => {});
+          } catch (_) {}
+        }
         break;
       case 'insight':
         this._playBuffer('insight', 0.07, false);

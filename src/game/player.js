@@ -159,7 +159,17 @@ export function movePlayer(gameState, dx, dy) {
       if (stepped === T.DESPAIR) gameState.emotionalField.add('despair', 1.0);
       if (stepped === T.RAGE) gameState.emotionalField.add('anger', 1.2);
     }
-    createParticles(gameState, newX, newY, 'damage', 12);
+    // DESPAIR and TERROR tiles disappear after being stepped on.
+    // Symbolically: facing despair and terror transforms them — they hurt but
+    // walking through them removes their grip. The tile is consumed like the emotion.
+    // Other hazards (HARM, RAGE, TRAP, PAIN, HOPELESS) remain — they represent
+    // persistent external forces rather than internal emotional states.
+    if (stepped === T.DESPAIR || stepped === T.TERROR) {
+      gameState.grid[newY][newX] = T.VOID;
+      createParticles(gameState, newX, newY, stepped === T.DESPAIR ? '#4466ff' : '#ff2222', 16);
+    } else {
+      createParticles(gameState, newX, newY, 'damage', 12);
+    }
     try { window.AudioManager?.play('damage'); } catch (e) {}
     return true;
   }

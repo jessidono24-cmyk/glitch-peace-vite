@@ -98,6 +98,7 @@ const game = {
 let canvas = null;
 let ctx = null;
 let menuSystem = null;
+let _lastHintText = ''; // cache to avoid redundant DOM updates every frame
 
 function initUI() {
   const app = document.getElementById('app');
@@ -223,9 +224,17 @@ function initUI() {
     const savedNative = localStorage.getItem('glitchpeace.nativeLang');
     const savedTarget = localStorage.getItem('glitchpeace.targetLang');
     const savedDiff   = localStorage.getItem('glitchpeace.difficulty');
+    const savedLangLevel = localStorage.getItem('glitchpeace.langLevel');
+    const savedImmersion = localStorage.getItem('glitchpeace.langImmersion');
+    const savedMusicVol  = localStorage.getItem('glitchpeace.musicVol');
+    const savedSfxVol    = localStorage.getItem('glitchpeace.sfxVol');
     if (savedNative) game.settings.nativeLanguage = savedNative;
     if (savedTarget) game.settings.targetLanguage = savedTarget || null;
     if (savedDiff && !hasSaveData()) game.settings.difficulty = savedDiff;
+    if (savedLangLevel) game.settings.langLevel = savedLangLevel;
+    if (savedImmersion !== null) game.settings.langImmersion = savedImmersion === '1';
+    if (savedMusicVol !== null) game.settings.musicVolume = parseFloat(savedMusicVol) || 0.5;
+    if (savedSfxVol !== null) game.settings.sfxVolume = parseFloat(savedSfxVol) || 0.7;
   } catch (e) {}
 
   // Show first-run onboarding if this is the player's first visit
@@ -569,7 +578,12 @@ function render(deltaMs = 16) {
         'alchemy':       'WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute · M: Switch Mode · ESC: Pause',
         'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
       };
-      hint.textContent = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · D: Stats · ESC: Pause';
+      // Only update the DOM when the text actually changes to prevent flicker
+      const newHintText = hints[currentMode?.type] || 'WASD/Arrows: Move · J: Archetype · R: Pulse · SHIFT: Matrix · U: Shop · Z: Undo · H: Help · D: Stats · ESC: Pause';
+      if (newHintText !== _lastHintText) {
+        hint.textContent = newHintText;
+        _lastHintText = newHintText;
+      }
     }
 
     // MESSAGE_PAUSE overlay: dim the screen and show "press any key to continue"

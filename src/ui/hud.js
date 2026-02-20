@@ -1,31 +1,41 @@
 // Enhanced from: _archive/gp-v5-YOUR-BUILD/src/main.js (HUD)
+// Cache element references across frames to avoid repeated DOM queries and repaints
+const _hudCache = {};
+
 export function updateHUD(game) {
   if (!game || !game.player) return;
   // ensure hud exists
-  const hudEl = document.getElementById('hud');
+  const hudEl = _hudCache.hudEl || (_hudCache.hudEl = document.getElementById('hud'));
   if (!hudEl) return;
 
   // ensure sections
   hudEl.style.display = (game.state === 'PLAYING') ? 'flex' : 'none';
 
   // update HP
-  const hpText = document.getElementById('hp-text');
-  const hpFill = document.getElementById('hp-fill');
-  const level = document.getElementById('level');
-  const score = document.getElementById('score');
-  const objective = document.getElementById('objective');
+  const hpText = _hudCache.hpText || (_hudCache.hpText = document.getElementById('hp-text'));
+  const hpFill = _hudCache.hpFill || (_hudCache.hpFill = document.getElementById('hp-fill'));
+  const level = _hudCache.level || (_hudCache.level = document.getElementById('level'));
+  const score = _hudCache.score || (_hudCache.score = document.getElementById('score'));
+  const objective = _hudCache.objective || (_hudCache.objective = document.getElementById('objective'));
 
-  if (hpText) hpText.textContent = `${Math.round(Math.max(0, game.player.hp || 0))}/${game.player.maxHp || 100}`;
+  const hpRounded = Math.round(Math.max(0, game.player.hp || 0));
+  const hpMax = game.player.maxHp || 100;
+  const hpStr = `${hpRounded}/${hpMax}`;
+  if (hpText && hpText.textContent !== hpStr) hpText.textContent = hpStr;
   if (hpFill) {
-    hpFill.style.width = `${(Math.max(0, game.player.hp || 0) / (game.player.maxHp || 100)) * 100}%`;
+    const hpRatio = hpRounded / hpMax;
+    const pct = `${(hpRatio * 100).toFixed(1)}%`;
+    if (hpFill.style.width !== pct) hpFill.style.width = pct;
     // Red flash when low HP
-    const hpRatio = Math.max(0, game.player.hp || 0) / (game.player.maxHp || 100);
-    hpFill.style.background = hpRatio < 0.25
+    const newBg = hpRatio < 0.25
       ? 'linear-gradient(90deg, #ff3344, #aa1122)'
       : 'linear-gradient(90deg, #00ff88, #00aa66)';
+    if (hpFill.style.background !== newBg) hpFill.style.background = newBg;
   }
-  if (level) level.textContent = String(game.level || 1);
-  if (score) score.textContent = String(game.score || 0);
+  const levelStr = String(game.level || 1);
+  if (level && level.textContent !== levelStr) level.textContent = levelStr;
+  const scoreStr = String(game.score || 0);
+  if (score && score.textContent !== scoreStr) score.textContent = scoreStr;
   // Objective: remaining peace nodes + timer (if timed) + moves left (PUZZLE)
   let objParts = [`◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}`];
   if (game.movesRemaining !== undefined) objParts.push(`${game.movesRemaining}↕`);
@@ -35,9 +45,10 @@ export function updateHUD(game) {
     const ss = String(secs % 60).padStart(2, '0');
     objParts.push(`⏱${mm}:${ss}`);
   }
-  if (objective) objective.textContent = objParts.join(' · ');
+  const objStr = objParts.join(' · ');
+  if (objective && objective.textContent !== objStr) objective.textContent = objStr;
 
-  // Emotional Field indicator (compact)
+  // Emotional Field indicator (compact) — update in-place instead of rebuild each frame
   const ef = game.emotionalField;
   if (ef) {
     const dom = ef.getDominant?.();
@@ -45,60 +56,67 @@ export function updateHUD(game) {
     const coh = ef.calcCoherence?.() ?? 0.5;
     const dis = ef.calcDistortion?.() ?? 0;
 
-    // inject tiny HUD row if missing
-    let emoRow = document.getElementById('hud-emo');
+    // Inject tiny HUD row once; update in-place every frame to avoid flicker
+    let emoRow = _hudCache.emoRow || (_hudCache.emoRow = document.getElementById('hud-emo'));
     if (!emoRow) {
       emoRow = document.createElement('div');
       emoRow.id = 'hud-emo';
-      emoRow.style.display = 'flex';
-      emoRow.style.gap = '8px';
-      emoRow.style.alignItems = 'center';
-      emoRow.style.marginTop = '6px';
+      emoRow.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:6px;';
+
+      const domLabel = document.createElement('div');
+      domLabel.id = 'hud-emo-label';
+      domLabel.style.cssText = 'font-family:Courier New;font-size:12px;min-width:100px;';
+
+      const cohBar = document.createElement('div');
+      cohBar.style.cssText = 'width:120px;height:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.04);overflow:hidden;';
+      const cohFill = document.createElement('div');
+      cohFill.id = 'hud-coh-fill';
+      cohFill.style.cssText = 'height:100%;background:#00ffcc;';
+      cohBar.appendChild(cohFill);
+
+      const disBar = document.createElement('div');
+      disBar.style.cssText = 'width:80px;height:8px;background:rgba(255,255,255,0.08);overflow:hidden;';
+      const disFill = document.createElement('div');
+      disFill.id = 'hud-dis-fill';
+      disFill.style.cssText = 'height:100%;background:#ff66aa;';
+      disBar.appendChild(disFill);
+
+      emoRow.appendChild(domLabel);
+      emoRow.appendChild(cohBar);
+      emoRow.appendChild(disBar);
       hudEl.appendChild(emoRow);
+      _hudCache.emoRow = emoRow;
     }
-    emoRow.innerHTML = '';
 
-    const domLabel = document.createElement('div');
-    domLabel.textContent = dom ? dom.toUpperCase() + ` ${domVal.toFixed(1)}` : 'NEUTRAL';
-    domLabel.style.color = dom ? (ef.EMOTIONS?.[dom]?.col || '#fff') : '#aaa';
-    domLabel.style.fontFamily = 'Courier New';
-    domLabel.style.fontSize = '12px';
-    emoRow.appendChild(domLabel);
+    // Update label text and colour in-place (no DOM rebuild)
+    const domLabel = _hudCache.emoLabel || (_hudCache.emoLabel = document.getElementById('hud-emo-label'));
+    const cohFill  = _hudCache.cohFill  || (_hudCache.cohFill  = document.getElementById('hud-coh-fill'));
+    const disFill  = _hudCache.disFill  || (_hudCache.disFill  = document.getElementById('hud-dis-fill'));
 
-    const cohBar = document.createElement('div');
-    cohBar.style.width = '120px';
-    cohBar.style.height = '8px';
-    cohBar.style.background = 'rgba(255,255,255,0.08)';
-    cohBar.style.border = '1px solid rgba(255,255,255,0.04)';
-    const cohFill = document.createElement('div');
-    cohFill.style.width = `${Math.round(coh * 100)}%`;
-    cohFill.style.height = '100%';
-    cohFill.style.background = '#00ffcc';
-    cohBar.appendChild(cohFill);
-    emoRow.appendChild(cohBar);
-
-    const disBar = document.createElement('div');
-    disBar.style.width = '80px';
-    disBar.style.height = '8px';
-    disBar.style.background = 'rgba(255,255,255,0.08)';
-    const disFill = document.createElement('div');
-    disFill.style.width = `${Math.round(dis * 100)}%`;
-    disFill.style.height = '100%';
-    disFill.style.background = '#ff66aa';
-    disBar.appendChild(disFill);
-    emoRow.appendChild(disBar);
+    if (domLabel) {
+      const newTxt = dom ? dom.toUpperCase() + ` ${domVal.toFixed(1)}` : 'NEUTRAL';
+      const newCol = dom ? (ef.EMOTIONS?.[dom]?.col || '#fff') : '#aaa';
+      if (domLabel.textContent !== newTxt) domLabel.textContent = newTxt;
+      if (domLabel.style.color !== newCol) domLabel.style.color = newCol;
+    }
+    if (cohFill) {
+      const pct = `${Math.round(coh * 100)}%`;
+      if (cohFill.style.width !== pct) cohFill.style.width = pct;
+    }
+    if (disFill) {
+      const pct = `${Math.round(dis * 100)}%`;
+      if (disFill.style.width !== pct) disFill.style.width = pct;
+    }
   }
 
   // Realm indicator and temporal modifiers (compact)
-  const realmRowId = 'hud-realm';
-  let realmRow = document.getElementById(realmRowId);
+  let realmRow = _hudCache.realmRow || (_hudCache.realmRow = document.getElementById('hud-realm'));
   if (!realmRow) {
     realmRow = document.createElement('div');
-    realmRow.id = realmRowId;
-    realmRow.style.marginTop = '6px';
-    realmRow.style.fontFamily = 'Courier New';
-    realmRow.style.fontSize = '11px';
+    realmRow.id = 'hud-realm';
+    realmRow.style.cssText = 'margin-top:6px;font-family:Courier New;font-size:11px;';
     hudEl.appendChild(realmRow);
+    _hudCache.realmRow = realmRow;
   }
   const realm = (game.emotionalField && typeof game.emotionalField.calcDistortion === 'function')
     ? (function() {
@@ -129,8 +147,9 @@ export function updateHUD(game) {
     realmText += ` · ⚠×${game._nearMissCount}`;
   }
 
-  realmRow.textContent = realmText;
-  realmRow.style.color = realm.col;
+  // Only update DOM when content actually changes (prevents per-frame repaint)
+  if (realmRow.textContent !== realmText) realmRow.textContent = realmText;
+  if (realmRow.style.color !== realm.col) realmRow.style.color = realm.col;
 }
 
 export function renderHUD(game) {

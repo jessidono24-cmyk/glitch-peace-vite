@@ -4,7 +4,7 @@
 //  Tiles present quick challenges; correct responses award extra points.
 // ═══════════════════════════════════════════════════════════════════════
 
-import { getLangChallenge } from './languages.js';
+import { getLangChallenge, getLangProgress, recordLangAnswer, CEFR_LEVELS } from './languages.js';
 import { getSigilChallenge } from './sigils.js';
 
 // ─── VOCABULARY CHALLENGES ──────────────────────────────────────────────
@@ -48,8 +48,9 @@ const MEMORY_SEQUENCES = [
 /**
  * Get a random challenge appropriate for a given tile/context.
  * type: 'vocab' | 'math' | 'memory' | 'auto'
+ * settings: { targetLanguage, langImmersion, langLevel }
  */
-export function getChallenge(type = 'auto', targetLangId = null) {
+export function getChallenge(type = 'auto', targetLangId = null, settings = {}) {
   if (type === 'auto') {
     const r = Math.random();
     // If a target language is set, 35% chance of language challenge
@@ -61,7 +62,11 @@ export function getChallenge(type = 'auto', targetLangId = null) {
   }
 
   if (type === 'language') {
-    const ch = getLangChallenge(targetLangId || 'en');
+    // Determine CEFR level: use saved progress unless settings override
+    const cefrLevel = settings.langLevel
+      || (targetLangId ? getLangProgress(targetLangId).level : 'A1');
+    const immersion = settings.langImmersion || false;
+    const ch = getLangChallenge(targetLangId || 'en', cefrLevel, immersion);
     if (ch) return ch;
     type = 'vocab'; // fallback if lang challenge fails
   }
@@ -88,7 +93,11 @@ export function getChallenge(type = 'auto', targetLangId = null) {
 export function triggerLearningChallenge(gameState, type = 'auto') {
   if (gameState._learningChallenge) return; // already active
   const targetLang = gameState.settings?.targetLanguage || null;
-  const challenge = getChallenge(type, targetLang);
+  const settings = {
+    langImmersion: gameState.settings?.langImmersion || false,
+    langLevel: gameState.settings?.langLevel || null, // null = use saved CEFR progress
+  };
+  const challenge = getChallenge(type, targetLang, settings);
   gameState._learningChallenge = {
     ...challenge,
     selected: 0,
@@ -123,6 +132,15 @@ export function handleChallengeInput(gameState, key) {
       if (gameState.emotionalField?.add) gameState.emotionalField.add('curiosity', 1.0);
     } else {
       if (gameState.emotionalField?.add) gameState.emotionalField.add('grief', 0.4);
+    }
+
+    // Record answer for CEFR level progression (language + grammar challenges)
+    if ((ch.type === 'language' || ch.type === 'grammar') && ch.lang) {
+      const updated = recordLangAnswer(ch.lang, isCorrect);
+      // If level advanced/retreated, expose the new level for overlay display
+      if (updated.level !== ch.cefrLevel) {
+        gameState._langLevelChanged = { lang: ch.lang, from: ch.cefrLevel, to: updated.level, at: Date.now() };
+      }
     }
 
     // Challenge expires 2s after answer (show result briefly)
@@ -177,7 +195,6 @@ export function renderLearningChallenge(gameState, ctx) {
   const w = ctx.canvas.width;
   const h = ctx.canvas.height;
   const elapsed = Date.now() - ch.triggeredMs;
-  const timeLeft = Math.max(0, ch.timeoutMs - elapsed);
   const timeFrac = ch.result ? 1 : Math.min(1, elapsed / ch.timeoutMs);
 
   // Background panel
@@ -191,9 +208,11 @@ export function renderLearningChallenge(gameState, ctx) {
   ctx.globalAlpha = 1.0;
 
   // Title row
+  const cefrTag = ch.cefrLevel ? ` [${ch.cefrLevel}]` : '';
   const typeLabel = ch.type === 'vocab' ? 'VOCABULARY'
     : ch.type === 'math' ? 'PATTERN'
-    : ch.type === 'language' ? `LANGUAGE · ${(ch.langName || '').toUpperCase()}`
+    : ch.type === 'grammar' ? `GRAMMAR · ${(ch.langName || ch.lang || '').toUpperCase()}${cefrTag}`
+    : ch.type === 'language' ? `LANGUAGE · ${(ch.langName || '').toUpperCase()}${cefrTag}`
     : ch.type === 'sigil' ? 'SIGIL · PATTERN GRAMMAR'
     : 'MEMORY';
   ctx.fillStyle = '#667799';
@@ -255,14 +274,21 @@ export function renderLearningChallenge(gameState, ctx) {
     ctx.textAlign = 'center';
     ctx.shadowColor = resColor;
     ctx.shadowBlur = 16;
-    ctx.fillText(resText, w / 2, h * 0.775);
+    ctx.fillText(resText, w / 2, h * 0.765);
     ctx.shadowBlur = 0;
 
-    // For sigil challenges: show primitives breakdown after answer
-    if (ch.type === 'sigil' && ch.primitives) {
-      ctx.fillStyle = '#667799';
-      ctx.font = '8px Courier New';
-      ctx.fillText(`Primitives: ${ch.primitives.join(' + ')}`, w / 2, h * 0.800);
+    // Show grammar hint / sigil primitives after answer
+    const hintText = ch.hint || (ch.type === 'sigil' && ch.primitives ? `Primitives: ${ch.primitives.join(' + ')}` : null);
+    if (hintText) {
+      // Word-wrap hint to canvas width
+      ctx.fillStyle = '#8899aa';
+      ctx.font = `${Math.floor(w / 42)}px Courier New`;
+      let ht = hintText;
+      while (ht.length > 0 && ctx.measureText(ht).width > w * 0.80) {
+        const sp = ht.lastIndexOf(' ');
+        ht = sp > 0 ? ht.substring(0, sp) + '…' : ht.substring(0, ht.length - 2) + '…';
+      }
+      ctx.fillText(ht, w / 2, h * 0.800);
     }
   } else {
     ctx.fillStyle = '#334';
@@ -272,4 +298,29 @@ export function renderLearningChallenge(gameState, ctx) {
   }
 
   ctx.restore();
+
+  // ── CEFR level-up / level-down notification ─────────────────────────
+  if (gameState._langLevelChanged) {
+    const { from, to, at } = gameState._langLevelChanged;
+    const age = Date.now() - at;
+    const dur = 3500;
+    if (age < dur) {
+      const fade = Math.min(1, age / 200) * (age > dur - 500 ? (dur - age) / 500 : 1);
+      const isUp = CEFR_LEVELS.indexOf(to) > CEFR_LEVELS.indexOf(from);
+      const col = isUp ? '#00ff88' : '#ff8844';
+      ctx.save();
+      ctx.globalAlpha = fade;
+      ctx.fillStyle = col;
+      ctx.font = `bold ${Math.floor(w / 22)}px Courier New`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = col;
+      ctx.shadowBlur = 14;
+      ctx.fillText(isUp ? `⬆ LEVEL UP: ${to}` : `⬇ LEVEL: ${to}`, w / 2, h * 0.14);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    } else {
+      delete gameState._langLevelChanged;
+    }
+  }
 }

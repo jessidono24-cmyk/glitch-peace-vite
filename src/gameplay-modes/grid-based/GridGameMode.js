@@ -208,11 +208,25 @@ export class GridGameMode extends GameMode {
     // Track score at level start (used by transition screen to compute earned delta)
     this._levelStartScore = gameState.score || 0;
 
+    // Detect dreamscape change — trigger a visual flash transition
+    const dreamscapeId = gameState.currentDreamscape || 'RIFT';
+    if (this._lastDreamscape && this._lastDreamscape !== dreamscapeId) {
+      const theme = getDreamscapeTheme(dreamscapeId);
+      gameState._dreamscapeTransition = {
+        from: this._lastDreamscape,
+        to: dreamscapeId,
+        color: theme.accent || '#00e5ff',
+        label: theme.label || dreamscapeId,
+        startMs: Date.now(),
+        durationMs: 1800,
+      };
+    }
+    this._lastDreamscape = dreamscapeId;
+
     // generateGrid modifies gameState directly (doesn't return result)
     generateGrid(gameState);
 
     // Apply dreamscape-specific tile bias
-    const dreamscapeId = gameState.currentDreamscape || 'RIFT';
     applyDreamscapeBias(gameState, dreamscapeId);
 
     // Play dreamscape-specific ambient tone when entering The Mirror
@@ -1004,6 +1018,40 @@ export class GridGameMode extends GameMode {
         grad.addColorStop(1, `rgba(0,0,0,${Math.min(0.6, (distortion - 0.6) * 1.5)})`);
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+      }
+    }
+
+    // ── Dreamscape transition flash (when switching worlds between levels) ──
+    if (gameState._dreamscapeTransition) {
+      const { color, label, startMs, durationMs } = gameState._dreamscapeTransition;
+      const age = Date.now() - startMs;
+      if (age < durationMs) {
+        // Fast flash-in (0→200ms) then quick fade-out (200→1800ms)
+        const fadeIn  = Math.min(1, age / 200);
+        const fadeOut = age > 200 ? Math.max(0, 1 - (age - 200) / (durationMs - 200)) : 1;
+        const a = fadeIn * fadeOut;
+        const cw = ctx.canvas.width;
+        const ch = ctx.canvas.height;
+        ctx.save();
+        ctx.globalAlpha = a * 0.85;
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, cw, ch);
+        ctx.globalAlpha = a;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${Math.floor(cw / 14)}px monospace`;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 30;
+        ctx.fillText(label, cw / 2, ch / 2 - Math.floor(cw / 20));
+        ctx.font = `${Math.floor(cw / 28)}px monospace`;
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText('ENTERING NEW DREAMSCAPE', cw / 2, ch / 2 + Math.floor(cw / 20));
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      } else {
+        delete gameState._dreamscapeTransition;
       }
     }
 

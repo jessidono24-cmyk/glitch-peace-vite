@@ -417,6 +417,8 @@ function spawnEnemies() {
 
 /** Timer handle for the game tip auto-dismiss (module-level to avoid DOM property mutation). */
 let _tipTimer = null;
+/** Timer handle for the mute-toggle notification auto-dismiss. */
+let _muteNotifTimer = null;
 
 /** Show a brief tip message in the #message element, auto-fades after durationMs.
  *  If game.settings.messagePause is true, gameplay pauses until player dismisses. */
@@ -544,6 +546,24 @@ document.addEventListener('keydown', e => {
       e.preventDefault();
       return;
     }
+
+    // N key: toggle audio mute/unmute
+    if (e.key === 'n' || e.key === 'N') {
+      game.settings.audio = !game.settings.audio;
+      // Silently ignore AudioManager errors (not available in all environments)
+      try { if (window.AudioManager) window.AudioManager.setEnabled(game.settings.audio); } catch (_) {}
+      try {
+        const el = document.getElementById('message');
+        if (el) {
+          el.textContent = game.settings.audio ? '🔊 Music ON' : '🔇 Music OFF';
+          el.classList.add('show');
+          clearTimeout(_muteNotifTimer);
+          _muteNotifTimer = setTimeout(() => el.classList.remove('show'), 1500);
+        }
+      } catch (_) { /* DOM unavailable — safe to ignore */ }
+      e.preventDefault();
+      return;
+    }
   }
 
   // ESC during PAUSE: resume game (unless in a sub-screen like tutorial/options)
@@ -649,7 +669,7 @@ function render(deltaMs = 16) {
       };
       // Only update the DOM when the text actually changes to prevent flicker
       // Grid mode: dynamically adjust hint based on what's currently active
-      let gridHint = 'WASD/Arrows: Move · J: Archetype · SHIFT: Matrix · H: Help · D: Stats · ESC: Pause';
+      let gridHint = 'WASD/Arrows: Move · J: Archetype · SHIFT: Matrix · H: Help · D: Stats · N: Mute · ESC: Pause';
       if (currentMode?.type === 'grid') {
         const g = game;
         const pulseReady = (g.glitchPulseCharge || 0) >= 100;
@@ -659,7 +679,7 @@ function render(deltaMs = 16) {
           + (pulseReady ? ' · R: PULSE READY!' : ' · R: Pulse (charge needed)')
           + (hasTokens ? ' · U: Shop' : '')
           + (puzzleMode ? ' · Z: Undo' : '')
-          + ' · H: Help · D: Stats · ESC: Pause';
+          + ' · H: Help · D: Stats · N: Mute · ESC: Pause';
       }
       const newHintText = hints[currentMode?.type] || gridHint;
       if (newHintText !== _lastHintText) {

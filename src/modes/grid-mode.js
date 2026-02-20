@@ -16,6 +16,7 @@ import { tryMove, triggerGlitchPulse, stepTileSpread, setEmotion, activateArchet
 import { burst, resonanceWave } from '../game/particles.js';
 import { drawGame } from '../ui/renderer.js';
 import { CW, CH } from '../game/grid.js';
+import { bus } from '../core/event-bus.js';
 
 /**
  * GridMode - Original tile-based tactical movement gameplay
@@ -69,9 +70,7 @@ export class GridMode extends GameMode {
     setMatrixHoldTime(0);
     
     // Expose game to window for compatibility
-    window._game = this.game;
-    window._insightTokens = insightTokens;
-    window._dreamIdx = CFG.dreamIdx;
+    bus.emit('game:started', { game: this.game, dreamIdx: CFG.dreamIdx });
   }
 
   initStars(w, h) {
@@ -132,7 +131,6 @@ export class GridMode extends GameMode {
           tryMove(g, dy, dx, matrix, () => this.nextDreamscape(), showMsg, insightTokens,
             (n) => {
               while (insightTokens < n) addInsightToken();
-              window._insightTokens = insightTokens;
             });
           this.lastMove = ts;
           break;
@@ -289,7 +287,6 @@ export class GridMode extends GameMode {
     if ((key === 'c' || key === 'C') && !event.repeat) {
       if (insightTokens >= 2) {
         spendInsightTokens(2);
-        window._insightTokens = insightTokens;
         if (!g.contZones) g.contZones = [];
         g.contZones.push({ x: g.player.x, y: g.player.y, timer: 240, maxTimer: 240 });
         showMsg('CONTAINMENT ZONE', '#00ffcc', 38);
@@ -306,7 +303,7 @@ export class GridMode extends GameMode {
     const g = this.game;
     const nextIdx = (CFG.dreamIdx + 1) % DREAMSCAPES.length;
     CFG.dreamIdx = nextIdx;
-    window._dreamIdx = nextIdx;
+    bus.emit('dreamscape:changed', { dreamIdx: nextIdx });
     pushDreamHistory(g.ds.id);
     
     this.interludeState = {
@@ -425,7 +422,6 @@ export class GridMode extends GameMode {
   cleanup() {
     super.cleanup();
     this.game = null;
-    window._game = null;
   }
 
   getState() {

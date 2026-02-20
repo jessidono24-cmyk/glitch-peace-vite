@@ -1,0 +1,271 @@
+'use strict';
+// ═══════════════════════════════════════════════════════════════════════
+//  GLITCH·PEACE — tarot-archetypes.js — Phase 10: Cosmology Integration
+//  22 Major Arcana as gameplay archetypes.
+//  Sterilized framing: psychological/archetypal energies, not divination.
+//  Builds on the existing 5 ARCHETYPES in constants.js.
+// ═══════════════════════════════════════════════════════════════════════
+
+// ─── 22 Major Arcana archetypes (psychological framing) ───────────────
+// power keys match player.js executeArchetypePower() contract
+export const TAROT_ARCHETYPES = {
+  // ── The existing 5 mapped to arcana ──────────────────────────────
+  // dragon     → VIII Strength (already in constants.js)
+  // child      → XVII Star (already in constants.js)
+  // orb        → XX Judgement (already in constants.js)
+  // captor     → XVI Tower (already in constants.js)
+  // protector  → IV Emperor (already in constants.js)
+
+  // ── 17 new Major Arcana archetypes ───────────────────────────────
+  fool: {
+    arcanum:      0,
+    name:         'THE FOOL',
+    color:        '#ffff88',
+    glow:         '#ffffaa',
+    power:        'reveal',
+    powerDesc:    'FOOL\'S LEAP — random teleport + reveal hidden tiles (J)',
+    activationMsg:'The Fool steps off the cliff…',
+    completionBonus: 'beginner\'s mind revealed…',
+    desc:         'Pure potential. New beginnings. Trust without evidence.',
+    affirmation:  'Every moment is a fresh start.',
+    element:      'Air',
+  },
+  magician: {
+    arcanum:      1,
+    name:         'THE MAGICIAN',
+    color:        '#ff8800',
+    glow:         '#ffaa00',
+    power:        'multishot',
+    powerDesc:    'MAGICIAN WILL — triple insight burst (J)',
+    activationMsg:'As above, so below…',
+    completionBonus: 'manifestation complete…',
+    desc:         'Focused will. Manifestation. All tools available.',
+    affirmation:  'I have everything I need.',
+    element:      'Fire',
+  },
+  high_priestess: {
+    arcanum:      2,
+    name:         'HIGH PRIESTESS',
+    color:        '#aaaaff',
+    glow:         '#8888ff',
+    power:        'reveal',
+    powerDesc:    'INNER KNOWING — all hidden tiles permanently revealed (J)',
+    activationMsg:'The veil parts…',
+    completionBonus: 'intuition sharpened…',
+    desc:         'Intuition. Mystery. The unseen knowing.',
+    affirmation:  'I trust what I cannot yet see.',
+    element:      'Water',
+  },
+  empress: {
+    arcanum:      3,
+    name:         'THE EMPRESS',
+    color:        '#88ff88',
+    glow:         '#00ff88',
+    power:        'heal',
+    powerDesc:    'ABUNDANCE — restore +40 HP + shield (J)',
+    activationMsg:'The earth provides…',
+    completionBonus: 'nurture continues…',
+    desc:         'Abundance. Nurture. Creative fertility.',
+    affirmation:  'I am nourished and nourishing.',
+    element:      'Earth',
+  },
+  hierophant: {
+    arcanum:      5,
+    name:         'THE HIEROPHANT',
+    color:        '#ffddaa',
+    glow:         '#ffbb88',
+    power:        'wisdom',
+    powerDesc:    'TRANSMISSION — all insight tiles score ×3 for 8 moves (J)',
+    activationMsg:'The teaching is given…',
+    completionBonus: 'wisdom received…',
+    desc:         'Tradition. Mentorship. Inner teacher.',
+    affirmation:  'I honor what I have learned.',
+    element:      'Earth',
+  },
+  lovers: {
+    arcanum:      6,
+    name:         'THE LOVERS',
+    color:        '#ff88cc',
+    glow:         '#ff44aa',
+    power:        'attract',
+    powerDesc:    'UNION — all peace tiles drawn toward you for 5 moves (J)',
+    activationMsg:'The choice is made from love…',
+    completionBonus: 'alignment found…',
+    desc:         'Alignment. Authentic choice. Union.',
+    affirmation:  'I choose from love, not fear.',
+    element:      'Air',
+  },
+  chariot: {
+    arcanum:      7,
+    name:         'THE CHARIOT',
+    color:        '#88aaff',
+    glow:         '#6688ff',
+    power:        'speed',
+    powerDesc:    'TRIUMPH — move speed ×2, no damage for 10 moves (J)',
+    activationMsg:'Forward, with mastery…',
+    completionBonus: 'momentum carries…',
+    desc:         'Willpower. Victory through control. Forward motion.',
+    affirmation:  'I move forward with focused will.',
+    element:      'Water',
+  },
+  justice: {
+    arcanum:      11,
+    name:         'JUSTICE',
+    color:        '#ffffaa',
+    glow:         '#ffff66',
+    power:        'balance',
+    powerDesc:    'EQUILIBRIUM — negate all hazard damage for 7 moves (J)',
+    activationMsg:'Balance is restored…',
+    completionBonus: 'karma aligned…',
+    desc:         'Cause and effect. Clarity. Right action.',
+    affirmation:  'I act with clear and balanced mind.',
+    element:      'Air',
+  },
+  hermit: {
+    arcanum:      9,
+    name:         'THE HERMIT',
+    color:        '#aaaaaa',
+    glow:         '#cccccc',
+    power:        'reveal',
+    powerDesc:    'INNER LIGHT — all tiles within 3 spaces revealed (J)',
+    activationMsg:'The lantern shows the way…',
+    completionBonus: 'solitude taught…',
+    desc:         'Introspection. Inner guidance. Solitary knowing.',
+    affirmation:  'I carry my own light.',
+    element:      'Earth',
+  },
+  wheel: {
+    arcanum:      10,
+    name:         'WHEEL OF FORTUNE',
+    color:        '#ff8844',
+    glow:         '#ffaa66',
+    power:        'random',
+    powerDesc:    'CYCLE — random powerful effect (J)',
+    activationMsg:'The wheel turns…',
+    completionBonus: 'cycle complete…',
+    desc:         'Change. Fate. Cycles of growth.',
+    affirmation:  'I trust the turning of cycles.',
+    element:      'Fire',
+  },
+  hanged_man: {
+    arcanum:      12,
+    name:         'HANGED MAN',
+    color:        '#aaddff',
+    glow:         '#88bbff',
+    power:        'pause',
+    powerDesc:    'SURRENDER — freeze all enemies for 12 seconds (J)',
+    activationMsg:'A new perspective arrives…',
+    completionBonus: 'release complete…',
+    desc:         'Suspension. New perspective. Voluntary sacrifice.',
+    affirmation:  'I release what I cannot control.',
+    element:      'Water',
+  },
+  death: {
+    arcanum:      13,
+    name:         'DEATH',
+    color:        '#555588',
+    glow:         '#8888bb',
+    power:        'transform',
+    powerDesc:    'TRANSFORMATION — clear all hazards, double next peace score (J)',
+    activationMsg:'The old form dissolves…',
+    completionBonus: 'transformation complete…',
+    desc:         'Ending. Transformation. Necessary change.',
+    affirmation:  'I release the old to welcome the new.',
+    element:      'Water',
+  },
+  temperance: {
+    arcanum:      14,
+    name:         'TEMPERANCE',
+    color:        '#88ffdd',
+    glow:         '#44ffcc',
+    power:        'heal',
+    powerDesc:    'ALCHEMY — heal +25 HP + restore full energy (J)',
+    activationMsg:'Integration flows…',
+    completionBonus: 'balance integrated…',
+    desc:         'Integration. Flow. The middle path.',
+    affirmation:  'I flow between extremes with grace.',
+    element:      'Fire',
+  },
+  devil: {
+    arcanum:      15,
+    name:         'THE DEVIL',
+    color:        '#882222',
+    glow:         '#cc3333',
+    power:        'shadow',
+    powerDesc:    'SHADOW POWER — +40 score per hazard stepped on for 8 moves (J)',
+    activationMsg:'The shadow grants its power…',
+    completionBonus: 'shadow integrated…',
+    desc:         'Shadow. Attachment. Material power.',
+    affirmation:  'I can look at my shadow with compassion.',
+    element:      'Earth',
+  },
+  star: {
+    arcanum:      17,
+    name:         'THE STAR',
+    color:        '#aaaaff',
+    glow:         '#8888ff',
+    power:        'reveal',
+    powerDesc:    'STARLIGHT — reveal all hidden tiles for this dreamscape (J)',
+    activationMsg:'Hope pours down like starlight…',
+    completionBonus: 'star guidance remains…',
+    desc:         'Hope. Renewal. Cosmic trust.',
+    affirmation:  'I am guided by something larger than fear.',
+    element:      'Air',
+  },
+  moon: {
+    arcanum:      18,
+    name:         'THE MOON',
+    color:        '#9988bb',
+    glow:         '#bbaaff',
+    power:        'illusion',
+    powerDesc:    'LUNACY — enemies confused for 10 moves, hallucinations reveal truths (J)',
+    activationMsg:'The unconscious speaks…',
+    completionBonus: 'the subconscious integrated…',
+    desc:         'Dreams. Subconscious. What lies beneath.',
+    affirmation:  'I can walk through the night.',
+    element:      'Water',
+  },
+  sun: {
+    arcanum:      19,
+    name:         'THE SUN',
+    color:        '#ffdd44',
+    glow:         '#ffff44',
+    power:        'illuminate',
+    powerDesc:    'RADIANCE — full HP restore + all peace tiles glow double score (J)',
+    activationMsg:'Joy without reason…',
+    completionBonus: 'radiance shared…',
+    desc:         'Vitality. Joy. Clarity.',
+    affirmation:  'I radiate what I am.',
+    element:      'Fire',
+  },
+  world: {
+    arcanum:      21,
+    name:         'THE WORLD',
+    color:        '#44ffcc',
+    glow:         '#00ffaa',
+    power:        'completion',
+    powerDesc:    'INTEGRATION — all systems amplified, instant dreamscape completion available (J)',
+    activationMsg:'The journey is complete…',
+    completionBonus: 'wholeness achieved…',
+    desc:         'Completion. Integration. Wholeness.',
+    affirmation:  'I am whole. The journey brought me here.',
+    element:      'Earth',
+  },
+};
+
+// ─── Original 5 archetypes from constants.js (single source of truth) ─
+export const ORIGINAL_ARCHETYPES = ['dragon', 'child', 'orb', 'captor', 'protector'];
+
+// ─── Full expanded archetype list (for random selection) ──────────────
+export const ALL_ARCHETYPES = [
+  ...ORIGINAL_ARCHETYPES,
+  ...Object.keys(TAROT_ARCHETYPES),
+];
+
+// ─── Get a random archetype (weighted toward existing 5 for stability) ─
+export function getRandomArchetype() {
+  // 70% chance of original 5, 30% chance of new tarot
+  const tarot = Object.keys(TAROT_ARCHETYPES);
+  const pool  = Math.random() < 0.7 ? ORIGINAL_ARCHETYPES : tarot;
+  return pool[Math.floor(Math.random() * pool.length)];
+}

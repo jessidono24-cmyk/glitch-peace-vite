@@ -690,14 +690,7 @@ function loop(ts) {
 
   // ── Dream Yoga: tick + expose to renderer ───────────────────────────
   dreamYoga.tick(dt);
-  window._dreamYoga = {
-    lucidity:  dreamYoga.lucidity,
-    rcActive:  dreamYoga.rcActive,
-    rcPrompt:  dreamYoga.rcPrompt,
-    rcAlpha:   dreamYoga.rcAlpha,
-    topSign:   dreamYoga.topDreamSign,
-    checks:    dreamYoga.totalChecks,
-  };
+  window._dreamYoga = dreamYoga;
   if (dreamYoga.lucidity >= 50) questSystem.onLucidityReached();
 
   const MOVE_DELAY = UPG.moveDelay * (game.slowMoves ? 1.5 : 1) * (game.ritualSlowMul || 1);
@@ -1489,8 +1482,8 @@ window.addEventListener('keydown', e => {
       _showMsg(lbl, col, 55);
       if (CFG.particles) burst(game, game.player.x, game.player.y, col, 22, 4);
     }
-    // Dream yoga: any key dismisses the reality check prompt
-    if (dreamYoga.rcActive && !e.repeat) {
+    // Dream yoga: Y key acknowledges the reality check (conscious act gives full bonus)
+    if ((e.key === 'y' || e.key === 'Y') && dreamYoga.rcActive && !e.repeat) {
       dreamYoga.acknowledgeRealityCheck();
       _showMsg('REALITY CHECK ✓ +LUCIDITY', '#aaddff', 45);
     }

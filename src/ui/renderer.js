@@ -636,7 +636,38 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
 
   // Biome overlay: after world, before HUD
   biomeSystem.draw(ctx, w, h, ts);
+  drawRealityCheck(ctx, w, h);
   drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive);
+}
+
+function drawRealityCheck(ctx, w, h) {
+  const dy = window._dreamYoga;
+  if (!dy || !dy.rcActive || !dy.rcPrompt) return;
+  const alpha = dy.rcAlpha * 0.92;
+  if (alpha < 0.02) return;
+
+  ctx.globalAlpha = alpha;
+  const bw = 280, bh = 64, x = (w - bw) / 2, y = h - 100;
+  ctx.fillStyle = '#08080f';
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x, y, bw, bh, 8) : ctx.rect(x, y, bw, bh);
+  ctx.fill();
+  ctx.strokeStyle = '#8844ff'; ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(x, y, bw, bh, 8) : ctx.rect(x, y, bw, bh);
+  ctx.stroke();
+
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 9px Courier New'; ctx.fillStyle = '#cc88ff';
+  ctx.fillText('REALITY CHECK', w / 2, y + 14);
+  ctx.font = '8px Courier New'; ctx.fillStyle = '#aaaacc';
+  ctx.fillText(dy.rcPrompt.q, w / 2, y + 28);
+  ctx.font = '7px Courier New'; ctx.fillStyle = '#556655';
+  ctx.fillText(dy.rcPrompt.hint, w / 2, y + 41);
+  ctx.font = '7px Courier New'; ctx.fillStyle = '#8844ff';
+  ctx.fillText('[Y] I am aware', w / 2, y + 54);
+
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
 
 // ── Emotion color map ────────────────────────────────────────────────────
@@ -847,6 +878,16 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.font = '7px Courier New'; ctx.fillStyle = '#cc88ff';
     ctx.fillText(seedsDisplay, 14, 120); // below insight tokens
     ctx.textAlign = 'left';
+  }
+
+  // Lucidity bar (purple)
+  const luc = window._dreamYoga?.lucidityPct ?? 0;
+  if (luc > 0) {
+    const lx = 14, ly = 130, lw = 60;
+    ctx.fillStyle = '#1a0a2a'; ctx.fillRect(lx, ly, lw, 4);
+    ctx.fillStyle = '#8844ff'; ctx.fillRect(lx, ly, lw * luc, 4);
+    ctx.font = '6px Courier New'; ctx.fillStyle = '#8844ff';
+    ctx.fillText('LUC', lx + lw + 3, ly + 4);
   }
 
   // Score
@@ -1234,40 +1275,6 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.fillStyle = '#334433'; ctx.font = '7px Courier New';
       ctx.fillText('ESC to open menu · auto-advances…', sx + gp / 2, sy - 8);
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
-    }
-
-    // Phase 2.5: Dream Yoga — lucidity meter (bottom-left of grid)
-    const dy = window._dreamYoga;
-    if (dy) {
-      const lx = sx + 2, ly = sy + gp - 18;
-      ctx.globalAlpha = 0.85;
-      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(lx, ly, 88, 14);
-      ctx.strokeStyle = 'rgba(100,200,255,0.2)'; ctx.lineWidth = 1;
-      ctx.strokeRect(lx, ly, 88, 14);
-      // bar
-      ctx.fillStyle = 'rgba(100,180,255,' + Math.min(1, 0.3 + dy.lucidity * 0.005) + ')'; ctx.fillRect(lx + 1, ly + 1, Math.round(dy.lucidity * 0.86), 12);
-      ctx.fillStyle = '#88aadd'; ctx.font = '7px Courier New'; ctx.textAlign = 'left';
-      ctx.fillText('◐ LUCIDITY ' + dy.lucidity + '%', lx + 3, ly + 10);
-      ctx.textAlign = 'left'; ctx.globalAlpha = 1;
-
-      // Reality check prompt — centred overlay
-      if (dy.rcActive && dy.rcAlpha > 0.02 && dy.rcPrompt) {
-        const pa = Math.min(1, dy.rcAlpha);
-        ctx.globalAlpha = pa;
-        ctx.fillStyle = 'rgba(0,5,20,0.92)'; ctx.fillRect(w / 2 - 200, h / 2 - 55, 400, 100);
-        ctx.strokeStyle = 'rgba(100,200,255,0.5)'; ctx.lineWidth = 1;
-        ctx.strokeRect(w / 2 - 200, h / 2 - 55, 400, 100);
-        ctx.fillStyle = '#aaccff'; ctx.shadowColor = '#aaccff'; ctx.shadowBlur = 10;
-        ctx.font = 'bold 11px Courier New'; ctx.textAlign = 'center';
-        ctx.fillText('◐ REALITY CHECK', w / 2, h / 2 - 36); ctx.shadowBlur = 0;
-        ctx.fillStyle = '#ddeeff'; ctx.font = '13px Courier New';
-        ctx.fillText(dy.rcPrompt.q, w / 2, h / 2 - 14);
-        ctx.fillStyle = '#556688'; ctx.font = '9px Courier New';
-        ctx.fillText(dy.rcPrompt.hint, w / 2, h / 2 + 6);
-        ctx.fillStyle = '#334466'; ctx.font = '8px Courier New';
-        ctx.fillText('press any key to acknowledge', w / 2, h / 2 + 26);
-        ctx.textAlign = 'left'; ctx.globalAlpha = 1;
-      }
     }
 
     // Phase M4: Speedrun timer overlay

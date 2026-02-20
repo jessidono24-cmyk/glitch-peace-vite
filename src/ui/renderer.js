@@ -639,6 +639,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
   drawRealityCheck(ctx, w, h);
   drawEmotionFlash(ctx, w, h);
   drawEmpathyFlash(ctx, w, h);
+  drawEmergenceFlash(ctx, w, h);
   drawTutorialHint(ctx, w);
   drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive);
   drawDashboard(ctx, w, h);
@@ -669,6 +670,27 @@ function drawTutorialHint(ctx, w) {
   ctx.font = '8px Courier New'; ctx.fillStyle = '#00cc55';
   ctx.textAlign = 'center';
   ctx.fillText(hint.text || hint, w / 2, 40);
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
+}
+
+function drawEmergenceFlash(ctx, w, h) {
+  const ei = window._emergenceIndicators;
+  if (!ei) return;
+  const flash = ei.newFlash;
+  if (!flash) return;
+  const alpha = ei.flashAlpha ?? 0;
+  if (alpha < 0.02) return;
+
+  ctx.globalAlpha = alpha * 0.9;
+  ctx.textAlign = 'center';
+  ctx.font = '7px Courier New'; ctx.fillStyle = '#ffaa44';
+  ctx.fillText('EMERGENCE INDICATOR', w / 2, h / 2 + 80);
+  ctx.font = 'bold 10px Courier New';
+  ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffdd88'; ctx.shadowBlur = 8;
+  ctx.fillText(flash.label || '', w / 2, h / 2 + 96);
+  ctx.shadowBlur = 0;
+  ctx.font = '7px Courier New'; ctx.fillStyle = '#886633';
+  ctx.fillText(flash.desc || '', w / 2, h / 2 + 110);
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
 

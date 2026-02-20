@@ -22,6 +22,16 @@ import { empathyTraining }     from './intelligence/empathy-training.js';
 import { strategicThinking }   from './intelligence/strategic-thinking.js';
 import { addScore, getTopScores } from './systems/leaderboard.js';
 import { recordSession, getAnalyticsSummary } from './systems/session-analytics.js';
+import {
+  checkImpulseBuffer, cancelImpulseBuffer, recordEchoPosition,
+  checkThresholdMonitor, updateSessionManager, applyRelapseCompassion,
+  checkRealityCheck, renderRecoveryOverlays,
+} from './systems/recovery-tools.js';
+import {
+  recordDreamSign, gainLucidity, loseLucidity,
+  triggerBodyScan, onGamePaused, onGameResumed,
+  renderDreamYogaOverlays,
+} from './systems/dream-yoga.js';
 
 // Expose intelligence singletons for stats dashboard (avoids circular imports)
 try {
@@ -202,6 +212,11 @@ function initUI() {
     },
     onResume: () => {
       game.state = 'PLAYING';
+      const pauseReward = onGameResumed(game);
+      if (pauseReward) {
+        game._message = `⏸ Pause reward: ${pauseReward.bonus}`;
+        game._messageMs = Date.now();
+      }
     },
     onSelectDreamscape: (dreamscapeId, playModeId, cosmologyId = null, gameModeId = 'grid-classic') => {
       // Fresh start — reset run state
@@ -484,6 +499,7 @@ document.addEventListener('keydown', e => {
       game.state = 'PAUSED';
       menuSystem.open('pause');
       saveGame(game);
+      onGamePaused();
       e.preventDefault();
       return;
     }
@@ -493,6 +509,7 @@ document.addEventListener('keydown', e => {
       game.state = 'PAUSED';
       menuSystem._tutorialReturnScreen = 'resume'; // special sentinel: ESC from tutorial resumes game
       menuSystem.open('tutorial');
+      onGamePaused();
       e.preventDefault();
       return;
     }
@@ -517,6 +534,11 @@ document.addEventListener('keydown', e => {
     if (menuSystem && menuSystem.screen === 'pause') {
       // ESC on the pause menu itself → resume
       game.state = 'PLAYING';
+      const pauseReward = onGameResumed(game);
+      if (pauseReward) {
+        game._message = `⏸ Pause reward: ${pauseReward.bonus}`;
+        game._messageMs = Date.now();
+      }
       e.preventDefault();
       return;
     }
@@ -605,7 +627,7 @@ function render(deltaMs = 16) {
         'architecture':  'WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · M: Switch Mode · ESC: Pause',
         'constellation': 'WASD/Arrows: Navigate to stars · Activate in sequence · M: Switch Mode · ESC: Pause',
         'constellation-3d': 'WASD/Arrows: Navigate to stars · 3D starfield view · M: Switch Mode · ESC: Pause',
-        'alchemy':       'WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute · M: Switch Mode · ESC: Pause',
+        'alchemy':       'WASD: Move · Step on elements (🜂Fire 🜄Water 🜃Earth 🜁Air) to collect · Walk to ⚗ Athanor tile to transmute · M: Switch Mode · ESC: Pause',
         'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
       };
       // Only update the DOM when the text actually changes to prevent flicker
@@ -645,6 +667,12 @@ function render(deltaMs = 16) {
     // Stats dashboard overlay — rendered on top of game, below game-over
     if (game._showStats) {
       renderStatsDashboard(game, ctx, canvas.width, canvas.height);
+    }
+
+    // Dream Yoga + Recovery overlays (lucidity bar, body scan, reality checks)
+    if (game.state === 'PLAYING') {
+      renderDreamYogaOverlays(game, ctx);
+      renderRecoveryOverlays(game, ctx, game.tileSize || 32);
     }
   }
 
@@ -751,6 +779,25 @@ function gameLoop(currentTime) {
     
     // PHASE 2A: Update consciousness engine systems
     updateConsciousnessEngine(deltaMs);
+
+    // ── Dream Yoga & Recovery: process tile-triggered flags ───────────────
+    if (game._triggerBodyScan) {
+      delete game._triggerBodyScan;
+      triggerBodyScan(game);
+    }
+    if (game._triggerLearningChallenge) {
+      delete game._triggerLearningChallenge;
+      gainLucidity(game, 'challenge');
+    }
+    if (game._lastTileType !== undefined) {
+      const dom = game.emotionalField?.getDominant() || null;
+      recordDreamSign(game._lastTileType, dom);
+      delete game._lastTileType;
+    }
+    // Session manager: tick fatigue/time-warning systems
+    if (game.mechanics) updateSessionManager(game, deltaMs);
+    // Reality check: may show occasional prompt after many moves
+    checkRealityCheck(game);
     
     // PHASE 1: Use mode update if available
     if (currentMode && currentMode.update) {

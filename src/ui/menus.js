@@ -59,6 +59,11 @@ export class MenuSystem {
   }
 
   open(screen) {
+    // Track where we came from so ESC from sub-screens returns correctly
+    if ((screen === 'options' || screen === 'credits' || screen === 'highscores') &&
+        (this.screen === 'title' || this.screen === 'pause')) {
+      this._subScreenReturn = this.screen; // remember 'title' or 'pause'
+    }
     this.screen = screen;
     this.sel = 0;
     if (screen === 'tutorial') this.tutPage = 0;
@@ -80,7 +85,9 @@ export class MenuSystem {
     // Global escapes
     if (k === 'Escape') {
       if (this.screen === 'options' || this.screen === 'credits' || this.screen === 'dreamscape' || this.screen === 'highscores') {
-        this.open('title');
+        const returnTo = this._subScreenReturn || 'title';
+        this._subScreenReturn = null;
+        this.open(returnTo);
         return { consumed: true };
       }
       if (this.screen === 'tutorial') {

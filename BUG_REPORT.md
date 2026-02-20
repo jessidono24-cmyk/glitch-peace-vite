@@ -35,9 +35,9 @@
 | BUG-017 | 🟡 Minor | ✅ Fixed | `renderHUD()` initial objective shows peaceTotal not remaining |
 | BUG-018 | 🟠 Medium | Open | RPG mode is a skeleton: shows `[Phase M5 skeleton]` in console, no quests, score never advances |
 | BUG-019 | 🟠 Medium | ✅ Fixed | Shooter HUD shows `◈ ×0` instead of wave/enemy count; wave data is in `modeState.waveNumber` only |
-| BUG-020 | 🟡 Minor | Open | Alchemy mode: 2-step mechanic (collect elements → transmute) undiscoverable; random movement yields score 0 |
+| BUG-020 | 🟡 Minor | ✅ Fixed | Alchemy mode: clarified 2-step mechanic in controls hint (element names + Athanor instruction) |
 | BUG-021 | 🟡 Minor | Open | Specialty mode node positions (`_birdSightings`, `_stars`, `_elements`) stored only on mode instance, invisible via `window.GlitchPeaceGame` |
-| BUG-022 | 🟡 Minor | Open | Pause menu navigation: navigating into a sub-screen (OPTIONS/CREDITS/HIGH SCORES) prevents ESC-to-resume |
+| BUG-022 | 🟡 Minor | ✅ Fixed | Pause menu navigation: ESC from OPTIONS/CREDITS/HIGH SCORES now returns to pause (not title) |
 
 ---
 

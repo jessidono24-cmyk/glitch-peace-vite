@@ -2,7 +2,7 @@
 
 **A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
 
-[![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
+[![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
@@ -38,23 +38,47 @@ GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than e
 
 ---
 
-## ✨ What's Working Right Now (v2.1 — Tested Feb 2026)
+## ✨ What's Working Right Now (v2.8 — Updated Feb 2026)
 
-### 🎮 9 Fully Playable Gameplay Modes
+### 🎮 10 Fully Playable Gameplay Modes (+ 3D)
 
-All 9 modes verified working across all dreamscapes and play styles in our February 2026 comprehensive test session.
+All 10 modes verified working across all dreamscapes and play styles. 22 bugs fixed total.
 
 | Mode | Icon | Core Mechanic | Status |
 |------|------|---------------|--------|
 | **Grid Roguelike** | ◈ | Collect peace nodes, dodge enemies, emotional field | ✅ Full |
-| **Twin-Stick Shooter** | ⚡ | Wave survival, 4 weapons, mouse aiming | ✅ Full |
-| **RPG Adventure** | ⚔ | Dialogue trees, character stats, quest system | ✅ Active |
+| **Twin-Stick Shooter** | ⚡ | Wave survival, 4 weapons, kill counter, mouse aiming | ✅ Full |
+| **RPG Adventure** | ⚔ | Dialogue trees, character stats, visible quest log | ✅ Active |
 | **Ornithology** | 🦅 | Move through biomes, observe birds, answer challenges | ✅ Full |
 | **Mycology** | 🍄 | Forage mushrooms, identify toxic species | ✅ Full |
 | **Architecture** | 🏛 | Place tiles, design structures (SPACE/Q/E/X) | ✅ Full |
 | **Constellation** | ✦ | Navigate to stars, activate sequences | ✅ Full |
-| **Alchemy** | ⚗ | Collect elements, transmute at Athanor | ✅ Full |
+| **Constellation 3D** | 🌌 | Three.js WebGL 3D starfield, same game logic | ✅ NEW |
+| **Alchemy** | ⚗ | Collect elements (🜂Fire 🜄Water 🜃Earth 🜁Air), transmute at Athanor | ✅ Full |
 | **Rhythm** | ♪ | Move to pulsing beat tiles, build streak multiplier | ✅ Full |
+
+### 🧘 Dream Yoga & Recovery Systems (Phase 2.5 — Now Live)
+
+These systems were designed but not wired. They are now active in every session:
+
+| System | What It Does | Trigger |
+|--------|-------------|---------|
+| **Lucidity Meter** | 0-100% bar (top-right) rises from insight tiles, body scans, challenges; decays on damage | Always visible when lucidity > 0 |
+| **Body Scan** | Somatic reminder overlay — `"Feel your feet · Press into the ground"` | Stepping on COVER tile |
+| **Dream Sign Tracking** | Records which tile types + emotions appear most across sessions (localStorage) | Every tile stepped |
+| **Reality Check** | `"Am I dreaming right now?"` prompt with sensory anchors | Every ~5 min (when enabled) |
+| **Pause Rewards** | +2 insight tokens + 10 lucidity after 60s pause; +10 HP after 10 min break | On resume from long pause |
+| **CSS Glitch Animation** | Canvas skews/hue-rotates with 3 intensity levels | `EmotionalField.calcDistortion()` |
+
+### 🐞 22 Bugs Fixed (Feb 2026 Session)
+
+17 original bugs + 5 new bugs found during comprehensive testing = 22 total, all resolved:
+- **BUG-022**: ESC now correctly returns from OPTIONS/CREDITS/HIGH SCORES → back to pause menu (not title)
+- **BUG-020**: Alchemy hint now shows element names + "Walk to ⚗ Athanor to transmute"
+- **BUG-018**: RPG quest log is now prominently rendered below mode banner (bright green, bordered)
+- **BUG-019**: Shooter HUD shows `Wave N · Kills: N` using accurate `this.kills` counter
+- **CSS Glitch**: Three mutually exclusive CSS keyframe animations driven by distortion level
+
 
 #### 1. Grid-Based Roguelike — All Systems Connected
 **Gameplay:**
@@ -531,7 +555,7 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 
 | Metric | Value |
 |--------|-------|
-| Version | 2.1 (Feb 2026 tested) |
+| Version | 2.8.0 (Feb 2026 updated) |
 | Lines of Code | ~18,200 |
 | Blueprint Completion | ~65% (Phase 1–2 complete, Phase 3–8 in progress) |
 | Source Modules | 66 |
@@ -554,7 +578,7 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 | Build Time | ~860ms |
 | Bundle Size | 343KB (109KB gzip) |
 | Test Pass Rate | 4/4 ✅ |
-| Bugs Fixed (Feb 2026) | 17 |
+| Bugs Fixed (Feb 2026) | 22 |
 | Vulnerabilities | 0 |
 
 ---

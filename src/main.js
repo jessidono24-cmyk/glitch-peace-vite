@@ -247,6 +247,8 @@ function initUI() {
   
   console.log('[Phase 1] Modular architecture initialized');
   console.log('[ModeRegistry] Available modes:', modeRegistry.getAllModes());
+  // Expose menuSystem on game object for test access
+  game.menuSystem = menuSystem;
 }
 
 // Attach game to window for cross-module access (menu -> temporalSystem)
@@ -286,6 +288,7 @@ function switchGameMode() {
     'grid': 'grid-classic', 'shooter': 'shooter', 'rpg': 'rpg',
     'ornithology': 'ornithology', 'mycology': 'mycology',
     'architecture': 'architecture', 'constellation': 'constellation',
+    'constellation-3d': 'constellation-3d',
     'alchemy': 'alchemy', 'rhythm': 'rhythm',
   };
   const currentModeId = currentMode
@@ -295,9 +298,12 @@ function switchGameMode() {
   const nextIndex = (currentIndex + 1) % availableModes.length;
   const nextModeId = availableModes[nextIndex];
   
-  // Cleanup current mode
+  // Cleanup current mode (also call dispose for 3D modes that own a second canvas)
   if (currentMode && currentMode.cleanup) {
     currentMode.cleanup();
+  }
+  if (currentMode && currentMode.dispose) {
+    currentMode.dispose();
   }
   
   // Create new mode
@@ -598,6 +604,7 @@ function render(deltaMs = 16) {
         'mycology':      'WASD/Arrows: Forage mushrooms · 1-4: Identify toxic species · M: Switch Mode · ESC: Pause',
         'architecture':  'WASD: Move · SPACE: Place tile · Q/E: Cycle tiles · X: Erase · M: Switch Mode · ESC: Pause',
         'constellation': 'WASD/Arrows: Navigate to stars · Activate in sequence · M: Switch Mode · ESC: Pause',
+        'constellation-3d': 'WASD/Arrows: Navigate to stars · 3D starfield view · M: Switch Mode · ESC: Pause',
         'alchemy':       'WASD: Move · Collect elements (🜂🜄🜃🜁) · Walk to ⚗ Athanor to transmute · M: Switch Mode · ESC: Pause',
         'rhythm':        'WASD/Arrows: Move to pulsing tiles ON THE BEAT · Build streak for ×multiplier · M: Switch Mode · ESC: Pause',
       };
@@ -759,8 +766,7 @@ function gameLoop(currentTime) {
         game.level = currentMode.waveNumber;
         // Expose shooter-specific data for HUD objective display
         game._waveNumber = currentMode.waveNumber || 1;
-        // Remaining enemies as kill objective (total - remaining)
-        game._killCount = currentMode.score ? Math.floor(currentMode.score / 10) : 0;
+        game._killCount = currentMode.kills || 0;
       }
     } else {
       // Fallback to legacy game systems
@@ -829,6 +835,15 @@ function updateConsciousnessEngine(deltaMs) {
   // Visual feedback: world gets darker/more distorted with high distortion
   const distortion = game.emotionalField.calcDistortion();
   game.worldDistortion = distortion;
+
+  // CSS glitch animation driven by distortion level — respects reducedMotion setting
+  if (!game.settings?.reducedMotion) {
+    canvas.classList.toggle('glitch-heavy',  distortion > 0.7);
+    canvas.classList.toggle('glitch-medium', distortion > 0.35 && distortion < 0.7);
+    canvas.classList.toggle('glitch-light',  distortion > 0.15 && distortion <= 0.35);
+  } else {
+    canvas.classList.remove('glitch-heavy', 'glitch-medium', 'glitch-light');
+  }
 }
 
 // Init

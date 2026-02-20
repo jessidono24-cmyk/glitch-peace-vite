@@ -133,7 +133,7 @@ export default class RPGMode extends GameMode {
   // ── Lifecycle ────────────────────────────────────────────────────────────────
 
   init(gameState, canvas, ctx) {
-    console.log('[RPGMode] Initializing RPG mode (Phase M5 skeleton)');
+    console.log('[RPGMode] Initializing RPG mode — dialogue, quests, stats, shadow enemies active');
     this.canvas = canvas;
     this.ctx = ctx;
 
@@ -419,16 +419,20 @@ export default class RPGMode extends GameMode {
     const active = this._quests.filter(q => !q.completed);
     if (!active.length) return;
 
-    const x = this.canvas.width - 180;
-    const y = 10;
-    ctx.fillStyle = 'rgba(5,5,20,0.75)';
-    ctx.fillRect(x, y, 172, 18 + active.length * 18);
-    ctx.fillStyle = '#445566';
-    ctx.font = '9px Courier New';
+    const x = this.canvas.width - 190;
+    const y = 62; // below mode banner, avoid overlap
+    const panelH = 18 + active.length * 18;
+    ctx.fillStyle = 'rgba(5,5,20,0.88)';
+    ctx.fillRect(x, y, 180, panelH);
+    ctx.strokeStyle = 'rgba(0,255,136,0.25)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x, y, 180, panelH);
+    ctx.fillStyle = '#00ff88';
+    ctx.font = 'bold 9px Courier New';
     ctx.textAlign = 'left';
-    ctx.fillText('QUESTS', x + 6, y + 12);
+    ctx.fillText('📋 QUESTS', x + 6, y + 12);
     active.forEach((q, i) => {
-      ctx.fillStyle = '#667099';
+      ctx.fillStyle = '#88ffcc';
       ctx.fillText(`◇ ${q.title}`, x + 6, y + 28 + i * 18);
     });
     ctx.textAlign = 'left';

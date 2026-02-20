@@ -699,6 +699,7 @@ export class MenuSystem {
       { id: 'constellation',  name: 'Constellation',       desc: 'Navigate stars and activate sequences',         icon: '✦' },
       { id: 'alchemy',        name: 'Alchemy',             desc: 'Collect elements and transmute them in the Athanor', icon: '⚗' },
       { id: 'rhythm',         name: 'Rhythm',              desc: 'Move to the beat and build score multipliers',  icon: '♪' },
+      { id: 'constellation-3d', name: 'Constellation 3D',  desc: 'Stars & Myth with Three.js 3D starfield',       icon: '🌌' },
     ];
   }
 

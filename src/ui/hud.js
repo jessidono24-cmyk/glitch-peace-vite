@@ -47,7 +47,7 @@ export function updateHUD(game) {
   } else if (modeType === 'ornithology') {
     const remaining = Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0));
     objParts = [`🐦 ×${remaining}`];
-  } else if (modeType === 'constellation') {
+  } else if (modeType === 'constellation' || modeType === 'constellation-3d') {
     const remaining = Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0));
     objParts = [`★ ×${remaining}`];
   } else if (modeType === 'mycology') {

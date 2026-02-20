@@ -167,8 +167,9 @@ if (PLAYER_PROFILE.targetLang) languageSystem.setTargetLang(PLAYER_PROFILE.targe
 musicEngine.setVolume(PLAYER_PROFILE.sfxMuted ? 0 : (PLAYER_PROFILE.sfxVol || 0.5));
 
 // Expose tokens/dreamIdx to renderer via window (avoids circular import)
-window._insightTokens = insightTokens;
-window._dreamIdx      = CFG.dreamIdx;
+window._insightTokens   = insightTokens;
+window._dreamIdx        = CFG.dreamIdx;
+window._campaignManager = campaignManager;
 // SteamPack: expose achievement defs for drawAchievements
 window._achieveDefs   = { ACHIEVEMENT_DEFS, list: ACHIEVEMENT_DEFS };
 window._achievementQueue = [];

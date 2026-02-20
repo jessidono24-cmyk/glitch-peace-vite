@@ -145,7 +145,8 @@ export class Constellation3DMode extends ConstellationMode {
     ];
 
     for (let i = 0; i < COUNT; i++) {
-      // Gaussian distribution (Box-Muller)
+      // Gaussian distribution (Box-Muller transform).
+      // Add epsilon to prevent Math.log(0) when Math.random() returns exactly 0.
       const u = Math.random() + 1e-10;
       const v = Math.random() + 1e-10;
       const r = Math.sqrt(-2 * Math.log(u));

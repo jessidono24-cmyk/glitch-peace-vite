@@ -25,7 +25,7 @@ function immersionLabel(key, settings) {
     'zh': { 'NEW GAME': '新游戏', 'CONTINUE': '继续', 'OPTIONS': '选项', 'TUTORIAL': '教程', 'CREDITS': '致谢', 'EXIT': '退出', 'RESUME': '恢复', 'RESTART RUN': '重新开始', 'QUIT TO TITLE': '返回菜单', 'HIGH SCORES': '高分榜' },
   };
   const lang = settings.targetLanguage;
-  const dict = translations[lang] || translations[lang?.substring(0, 2)] || {};
+  const dict = translations[lang] || (typeof lang === 'string' && translations[lang.substring(0, 2)]) || {};
   return dict[key] || key;
 }
 

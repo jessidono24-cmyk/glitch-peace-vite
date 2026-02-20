@@ -8,7 +8,9 @@
 
 import * as Tone from 'tone';
 
-// Scale definitions
+// Volume mapping constants (dB scale)
+const MIN_VOLUME_DB = -60;
+const VOLUME_RANGE_DB = 60;
 const SCALES = {
   calm:   ['C4','E4','G4','B4','C5','E5','G5'],
   medium: ['A3','C4','E4','G4','A4','C5','E5'],
@@ -74,8 +76,8 @@ export class AmbientMusicEngine {
    * Set master volume (0–1 mapped to dB).
    */
   setVolume(vol) {
-    // Map 0-1 to -60..0 dB
-    Tone.getDestination().volume.value = vol <= 0 ? -Infinity : -60 + vol * 60;
+    // Map 0-1 to MIN_VOLUME_DB..0 dB
+    Tone.getDestination().volume.value = vol <= 0 ? -Infinity : MIN_VOLUME_DB + vol * VOLUME_RANGE_DB;
   }
 
   _scheduleLoop(state) {

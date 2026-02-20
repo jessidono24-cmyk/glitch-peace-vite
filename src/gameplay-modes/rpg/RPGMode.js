@@ -664,7 +664,7 @@ export default class RPGMode extends GameMode {
     if (!quest._timerActive && peaceCollected > (quest._baseCount || 0)) {
       quest._timerActive = true;
       quest._timerStart = Date.now();
-      quest._baseCount = peaceCollected - 1; // count from just before this node
+      quest._baseCount = peaceCollected - 1; // subtract 1: the node just collected counts as progress[0], so baseline is one before it
     }
 
     if (quest._timerActive) {

@@ -103,6 +103,7 @@ export function buildDreamscape(ds, sz, level, prevScore, prevHp, maxHp, dreamHi
     score: prevScore || 0,
     particles: [], trail: [], echos: [], contZones: [],
     shakeFrames: 0, peaceLeft: peaceCount, insightLeft: insCount,
+    peaceTotal: peaceCount, peaceCollected: 0,
     msg: null, msgColor: '#fff', msgTimer: 0,
     flashColor: null, flashAlpha: 0,
     tileFlicker: [], resonanceWave: null, peaceStreak: 0,

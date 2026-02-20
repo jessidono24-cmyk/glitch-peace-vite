@@ -15,13 +15,16 @@ function stars(ctx, backgroundStars, ts) {
 
 // ─── Mode select definitions ──────────────────────────────────────────
 export const GAME_MODES = [
-  { id: 'grid',          label: '🗂️  GRID MODE',          sub: 'tactical tile navigation · original',         color: '#00ff88' },
-  { id: 'shooter',       label: '🔫  SHOOTER MODE',        sub: 'fast-paced arena combat · reflex',            color: '#ff6622' },
-  { id: 'rhythm',        label: '🎵  RHYTHM MODE',         sub: 'note-fall · beat timing · 5 dreamscapes  M7', color: '#ffaa44' },
-  { id: 'constellation', label: '✦   CONSTELLATION MODE',  sub: 'connect star nodes · meditative puzzle  M6',  color: '#aaddff' },
-  { id: 'meditation',    label: '🌸  MEDITATION MODE',     sub: 'breathing & awareness · no enemies',          color: '#88ffcc' },
-  { id: 'coop',          label: '🤝  CO-OP MODE',          sub: 'two-player journey · shared dreamscape  M8',  color: '#ffcc44' },
-  { id: 'challenge',     label: '📅  DAILY CHALLENGE',     sub: 'new seeded run every 24 hours',               color: '#cc88ff' },
+  { id: 'grid-classic',    label: '🗂️  GRID CLASSIC',       sub: 'tactical tile navigation · original',         color: '#00ff88' },
+  { id: 'shooter',         label: '🔫  SHOOTER MODE',        sub: 'fast-paced arena combat · reflex',            color: '#ff6622' },
+  { id: 'rpg',             label: '⚔   RPG ADVENTURE',       sub: 'dialogue, quests, character stats',           color: '#ffcc44' },
+  { id: 'ornithology',     label: '🦅  ORNITHOLOGY',         sub: 'observe birds · answer challenges',           color: '#88ffcc' },
+  { id: 'mycology',        label: '🍄  MYCOLOGY',            sub: 'forage mushrooms · identify species',         color: '#cc88ff' },
+  { id: 'architecture',    label: '🏛   ARCHITECTURE',        sub: 'place tiles · design structures (SPACE/Q/E)', color: '#aaddff' },
+  { id: 'constellation',   label: '✦   CONSTELLATION',       sub: 'connect star nodes · meditative puzzle',      color: '#aaddff' },
+  { id: 'alchemy',         label: '⚗   ALCHEMY',             sub: 'collect elements · transmute at Athanor',     color: '#ff8800' },
+  { id: 'rhythm',          label: '🎵  RHYTHM MODE',         sub: 'move to beat tiles · build streak',           color: '#ffaa44' },
+  { id: 'constellation-3d',label: '🌌  CONSTELLATION 3D',    sub: 'Three.js WebGL 3D starfield · nebula',        color: '#ccaaff' },
 ];
 
 export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
@@ -1154,5 +1157,54 @@ export function drawArchetypeSelect(ctx, w, h, selIdx, backgroundStars, ts) {
   ctx.textAlign = 'center';
   ctx.fillStyle = '#0d1a0d'; ctx.font = '8px Courier New';
   ctx.fillText('↑↓←→ navigate  ·  ENTER select  ·  ESC skip (no archetype)', w / 2, h - 10);
+  ctx.textAlign = 'left';
+}
+
+// ─── Play Mode Selection Screen ────────────────────────────────────────────
+export function drawPlayModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
+  ctx.fillStyle = '#01010a'; ctx.fillRect(0, 0, w, h);
+  if (backgroundStars) { for (const s of backgroundStars) { ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(ts * 0.0008 + s.phase)); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT PLAY STYLE', w / 2, 52); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334433'; ctx.font = '9px Courier New';
+  ctx.fillText('how do you want to experience this dreamscape?', w / 2, 70);
+  const rowH = 32, startY = 90;
+  PLAY_MODE_LIST.forEach((id, i) => {
+    const meta = PLAY_MODES[id]; if (!meta) return;
+    const sel = i === modeIdx, y = startY + i * rowH;
+    ctx.fillStyle = sel ? 'rgba(0,255,136,0.08)' : 'transparent'; ctx.fillRect(w / 2 - 160, y - 16, 320, 28);
+    if (sel) { ctx.strokeStyle = 'rgba(0,255,136,0.4)'; ctx.strokeRect(w / 2 - 160, y - 16, 320, 28); }
+    ctx.fillStyle = sel ? meta.color || '#00ff88' : '#2a3a2a';
+    ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New';
+    ctx.fillText(`${meta.emoji || ''}  ${meta.name}`, w / 2, y);
+  });
+  ctx.fillStyle = '#0d1a0d'; ctx.font = '8px Courier New';
+  ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 15);
+  ctx.textAlign = 'left';
+}
+
+// ─── Cosmology Selection Screen ────────────────────────────────────────────
+export function drawCosmologySelect(ctx, w, h, cosmoIdx, cosmologyList, backgroundStars, ts) {
+  ctx.fillStyle = '#01010a'; ctx.fillRect(0, 0, w, h);
+  if (backgroundStars) { for (const s of backgroundStars) { ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(ts * 0.0008 + s.phase)); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 18;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT COSMOLOGY', w / 2, 52); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334455'; ctx.font = '9px Courier New';
+  ctx.fillText('choose a world tradition (optional — affects tile lore)', w / 2, 70);
+  const entries = [{ id: null, name: '  NONE  ', emoji: '○', color: '#aaaaaa', subtitle: 'No cosmological overlay' }, ...cosmologyList];
+  const rowH = 32, startY = 90;
+  entries.forEach((c, i) => {
+    const sel = i === cosmoIdx, y = startY + i * rowH;
+    if (y > h - 30) return;
+    ctx.fillStyle = sel ? 'rgba(170,221,255,0.08)' : 'transparent'; ctx.fillRect(w / 2 - 160, y - 16, 320, 28);
+    if (sel) { ctx.strokeStyle = 'rgba(170,221,255,0.4)'; ctx.strokeRect(w / 2 - 160, y - 16, 320, 28); }
+    ctx.fillStyle = sel ? (c.color || '#aaddff') : '#334455';
+    ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New';
+    ctx.fillText(`${c.emoji || ''}  ${c.name}`, w / 2, y);
+  });
+  ctx.fillStyle = '#0d1a0d'; ctx.font = '8px Courier New';
+  ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 15);
   ctx.textAlign = 'left';
 }

@@ -16,7 +16,7 @@ test('smoke: game loads, title menu renders', async ({ page }) => {
 
   // Verify menu system is rendering (check canvas pixel data as proxy)
   const canvasPixelData = await page.evaluate(() => {
-    const c = document.getElementById('canvas');
+    const c = document.getElementById('c');
     const ctx = c.getContext('2d');
     const imageData = ctx.getImageData(0, 0, 1, 1);
     return imageData.data; // RGBA values

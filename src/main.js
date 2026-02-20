@@ -178,6 +178,8 @@ window._alchemySystem = alchemySystem;
 window._empathyTraining = empathyTraining;
 window._logicPuzzles = logicPuzzles;
 window._strategicThinking = strategicThinking;
+window._selfReflection = selfReflection;
+window._emergenceIndicators = emergenceIndicators;
 window._dashboardOpen = false; // updated each frame
 
 let dashboardOpen = false;
@@ -445,8 +447,8 @@ function nextDreamscape() {
   // Phase 6: show a vocabulary word on the interlude screen
   const vocabWord = vocabularyEngine.getInterludeWord(g.ds.emotion);
   // Phase 8: record emergence events
-  emergenceIndicators.record('dream_completion');
-  if (prompt.depth === 'mid' || prompt.depth === 'deep') emergenceIndicators.record('reflection_depth');
+  emergenceIndicators.record('dream_completion', 1);
+  emergenceIndicators.record('reflection_depth', 1);
   // Phase 6: record vocabulary growth
   if (vocabularyEngine.sessionCount >= 8) emergenceIndicators.record('vocabulary_growth');
   // Phase 9: surface sequence challenge + empathy reflection
@@ -492,7 +494,8 @@ function nextDreamscape() {
     minAdvanceMs: INTERLUDE_MIN_ADVANCE_MS,
     ds: DREAMSCAPES[nextIdx],
     nextGame,
-    reflectionPrompt: prompt,
+    reflectionPrompt: prompt.prompt,
+    reflectionDepth: prompt.depth,
     affirmation,
     vocabWord,
     empathyReflection,

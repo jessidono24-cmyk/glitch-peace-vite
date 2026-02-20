@@ -1603,6 +1603,7 @@ function pollGamepad() {
     const next = matrixActive === 'A' ? 'B' : 'A';
     setMatrix(next); setMatrixHoldTime(0);
     sfxManager.resume(); sfxManager.playMatrixSwitch(next === 'A');
+    emergenceIndicators.record('matrix_mastery');
   }
   if (pressed(9)) { // START: pause/resume
     if (phase === 'playing') { CURSOR.pause = 0; sessionTracker.pauseSession(); setPhase('paused'); }

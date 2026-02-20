@@ -173,6 +173,7 @@ window._dreamIdx      = CFG.dreamIdx;
 window._achieveDefs   = { ACHIEVEMENT_DEFS, list: ACHIEVEMENT_DEFS };
 window._achievementQueue = [];
 window._achievementSystem = achievementSystem;
+window._spritePlayer = spritePlayer;
 window._alchemySystem = alchemySystem;
 window._empathyTraining = empathyTraining;
 window._logicPuzzles = logicPuzzles;

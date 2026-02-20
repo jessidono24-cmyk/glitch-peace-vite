@@ -593,19 +593,26 @@ export class MenuSystem {
       {
         label: 'LANGUAGE LEVEL',
         get value() {
-          // Show saved CEFR level if no manual override; otherwise show the override
-          const lvl = cfg.langLevel || (cfg.targetLanguage ? getLangProgress(cfg.targetLanguage).level : 'A1');
-          return cfg.langLevel ? `${lvl} (manual)` : `${lvl} (auto)`;
+          // Read saved CEFR once per language selection change; manual override shows (manual)
+          if (!cfg.langLevel && cfg.targetLanguage) {
+            // Lazy cache in cfg to avoid per-render localStorage read
+            if (cfg._cachedLangLevel == null || cfg._cachedLangLevelFor !== cfg.targetLanguage) {
+              cfg._cachedLangLevel = getLangProgress(cfg.targetLanguage).level;
+              cfg._cachedLangLevelFor = cfg.targetLanguage;
+            }
+            return `${cfg._cachedLangLevel} (auto)`;
+          }
+          return cfg.langLevel ? `${cfg.langLevel} (manual)` : 'A1 (auto)';
         },
         left: () => {
-          const cur = cfg.langLevel || (cfg.targetLanguage ? getLangProgress(cfg.targetLanguage).level : 'A1');
+          const cur = cfg.langLevel || cfg._cachedLangLevel || 'A1';
           const idx = CEFR_LEVELS.indexOf(cur);
           cfg.langLevel = CEFR_LEVELS[Math.max(0, idx - 1)];
           if (cfg.targetLanguage) setLangLevel(cfg.targetLanguage, cfg.langLevel);
           try { localStorage.setItem('glitchpeace.langLevel', cfg.langLevel); } catch (e) {}
         },
         right: () => {
-          const cur = cfg.langLevel || (cfg.targetLanguage ? getLangProgress(cfg.targetLanguage).level : 'A1');
+          const cur = cfg.langLevel || cfg._cachedLangLevel || 'A1';
           const idx = CEFR_LEVELS.indexOf(cur);
           cfg.langLevel = CEFR_LEVELS[Math.min(CEFR_LEVELS.length - 1, idx + 1)];
           if (cfg.targetLanguage) setLangLevel(cfg.targetLanguage, cfg.langLevel);

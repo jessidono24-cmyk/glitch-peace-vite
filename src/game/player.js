@@ -18,6 +18,8 @@ import { createParticles } from './particles.js';
 import { createPowerup, applyPowerup } from '../systems/powerups.js';
 
 const MEMORY_SCORE_BONUS = 200; // pts awarded for stepping on a T.MEM tile
+const DESPAIR_PARTICLE_COLOR = '#4466ff'; // Blue burst when despair tile is resolved
+const TERROR_PARTICLE_COLOR  = '#ff2222'; // Red burst when terror tile is resolved
 
 export function createPlayer() {
   return {
@@ -166,7 +168,7 @@ export function movePlayer(gameState, dx, dy) {
     // persistent external forces rather than internal emotional states.
     if (stepped === T.DESPAIR || stepped === T.TERROR) {
       gameState.grid[newY][newX] = T.VOID;
-      createParticles(gameState, newX, newY, stepped === T.DESPAIR ? '#4466ff' : '#ff2222', 16);
+      createParticles(gameState, newX, newY, stepped === T.DESPAIR ? DESPAIR_PARTICLE_COLOR : TERROR_PARTICLE_COLOR, 16);
     } else {
       createParticles(gameState, newX, newY, 'damage', 12);
     }

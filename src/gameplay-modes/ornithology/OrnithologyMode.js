@@ -542,8 +542,9 @@ export class OrnithologyMode extends GameMode {
     const questionLines = c.question.split('\n');
     ctx.fillStyle = headerColor;
     ctx.font = `bold ${Math.floor(w / 28)}px monospace`;
+    const LINE_SPACING = Math.floor(w / 22); // ~line height for question text
     questionLines.forEach((line, i) => {
-      ctx.fillText(line, w / 2, h * 0.27 + i * Math.floor(w / 22));
+      ctx.fillText(line, w / 2, h * 0.27 + i * LINE_SPACING);
     });
 
     ctx.fillStyle = '#446655';

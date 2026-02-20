@@ -200,6 +200,7 @@ export const CEFR_LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 // Minimum rolling accuracy required to *hold* a level before advancing/retreating
 const CEFR_ADVANCE_ACCURACY = 0.82; // 82% correct over last 10 challenges → advance
 const CEFR_RETREAT_ACCURACY = 0.45; // below 45% → retreat one level
+const MIN_ANSWERS_FOR_PROGRESSION = 5; // minimum answers in window before level can change
 
 /**
  * Read per-language CEFR progress from localStorage.
@@ -245,7 +246,7 @@ export function recordLangAnswer(langId, wasCorrect) {
   if (progress.recent.length > 10) progress.recent.shift();
 
   // Level progression/regression based on rolling accuracy
-  if (progress.recent.length >= 5) {
+  if (progress.recent.length >= MIN_ANSWERS_FOR_PROGRESSION) {
     const rollingAcc = progress.recent.filter(Boolean).length / progress.recent.length;
     const curIdx = CEFR_LEVELS.indexOf(progress.level);
 
@@ -375,16 +376,15 @@ export function getLangChallenge(targetLangId = 'fr', cefrLevel = 'A1', immersio
 
   const correctIndex = allOptions.indexOf(correctWord);
 
-  // Immersion mode: show concept in target language; English in parens for A1/A2
-  let promptConcept = entry.concept;
-  if (immersionMode && levelIdx >= 2) {
-    // B1+ full immersion: concept shown only in target language (no English)
-    promptConcept = entry[targetLangId] !== correctWord
-      ? entry[targetLangId]
-      : `"${entry.concept}"`;
-  }
-
+  // Immersion mode: show concept in target language (no English) at B1+
   const levelTag = cefrLevel !== 'A1' ? ` [${cefrLevel}]` : '';
+  let prompt;
+  if (immersionMode && levelIdx >= 2) {
+    // Full immersion B1+: question is entirely in the target language
+    prompt = `${targetLang.name.toUpperCase()}${levelTag}: "${correctWord}" →?`;
+  } else {
+    prompt = `${targetLang.name.toUpperCase()}${levelTag}: "${entry.concept}" means...`;
+  }
 
   return {
     type: 'language',
@@ -392,7 +392,7 @@ export function getLangChallenge(targetLangId = 'fr', cefrLevel = 'A1', immersio
     cefrLevel,
     langName: targetLang.name,
     nativeName: targetLang.nativeName,
-    prompt: `${targetLang.name.toUpperCase()}${levelTag}: "${entry.concept}" means...`,
+    prompt,
     promptConcept: entry.concept,
     options: allOptions,
     correct: correctIndex,

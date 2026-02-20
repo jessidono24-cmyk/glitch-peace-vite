@@ -1736,6 +1736,8 @@ export class GridGameMode extends GameMode {
           // Check if the player collected a peace node this move
           if (gameState._lastPeaceCollected !== gameState.peaceCollected) {
             gameState.emotionalField.observeBehavior('peace_collect', behaviorCtx);
+            // Update tracking state so each collection triggers at most once
+            gameState._lastPeaceCollected = gameState.peaceCollected;
           }
 
           // Check if the player reversed direction vs. last move
@@ -1758,6 +1760,13 @@ export class GridGameMode extends GameMode {
           if (curTile && (TILE_DEF[curTile]?.d || 0) > 0) {
             gameState.emotionalField.observeBehavior('hazard_enter', behaviorCtx);
           }
+
+          // Detect hazard avoidance: if the previous next-tile was a hazard and
+          // the player changed direction to a non-hazard tile → hazard_avoid
+          if (this._lastNextWasHazard && !(nextTile && (TILE_DEF[nextTile]?.d || 0) > 0)) {
+            gameState.emotionalField.observeBehavior('hazard_avoid', behaviorCtx);
+          }
+          this._lastNextWasHazard = !!(nextTile && (TILE_DEF[nextTile]?.d || 0) > 0);
         }
 
         // Phase 9: track mindful vs. reactive move

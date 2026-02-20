@@ -337,7 +337,7 @@ export class ArchitectureMode extends GameMode {
     // ── End grid-space rendering — restore canvas transform ────────────
     ctx.restore();
 
-    // Blueprint info panel (right side or bottom)
+    // Blueprint info panel (right side or bottom) — in canvas space (after ctx.restore)
     const panelY = (this._yOff || 0) + sz * ts + 4;
     if (panelY < h - 10) {
       ctx.fillStyle = '#111128';

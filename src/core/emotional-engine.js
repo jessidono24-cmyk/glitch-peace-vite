@@ -262,7 +262,9 @@ export class EmotionalField {
 
     // ── Speed-based inference ─────────────────────────────────────────
     // If recent moves are all under 200ms apart → "rushing" state → more fear
-    const recentMoves = this._behaviorSamples.filter(s => s.type === 'move' && now - s.t < 1500);
+    const recentMoves = this._behaviorSamples.filter(
+      s => (s.type === 'move' || s.type === 'rapid_move') && now - s.t < 1500
+    );
     if (recentMoves.length >= 5) {
       // High-speed burst: raise arousal emotions
       this.add('fear', 0.06);

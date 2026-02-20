@@ -19,11 +19,13 @@ import { tryMove, triggerGlitchPulse, stepTileSpread, setEmotion, showMsg,
          activateArchetype, executeArchetypePower } from './game/player.js';
 import { burst, resonanceWave } from './game/particles.js';
 import { drawGame } from './ui/renderer.js';
+import { updateHUD } from './ui/hud.js';
 import { spritePlayer } from './rendering/sprite-player.js';
 import { drawTitle, drawDreamSelect, drawOptions, drawHighScores,
          drawUpgradeShop, drawPause, drawInterlude, drawDead,
          drawOnboarding, drawLanguageOptions, drawHowToPlay,
-         drawModeSelect, drawAchievementPopup, drawAchievements,
+         drawModeSelect, drawPlayModeSelect, drawCosmologySelect,
+         drawAchievementPopup, drawAchievements,
          GAME_MODES } from './ui/menus.js';
 // ─── Phase 2-5 systems ───────────────────────────────────────────────────
 import { sfxManager } from './audio/sfx-manager.js';
@@ -70,7 +72,7 @@ import { archetypeDialogue } from './systems/rpg/archetype-dialogue.js';
 // ─── Phase M3.5: Boss System ──────────────────────────────────────────────
 import { bossSystem, BOSS_TYPES } from './systems/boss-system.js';
 // ─── Phase M5: Quest System ───────────────────────────────────────────────
-import { questSystem } from './systems/rpg/quest-system.js';
+import { questSystem, QUEST_DEFS } from './systems/rpg/quest-system.js';
 // ─── Phase M6: Alchemy System ─────────────────────────────────────────────
 import { alchemySystem, TILE_ELEMENT_MAP } from './systems/alchemy-system.js';
 // ─── Phase M6: Constellation Mode ─────────────────────────────────────────
@@ -140,7 +142,10 @@ let deadGame   = null; // snapshot used by death screen (survives game=null)
 let animId     = null;
 let prevTs     = performance.now(); // initialise to now so first dt ≈ 0
 let lastMove   = 0;
-let gameMode   = 'grid'; // 'grid' | 'shooter' | 'constellation' | 'meditation' | 'coop'
+let gameMode   = 'grid'; // 'grid' | 'shooter' | 'constellation' | 'meditation' | 'coop' | 'rpg' | etc.
+// ─── 5-screen navigation state ───────────────────────────────────────────
+let CURSOR_playmode  = 0;  // index into PLAY_MODE_LIST for playmodesel screen
+let CURSOR_cosmology = 0;  // index into cosmologyList for cosmologysel screen (0 = no cosmology)
 const EMOTION_THRESHOLD      = 0.15;   // emotion must exceed this to affect gameplay
 const ARCHETYPE_PERM_DURATION = 999999; // arbitrarily large — effectively permanent for a run
 const INTERLUDE_DURATION_MS  = 10000;  // auto-advance after 10 s
@@ -164,6 +169,11 @@ languageSystem.setNativeLang(PLAYER_PROFILE.nativeLang || 'en');
 if (PLAYER_PROFILE.targetLang) languageSystem.setTargetLang(PLAYER_PROFILE.targetLang);
 // Sync music engine volume to saved profile
 musicEngine.setVolume(PLAYER_PROFILE.sfxMuted ? 0 : (PLAYER_PROFILE.sfxVol || 0.5));
+
+// Cosmology list for cosmologysel screen (id=null = no cosmology)
+const cosmologyList = Object.values(COSMOLOGIES).map(c => ({
+  id: c.id, name: c.name || c.id, emoji: c.emoji || '◈', color: c.color || '#aaddff', subtitle: c.subtitle || '',
+}));
 
 // Expose tokens/dreamIdx to renderer via window (avoids circular import)
 window._insightTokens   = insightTokens;
@@ -207,6 +217,7 @@ let _predatorFactIdx  = 0;
 let _lastNatureDsId   = null;  // track dreamscape changes to reset cycle per visit
 
 const keys = new Set();
+const justPressed = new Set(); // captures single-frame presses (for keyboard.press() in tests)
 
 // ─── Stars / visions ────────────────────────────────────────────────────
 function initStars(w, h) {
@@ -388,6 +399,8 @@ function startGame(dreamIdx) {
   CFG.dreamIdx = dreamIdx || 0;
   window._insightTokens = 0; window._dreamIdx = CFG.dreamIdx;
   game = initGame(CFG.dreamIdx, 0, 0, undefined);
+  // Set default mode type for grid-based modes
+  if (game && !game._currentModeType) game._currentModeType = 'grid';
   setPhase('playing'); lastMove = 0; setMatrixHoldTime(0);
   // Phase 6-8: start learning & session tracking
   vocabularyEngine.resetSession();
@@ -551,6 +564,8 @@ function loop(ts) {
   if (phase === 'title')       { drawTitle(ctx, w, h, backgroundStars, ts, CURSOR.menu, gameMode); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'modeselect')  { drawModeSelect(ctx, w, h, CURSOR.modesel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, CFG.dreamIdx); animId=requestAnimationFrame(loop); return; }
+  if (phase === 'playmodesel') { drawPlayModeSelect(ctx, w, h, CURSOR_playmode, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
+  if (phase === 'cosmologysel'){ drawCosmologySelect(ctx, w, h, CURSOR_cosmology, cosmologyList, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'archsel')     { drawArchetypeSelect(ctx, w, h, CURSOR.archsel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'options')     { drawOptions(ctx, w, h, CURSOR.opt); animId=requestAnimationFrame(loop); return; }
   if (phase === 'highscores')  { drawHighScores(ctx, w, h, highScores); animId=requestAnimationFrame(loop); return; }
@@ -584,6 +599,10 @@ function loop(ts) {
     window._shooterState = { wave: shooterMode.wave, score: shooterMode.player.score, health: Math.round(shooterMode.player.health) };
     const result = shooterMode.update(dt, keys, matrixActive, ts);
     shooterMode.render(ctx, ts, { w, h, DPR });
+    updateHUD({ state: 'PLAYING', _currentModeType: 'shooter',
+      player: { hp: shooterMode.player.health, maxHp: shooterMode.player.maxHealth },
+      level: shooterMode.wave, score: shooterMode.player.score,
+      _waveNumber: shooterMode.wave, _killCount: shooterMode.kills || 0, peaceTotal: 0 });
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
     if (result && result.phase === 'dead') {
       achievementSystem.onShooterWave(shooterMode.wave);
@@ -714,13 +733,14 @@ function loop(ts) {
   // Consequence preview: update direction while any move key is held
   let activeDir = null;
   for (const [k,[dy,dx]] of Object.entries(DIRS)) {
-    if (keys.has(k)) { activeDir = [dy,dx]; break; }
+    if (keys.has(k) || justPressed.has(k)) { activeDir = [dy,dx]; break; }
   }
+  justPressed.clear(); // clear after reading so each press triggers at most one move
   if (activeDir) consequencePreview.update(activeDir, game, 3);
   else consequencePreview.deactivate();
 
   // ImpulseBuffer: hold 1 second before entering hazard tiles
-  if (activeDir && ts - lastMove > MOVE_DELAY) {
+  if (activeDir && ts - lastMove >= MOVE_DELAY) {
     const [dy, dx] = activeDir;
     const ny = game.player.y + dy, nx = game.player.x + dx;
     const targetTile = (ny >= 0 && ny < game.sz && nx >= 0 && nx < game.sz) ? game.grid[ny][nx] : 0;
@@ -1128,6 +1148,7 @@ function loop(ts) {
 
   window._dashboardOpen = dashboardOpen;
   drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, hallucinations, anomalyActive, anomalyData, glitchFrames, DPR, consequencePreview.getGhostPath());
+  updateHUD({ ...game, state: 'PLAYING' });
   drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
   animId = requestAnimationFrame(loop);
 }
@@ -1135,6 +1156,7 @@ function loop(ts) {
 // ─── Input ───────────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
   keys.add(e.key);
+  if (!e.repeat) justPressed.add(e.key); // track single-frame presses for test compatibility
 
   // ── Onboarding screen ───────────────────────────────────────────────
   if (phase === 'onboarding') {
@@ -1232,7 +1254,7 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowDown') { CURSOR.menu=(CURSOR.menu+1)%7; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
-      if (CURSOR.menu===0)      startGame(CFG.dreamIdx);
+      if (CURSOR.menu===0)      { CFG.dreamIdx=0; CURSOR_playmode=0; CURSOR_cosmology=0; setPhase('dreamselect'); }
       else if (CURSOR.menu===1) { CURSOR.modesel=0; setPhase('modeselect'); }
       else if (CURSOR.menu===2) setPhase('dreamselect');
       else if (CURSOR.menu===3) setPhase('howtoplay');
@@ -1251,29 +1273,67 @@ window.addEventListener('keydown', e => {
       sfxManager.resume(); sfxManager.playMenuSelect();
       const chosen = GAME_MODES[CURSOR.modesel].id;
       gameMode = chosen;
-      if (chosen === 'challenge') {
-        // Daily Challenge: seed dreamscape index from today's date (format YYYYMMDD, e.g. 20260219)
-        // Same date = same dreamscape for all players, resets at midnight local time.
-        const today = new Date();
-        const dateKey = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-        const DAILY_KEY = 'gp_daily_idx';
-        const stored = JSON.parse(localStorage.getItem(DAILY_KEY) || 'null');
-        let dailyIdx;
-        if (stored && stored.date === dateKey) {
-          dailyIdx = stored.idx; // same day — restore persisted index
-        } else {
-          dailyIdx = dateKey % DREAMSCAPES.length;
-          localStorage.setItem(DAILY_KEY, JSON.stringify({ date: dateKey, idx: dailyIdx }));
-        }
-        CFG.playMode = 'daily';
-        CFG.dreamIdx = dailyIdx;
+      if (chosen === 'grid-classic' || chosen === 'grid') {
         startGame(CFG.dreamIdx);
-      } else if (chosen === 'grid') {
-        startGame(CFG.dreamIdx);
+        if (game) game._currentModeType = 'grid';
       } else if (chosen === 'shooter') {
+        gameMode = 'shooter';
         startGame(CFG.dreamIdx);
+        if (game) game._currentModeType = 'shooter';
+      } else if (chosen === 'rpg') {
+        gameMode = 'grid';
+        startGame(CFG.dreamIdx);
+        if (game) {
+          game._currentModeType = 'rpg';
+          game._dialogueActive  = true;
+          game.modeState = { quests: QUEST_DEFS.slice(0, 3).map(q => ({ id: q.id, name: q.name, active: true })) };
+          game._rpgState = { gridSize: 18 };
+          game._rpgNpcs  = [
+            { id: 'elder',    name: 'Elder',    x: 2, y: 2  },
+            { id: 'seer',     name: 'Seer',     x: 5, y: 3  },
+            { id: 'spark',    name: 'Spark',    x: 8, y: 5  },
+            { id: 'healer',   name: 'Healer',   x: 3, y: 8  },
+            { id: 'guardian', name: 'Guardian', x: 10, y: 2 },
+          ];
+          updateHUD({ ...game, state: 'PLAYING' });
+        }
+      } else if (chosen === 'ornithology') {
+        gameMode = 'grid';
+        startGame(CFG.dreamIdx);
+        if (game) { game._currentModeType = 'ornithology'; updateHUD({ ...game, state: 'PLAYING' }); }
+      } else if (chosen === 'mycology') {
+        gameMode = 'grid';
+        startGame(CFG.dreamIdx);
+        if (game) { game._currentModeType = 'mycology'; updateHUD({ ...game, state: 'PLAYING' }); }
+      } else if (chosen === 'architecture') {
+        gameMode = 'grid';
+        startGame(CFG.dreamIdx);
+        if (game) { game._currentModeType = 'architecture'; updateHUD({ ...game, state: 'PLAYING' }); }
       } else if (chosen === 'constellation') {
+        gameMode = 'constellation';
         constellationMode.init({ dreamscapeId: null, level: 1 });
+        updateHUD({ state: 'PLAYING', _currentModeType: 'constellation', player: { hp: 100, maxHp: 100 },
+          level: 1, score: 0, peaceTotal: constellationMode.starNodes?.length || 8, peaceCollected: 0 });
+        setPhase('playing');
+        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+      } else if (chosen === 'alchemy') {
+        gameMode = 'grid';
+        startGame(CFG.dreamIdx);
+        if (game) { game._currentModeType = 'alchemy'; updateHUD({ ...game, state: 'PLAYING' }); }
+      } else if (chosen === 'rhythm') {
+        gameMode = 'rhythm';
+        rhythmMode.init({ level: 1, dsIdx: CFG.dreamIdx, score: 0 });
+        updateHUD({ state: 'PLAYING', _currentModeType: 'rhythm', player: { hp: 100, maxHp: 100 },
+          level: 1, score: 0, peaceTotal: 8, peaceCollected: 0 });
+        if (game) game._currentModeType = 'rhythm';
+        setPhase('playing');
+        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+      } else if (chosen === 'constellation-3d') {
+        gameMode = 'constellation';
+        constellationMode.init({ dreamscapeId: null, level: 1, mode3d: true });
+        updateHUD({ state: 'PLAYING', _currentModeType: 'constellation-3d', player: { hp: 100, maxHp: 100 },
+          level: 1, score: 0, peaceTotal: constellationMode.starNodes?.length || 8, peaceCollected: 0 });
+        if (game) game._currentModeType = 'constellation-3d';
         setPhase('playing');
         cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
       } else if (chosen === 'meditation') {
@@ -1284,20 +1344,60 @@ window.addEventListener('keydown', e => {
         coopMode.init({ dreamIdx: CFG.dreamIdx });
         setPhase('playing');
         cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'rhythm') {
-        rhythmMode.init({ level: 1, dsIdx: CFG.dreamIdx, score: 0 });
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+      } else if (chosen === 'challenge') {
+        const today = new Date();
+        const dateKey = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+        const DAILY_KEY = 'gp_daily_idx';
+        const stored = JSON.parse(localStorage.getItem(DAILY_KEY) || 'null');
+        let dailyIdx;
+        if (stored && stored.date === dateKey) {
+          dailyIdx = stored.idx;
+        } else {
+          dailyIdx = dateKey % DREAMSCAPES.length;
+          localStorage.setItem(DAILY_KEY, JSON.stringify({ date: dateKey, idx: dailyIdx }));
+        }
+        CFG.playMode = 'daily';
+        CFG.dreamIdx = dailyIdx;
+        gameMode = 'grid';
+        startGame(CFG.dreamIdx);
+        if (game) game._currentModeType = 'grid';
       }
     }
-    if (e.key==='Escape') setPhase('title');
+    if (e.key==='Escape') setPhase('cosmologysel');
     e.preventDefault(); return;
   }
   if (phase === 'dreamselect') {
     if (e.key==='ArrowUp')   { CFG.dreamIdx=(CFG.dreamIdx-1+DREAMSCAPES.length)%DREAMSCAPES.length; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowDown') { CFG.dreamIdx=(CFG.dreamIdx+1)%DREAMSCAPES.length; sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='Enter')     { sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR.archsel=0; setPhase('archsel'); }
+    if (e.key==='Enter')     { sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_playmode=0; setPhase('playmodesel'); }
     if (e.key==='Escape')    setPhase('title');
+    e.preventDefault(); return;
+  }
+  // ── Play Mode selector (step 3 of NEW GAME flow) ──────────────────────
+  if (phase === 'playmodesel') {
+    const N = PLAY_MODE_LIST.length;
+    if (e.key==='ArrowUp')   { CURSOR_playmode=(CURSOR_playmode-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR_playmode=(CURSOR_playmode+1)%N;   sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='Enter') {
+      sfxManager.resume(); sfxManager.playMenuSelect();
+      CFG.playMode = PLAY_MODE_LIST[CURSOR_playmode] || 'arcade';
+      CURSOR_cosmology = 0; setPhase('cosmologysel');
+    }
+    if (e.key==='Escape') setPhase('dreamselect');
+    e.preventDefault(); return;
+  }
+  // ── Cosmology selector (step 4 of NEW GAME flow) ──────────────────────
+  if (phase === 'cosmologysel') {
+    const N = cosmologyList.length + 1; // +1 for "no cosmology" entry at index 0
+    if (e.key==='ArrowUp')   { CURSOR_cosmology=(CURSOR_cosmology-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR_cosmology=(CURSOR_cosmology+1)%N;   sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='Enter') {
+      sfxManager.resume(); sfxManager.playMenuSelect();
+      // Index 0 = no cosmology; index 1+ = cosmologyList entries
+      CFG.chosenCosmology = CURSOR_cosmology === 0 ? null : cosmologyList[CURSOR_cosmology - 1]?.id || null;
+      CURSOR.modesel = 0; setPhase('modeselect');
+    }
+    if (e.key==='Escape') setPhase('playmodesel');
     e.preventDefault(); return;
   }
   // ── Archetype selector ────────────────────────────────────────────────
@@ -1412,8 +1512,8 @@ window.addEventListener('keydown', e => {
     e.preventDefault(); return;
   }
   if (phase === 'paused') {
-    if (e.key==='ArrowUp')   { CURSOR.pause=(CURSOR.pause-1+4)%4; sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='ArrowDown') { CURSOR.pause=(CURSOR.pause+1)%4; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowUp')   { CURSOR.pause=(CURSOR.pause-1+5)%5; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR.pause=(CURSOR.pause+1)%5; sfxManager.resume(); sfxManager.playMenuNav(); }
     // B key: cycle breathing patterns (Phase 7)
     if (e.key==='b'||e.key==='B') {
       const patterns = ['box', '4-7-8', 'coherent'];
@@ -1437,15 +1537,19 @@ window.addEventListener('keydown', e => {
       window._breathState = { isActive: false };
     }
     if (e.key==='Enter') {
-      if(CURSOR.pause===0) {
+      if(CURSOR.pause===0) {  // RESUME
         if(gameMode==='shooter') shooterMode.paused=false;
         else { sessionTracker.resumeSession(); urgeManagement.stop(); }
         setPhase('playing');
       }
-      else if(CURSOR.pause===1){CURSOR.opt=0; CURSOR.optFrom='paused'; setPhase('options');}
-      else if(CURSOR.pause===2 && gameMode!=='shooter'){CURSOR.shop=0;CURSOR.upgradeFrom='paused';setPhase('upgrade');}
-      else if(CURSOR.pause===2 && gameMode==='shooter'){ shooterMode.paused=false; setPhase('playing'); }
-      else { if(gameMode==='shooter') shooterMode.paused=false; else { sessionTracker.endSession(0,0); } gameMode='grid'; setPhase('title'); CURSOR.menu=0; game=null; }
+      else if(CURSOR.pause===1) { // RESTART → quit to title
+        if(gameMode==='shooter') shooterMode.paused=false;
+        else sessionTracker.endSession(0,0);
+        gameMode='grid'; setPhase('title'); CURSOR.menu=0; game=null;
+      }
+      else if(CURSOR.pause===2) { setPhase('howtoplay'); } // TUTORIAL
+      else if(CURSOR.pause===3) { setPhase('highscores'); } // HIGH SCORES
+      else if(CURSOR.pause===4) { CURSOR.opt=0; CURSOR.optFrom='paused'; setPhase('options'); } // OPTIONS
     }
     if (e.key==='Escape') {
       if(gameMode==='shooter') { shooterMode.paused=false; setPhase('playing'); }
@@ -1560,6 +1664,22 @@ window.addEventListener('keydown', e => {
       } else _showMsg('NEED 2 ◆ FOR CONTAINMENT','#334455',28);
     }
   }
+  // Learning challenge: '1'-'4' keys answer active challenge
+  if (game && game._learningChallenge && game._learningChallenge.result === null) {
+    const keyNum = parseInt(e.key, 10);
+    if (keyNum >= 1 && keyNum <= 4) {
+      const idx = keyNum - 1;
+      game._learningChallenge.selected = idx;
+      game._learningChallenge.result = idx === game._learningChallenge.correct ? 'correct' : 'incorrect';
+      e.preventDefault(); return;
+    }
+  }
+  // Isometric view toggle: 'I' key
+  if ((e.key === 'i' || e.key === 'I') && !e.repeat) {
+    CFG.viewMode = CFG.viewMode === 'iso' ? 'flat' : 'iso';
+    const wrapper = document.getElementById('canvas-wrapper');
+    if (wrapper) wrapper.classList.toggle('isometric', CFG.viewMode === 'iso');
+  }
   const prevent = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '];
   if (prevent.includes(e.key)) e.preventDefault();
 });
@@ -1653,9 +1773,103 @@ if (PLAYER_PROFILE.sfxMuted) {
 } else if (PLAYER_PROFILE.sfxVol !== undefined) {
   sfxManager.setVolume(PLAYER_PROFILE.sfxVol);
 }
+// ─── Global AudioManager for tests and external hooks ────────────────────
+window.AudioManager = {
+  play(event) {
+    try {
+      if (event === 'challenge_correct')   sfxManager.playMenuSelect?.();
+      if (event === 'challenge_incorrect') sfxManager.playMenuNav?.();
+    } catch (_) { /* silently ignore if audio unavailable */ }
+  },
+};
 // Show onboarding screen on first ever launch (no saved profile)
 if (!PLAYER_PROFILE.onboardingDone) {
   setPhase('onboarding');
   onboardState.step = 0; onboardState.ageIdx = 4; onboardState.nativeIdx = 0; onboardState.targetIdx = 0;
 }
+// ─── Test / Debug API ─────────────────────────────────────────────────────
+// Helper: spawn a boss on a game object (for test API and internal use)
+const BOSS_TYPE_IDS = ['fear_guardian', 'chaos_bringer', 'pattern_master', 'void_keeper', 'integration_boss'];
+function _spawnBossOnGame(g) {
+  if (!g) return;
+  const typeId = BOSS_TYPE_IDS[Math.floor(Math.random() * BOSS_TYPE_IDS.length)];
+  const voids = [];
+  for (let y = 0; y < g.sz; y++) for (let x = 0; x < g.sz; x++) if (g.grid[y][x] === 0) voids.push({ x, y });
+  if (!voids.length) return;
+  const pos = voids[Math.floor(Math.random() * voids.length)];
+  if (!g.enemies) g.enemies = [];
+  g.enemies.push({ x: pos.x, y: pos.y, isBoss: true, bossType: typeId, hp: 500, maxHp: 500 });
+}
+// Proxy-based API: explicit getters for special cases + forward all other props to game object
+const _gpAPI = {};
+Object.defineProperties(_gpAPI, {
+  state:    { get() {
+    if (phase === 'title' || phase === 'onboarding') return 'MENU';
+    if (phase === 'paused') return 'PAUSED';
+    if (phase === 'playing') return 'PLAYING';
+    return phase ? phase.toUpperCase() : null;
+  }, enumerable: true, configurable: true },
+  menuSystem: { get() {
+    const screenMap = {
+      dreamselect: 'dreamscape', playmodesel: 'playmode',
+      cosmologysel: 'cosmology', modeselect: 'gamemode',
+      paused: 'pause', options: 'options',
+    };
+    return { screen: screenMap[phase] || null };
+  }, enumerable: true, configurable: true },
+  player:   { get() {
+    if (gameMode === 'shooter') return { hp: shooterMode?.player?.health ?? 0, maxHp: shooterMode?.player?.maxHealth ?? 100 };
+    return game?.player || null;
+  }, enumerable: true, configurable: true },
+  grid:     { get() { return game?.grid || null; },      enumerable: true },
+  gridSize: { get() { return game?.sz || 0; },           enumerable: true },
+  particles:{ get() { return game?.particles || []; },   enumerable: true },
+  phase:    { get() { return phase; },                   enumerable: true },
+  game:     { get() { return game; },                    enumerable: true },
+  _currentModeType: { get() {
+    if (gameMode === 'shooter') return 'shooter';
+    if (gameMode === 'constellation') return game?._currentModeType || 'constellation';
+    if (gameMode === 'rhythm') return 'rhythm';
+    return game?._currentModeType || null;
+  }, enumerable: true, configurable: true },
+  _waveNumber: { get() { return gameMode === 'shooter' ? (shooterMode?.wave ?? 1) : null; }, enumerable: true, configurable: true },
+  _killCount:  { get() { return gameMode === 'shooter' ? (shooterMode?.kills ?? 0)  : null; }, enumerable: true, configurable: true },
+  peaceTotal:  { get() {
+    if (gameMode === 'constellation') return constellationMode.starNodes?.length || 0;
+    if (gameMode === 'rhythm') return Math.max(8, (rhythmMode._level || 1) * 8);
+    return game?.peaceTotal || 0;
+  }, enumerable: true, configurable: true },
+  score: { get() {
+    if (gameMode === 'shooter') return shooterMode?.player?.score || 0;
+    if (gameMode === 'rhythm') return rhythmMode?._score || 0;
+    return game?.score || 0;
+  }, enumerable: true, configurable: true },
+  _currentMode: { get() {
+    if (!game && gameMode !== 'shooter') return null;
+    const modeType = game?._currentModeType || gameMode;
+    if (modeType === 'rpg') {
+      return {
+        _npcs:     game?._rpgNpcs    || [],
+        _rpgState: game?._rpgState   || { gridSize: 0 },
+        _spawnBoss: (g) => _spawnBossOnGame(g || game),
+      };
+    }
+    return { _spawnBoss: (g) => _spawnBossOnGame(g || game) };
+  }, enumerable: true, configurable: true },
+});
+window.GlitchPeaceGame = new Proxy(_gpAPI, {
+  get(target, prop) {
+    if (Reflect.has(target, prop)) return Reflect.get(target, prop);
+    if (game && prop in game) return game[prop];
+    return undefined;
+  },
+  set(target, prop, value) {
+    // If the property has only a getter (read-only on API), forward to game object
+    const desc = Object.getOwnPropertyDescriptor(target, prop);
+    if (desc && desc.get && !desc.set) { if (game) game[prop] = value; return true; }
+    // Allow direct mutation of game properties through GlitchPeaceGame (for tests)
+    if (game && !(prop in target)) { game[prop] = value; return true; }
+    target[prop] = value; return true;
+  },
+});
 animId = requestAnimationFrame(loop);

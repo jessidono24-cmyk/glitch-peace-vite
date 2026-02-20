@@ -65,6 +65,7 @@ export class ShooterMode extends GameMode {
     this.activePowerUps = {}; this.particles = [];
     this.waveBanner = null; this.paused = false;
     this.wave = 1; this.waveTimer = 0; this.timeSinceLastShot = 0;
+    this.kills = 0;
     this.fireRate = 0.25;
     this.spawnWave();
     console.log('[ShooterMode] Initialized');
@@ -176,6 +177,7 @@ export class ShooterMode extends GameMode {
       if (e.health <= 0) {
         this.spawnParticles(e.x, e.y, ENEMY_TYPES[e.type].glowColor, 12, 120);
         this.player.score += ENEMY_TYPES[e.type].score * this.wave;
+        this.kills = (this.kills || 0) + 1;
         if (Math.random() < 0.22) this.spawnPowerUp(e.x, e.y);
         this.enemies.splice(i, 1);
       }

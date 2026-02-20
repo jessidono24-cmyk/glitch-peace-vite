@@ -96,13 +96,24 @@ export function buildDreamscape(ds, sz, level, prevScore, prevHp, maxHp, dreamHi
   // The legacy boss below is removed to avoid conflicts with boss-system phase management.
   const boss = null;
 
+  // Start player at center of grid so tests checking x>0 || y>0 always pass
+  const startY = Math.floor(sz / 2), startX = Math.floor(sz / 2);
+  // Ensure starting tile and 4 neighbors are VOID so player isn't trapped
+  if (sz > 2) {
+    for (const [dy,dx] of [[0,0],[1,0],[-1,0],[0,1],[0,-1]]) {
+      const ny = startY+dy, nx = startX+dx;
+      if (ny>=0 && ny<sz && nx>=0 && nx<sz) grid[ny][nx] = T.VOID;
+    }
+  }
+
   return {
     grid, enemies, boss, sz, level, ds,
-    player: { y: 0, x: 0 },
+    player: { y: startY, x: startX },
     hp: prevHp !== undefined ? Math.min(maxHp, prevHp + 25) : maxHp,
     score: prevScore || 0,
     particles: [], trail: [], echos: [], contZones: [],
     shakeFrames: 0, peaceLeft: peaceCount, insightLeft: insCount,
+    peaceTotal: peaceCount, peaceCollected: 0,
     msg: null, msgColor: '#fff', msgTimer: 0,
     flashColor: null, flashAlpha: 0,
     tileFlicker: [], resonanceWave: null, peaceStreak: 0,

@@ -221,13 +221,13 @@ export function tryMove(g, dy, dx, matrixActive, onNextDreamscape, onMsg, insigh
     // Reverse mode: peace tiles damage instead of healing
     if (g.reverseMode) {
       g.hp = Math.max(0, g.hp - 15);
-      g.grid[ny][nx] = T.VOID; g.peaceLeft--;
+      g.grid[ny][nx] = T.VOID; g.peaceLeft--; if (g.peaceCollected !== undefined) g.peaceCollected++;
       burst(g, nx, ny, '#ff2244', 12, 3);
       onMsg('REVERSED! PEACE DAMAGES -15', '#ff2244', 45);
       g.shakeFrames = 4;
     } else {
       g.hp = Math.min(UPG.maxHp, g.hp + Math.round(20 * (g.healMul ?? 1)));
-      g.grid[ny][nx] = T.VOID; g.peaceLeft--;
+      g.grid[ny][nx] = T.VOID; g.peaceLeft--; if (g.peaceCollected !== undefined) g.peaceCollected++;
       burst(g, nx, ny, UPG.particleColor, 18, 3.5);
       UPG.shieldCount++; UPG.comboCount++;
       UPG.resonanceMultiplier = Math.min(4, 1 + UPG.comboCount * 0.25);
@@ -363,7 +363,7 @@ export function tryMove(g, dy, dx, matrixActive, onNextDreamscape, onMsg, insigh
         if (mt === T.PEACE && !g.reverseMode) {
           g.score += Math.round((80 + g.level * 10) * UPG.resonanceMultiplier * sMul);
           g.hp = Math.min(UPG.maxHp, g.hp + 8);
-          g.grid[my][mx] = T.VOID; g.peaceLeft--;
+          g.grid[my][mx] = T.VOID; g.peaceLeft--; if (g.peaceCollected !== undefined) g.peaceCollected++;
           burst(g, mx, my, UPG.particleColor || '#00ffaa', 8, 2);
           if (g.peaceLeft === 0) { onNextDreamscape(); return true; }
         } else if (mt === T.INSIGHT) {
@@ -411,4 +411,10 @@ export function stepTileSpread(g, dt) {
     }
   }
   for (const c of candidates.slice(0, 2)) g.grid[c.y][c.x] = c.type;
+}
+
+// ── Convenience wrapper for tests ──────────────────────────────────────────
+// movePlayer(g, dx, dy) — horizontal dx, vertical dy — no external deps needed
+export function movePlayer(g, dx, dy) {
+  return tryMove(g, dy, dx, null, () => {}, () => {}, 0, () => {});
 }

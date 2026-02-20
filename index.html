@@ -316,9 +316,35 @@
   </style>
 </head>
 <body>
-  <div id="app"></div>
+  <div id="app">
+    <div id="canvas-wrapper">
+      <canvas id="c"></canvas>
+      <div id="sprite-layer"></div>
+    </div>
+  </div>
+  <div id="hud" style="display:none;">
+    <div class="hud-section">
+      <div class="hud-item">
+        <span class="hud-label">Health</span>
+        <div id="hp-bar"><div id="hp-fill" style="width:100%"></div><div id="hp-text">100/100</div></div>
+      </div>
+    </div>
+    <div class="hud-section">
+      <div class="hud-item"><span class="hud-label">Level</span><span class="hud-value" id="level">1</span></div>
+      <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="score">0</span></div>
+      <div class="hud-item"><span class="hud-label">Objective</span><span class="hud-value" id="objective">◈ ×0</span></div>
+    </div>
+  </div>
   <div id="menu-overlay"></div>
   <div id="message"></div>
+  <div id="mobile-controls" style="display:none;">
+    <div class="row"><button class="dpad" id="btn-up">↑</button></div>
+    <div class="row">
+      <button class="dpad" id="btn-left">←</button>
+      <button class="dpad" id="btn-down">↓</button>
+      <button class="dpad" id="btn-right">→</button>
+    </div>
+  </div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

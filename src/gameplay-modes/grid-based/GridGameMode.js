@@ -1742,8 +1742,10 @@ export class GridGameMode extends GameMode {
           || input.isKeyPressed?.(' ')
           || input.isKeyPressed?.('Enter')) {
         this._levelFlashMs = 0;
+        // Fall through — let the same key press register as movement below
+      } else {
+        return;
       }
-      return;
     }
 
     // SHIFT: toggle Matrix A ↔ B

@@ -51,7 +51,6 @@ import { emergenceIndicators } from './systems/awareness/emergence-indicators.js
 import { chakraSystem } from './systems/cosmology/chakra-system.js';
 import { TAROT_ARCHETYPES, getRandomArchetype } from './systems/cosmology/tarot-archetypes.js';
 // ─── Phase 11: Integration Dashboard ─────────────────────────────────────
-import { drawDashboard, dashboard } from './systems/integration/progress-dashboard.js';
 // ─── Phase 9: Intelligence Enhancement ───────────────────────────────────
 import { logicPuzzles }       from './intelligence/cognitive/logic-puzzles.js';
 import { strategicThinking }  from './intelligence/cognitive/strategic-thinking.js';
@@ -179,7 +178,9 @@ window._alchemySystem = alchemySystem;
 window._empathyTraining = empathyTraining;
 window._logicPuzzles = logicPuzzles;
 window._strategicThinking = strategicThinking;
+window._dashboardOpen = false; // updated each frame
 
+let dashboardOpen = false;
 let glitchFrames = 0, glitchTimer = 500;
 let anomalyActive = false, anomalyData = { row:-1, col:-1, t:0 };
 let hallucinations = [];
@@ -1122,10 +1123,9 @@ function loop(ts) {
     setPhase('dead'); animId=requestAnimationFrame(loop); return;
   }
 
+  window._dashboardOpen = dashboardOpen;
   drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, hallucinations, anomalyActive, anomalyData, glitchFrames, DPR, consequencePreview.getGhostPath());
   drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-  // Phase 11: Draw dashboard overlay if visible
-  if (dashboard.visible) drawDashboard(ctx, CW(), CH());
   animId = requestAnimationFrame(loop);
 }
 
@@ -1481,8 +1481,8 @@ window.addEventListener('keydown', e => {
       }
       e.preventDefault(); return;
     }
-    if (e.key==='Escape') { CURSOR.pause=0; sessionTracker.pauseSession(); emergenceIndicators.record('pause_frequency'); characterStats.onPauseUsed(); questSystem.onPause(); dashboard.hide(); setPhase('paused'); }
-    if ((e.key==='h'||e.key==='H') && !e.repeat) dashboard.toggle();
+    if (e.key==='Escape') { CURSOR.pause=0; sessionTracker.pauseSession(); emergenceIndicators.record('pause_frequency'); characterStats.onPauseUsed(); questSystem.onPause(); dashboardOpen = false; setPhase('paused'); }
+    if ((e.key==='h'||e.key==='H') && !e.repeat) dashboardOpen = !dashboardOpen;
     if (e.key==='Shift' && !e.repeat) {
       const next = matrixActive === 'A' ? 'B' : 'A';
       setMatrix(next); setMatrixHoldTime(0);
@@ -1606,7 +1606,7 @@ function pollGamepad() {
     else if (phase === 'paused') { sessionTracker.resumeSession(); setPhase('playing'); }
     else if (phase === 'title') startGame(CFG.dreamIdx);
   }
-  if (pressed(8) && phase === 'playing') dashboard.toggle(); // SELECT: dashboard
+  if (pressed(8) && phase === 'playing') dashboardOpen = !dashboardOpen; // SELECT: dashboard
 
   // Save button states for edge detection
   gpLastButtons = gp.buttons.map(b => b?.pressed || false);

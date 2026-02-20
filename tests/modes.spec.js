@@ -530,7 +530,7 @@ test('feature: learning challenge — triggers and accepts key input 1-4', async
 // ─────────────────────────────────────────────────────────────────────────────
 //  RPG NPC — 3 NPCs present in RPG mode
 // ─────────────────────────────────────────────────────────────────────────────
-test('feature: RPG mode — 3 NPCs placed in world (Elder, Seer, Spark)', async ({ page }) => {
+test('feature: RPG mode — 5 NPCs placed in world (Elder, Seer, Spark, Healer, Guardian)', async ({ page }) => {
   const state = await startMode(page, 'rpg');
   expect(state).toBe('PLAYING');
   await page.waitForTimeout(300);
@@ -540,7 +540,7 @@ test('feature: RPG mode — 3 NPCs placed in world (Elder, Seer, Spark)', async 
     const mode = window.GlitchPeaceGame?._currentMode;
     return mode?._npcs?.length ?? 0;
   });
-  expect(npcCount).toBe(3); // Elder + Seer + Spark
+  expect(npcCount).toBe(5); // Elder + Seer + Spark + Healer + Guardian
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

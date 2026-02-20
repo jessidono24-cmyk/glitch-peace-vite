@@ -338,6 +338,7 @@ export function tryMove(g, dy, dx, matrixActive, onNextDreamscape, onMsg, insigh
       g.hp = Math.max(0, g.hp - dmg);
       g.shakeFrames = 5;
       if (window.sfxManager) window.sfxManager.playPlayerHurt();
+      if (window._strategicThinking) window._strategicThinking.onDamage?.(matrixActive);
       const dmgColors = { [T.DESPAIR]:'#2244ff',[T.TERROR]:'#ff0000',[T.SELF_HARM]:'#660000',[T.RAGE]:'#ff0044',[T.HOPELESS]:'#004488',[T.GLITCH]:'#aa00ff',[T.TRAP]:'#ff8800',[T.PAIN]:'#440000' };
       const pColors   = { [T.DESPAIR]:'#3355ff',[T.TERROR]:'#ff2222',[T.SELF_HARM]:'#880000',[T.RAGE]:'#ff0044',[T.HOPELESS]:'#004488',[T.GLITCH]:'#aa00ff',[T.TRAP]:'#ff8800',[T.PAIN]:'#440000' };
       const msgs      = { [T.DESPAIR]:'-DESPAIR',[T.TERROR]:'-TERROR!',[T.SELF_HARM]:'-SELF·HARM',[T.RAGE]:'-RAGE',[T.HOPELESS]:'-HOPELESS',[T.GLITCH]:'-GLITCH',[T.TRAP]:'-TRAP',[T.PAIN]:'-PAIN' };

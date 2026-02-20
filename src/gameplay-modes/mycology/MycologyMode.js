@@ -10,23 +10,63 @@
 import GameMode from '../../core/interfaces/GameMode.js';
 
 // ── Mushroom species data ───────────────────────────────────────────────
+// notes: array of facts shown in rotation on each encounter with the same species
 const MUSHROOMS = [
   // Edible (safe: true)
-  { name: 'Chanterelle',      symbol: '🍄', safe: true,  rarity: 2, note: 'Golden, funnel-shaped; fruity apricot scent. Partner of oaks and beeches.' },
-  { name: 'Morel',            symbol: '🍄', safe: true,  rarity: 3, note: 'Honeycomb cap; highly prized; fruits only in early spring.' },
-  { name: 'Oyster Mushroom',  symbol: '🍄', safe: true,  rarity: 1, note: 'Grows in shelf clusters on dead wood; used for mycelium packaging.' },
-  { name: 'Lion\'s Mane',     symbol: '🍄', safe: true,  rarity: 3, note: 'Cascading white teeth; compounds studied for nerve growth factor.' },
-  { name: 'Shiitake',         symbol: '🍄', safe: true,  rarity: 2, note: 'Cultivated for 1,000+ years; second most consumed mushroom worldwide.' },
-  { name: 'Porcini',          symbol: '🍄', safe: true,  rarity: 2, note: 'Broad brown cap; called "king bolete"; forms mycorrhizae with conifers.' },
-  { name: 'Giant Puffball',   symbol: '🍄', safe: true,  rarity: 2, note: 'Can grow to 150 cm; edible when flesh is pure white throughout.' },
+  { name: 'Chanterelle',      symbol: '🍄', safe: true,  rarity: 2,
+    notes: ['Golden, funnel-shaped; fruity apricot scent. Partner of oaks and beeches.',
+            'Cannot be cultivated—requires a live tree partner root network to grow.',
+            'Rich in vitamin D; traditional European forest delicacy for centuries.'] },
+  { name: 'Morel',            symbol: '🍄', safe: true,  rarity: 3,
+    notes: ['Honeycomb cap; highly prized; fruits only in early spring.',
+            'Appears after forest fires—benefits from the nutrient-rich ash layer.',
+            'Must be cooked; contains hydrazine compounds that are toxic when raw.'] },
+  { name: 'Oyster Mushroom',  symbol: '🍄', safe: true,  rarity: 1,
+    notes: ['Grows in shelf clusters on dead wood; used for mycelium packaging.',
+            'Can digest hydrocarbons in contaminated soil—a powerful bioremediation tool.',
+            'One of the few fungi that actively hunts; paralyzes nematodes with toxin.'] },
+  { name: "Lion's Mane",      symbol: '🍄', safe: true,  rarity: 3,
+    notes: ["Cascading white teeth; compounds studied for nerve growth factor.",
+            'Clinical trials show potential for reducing mild cognitive impairment.',
+            'Used in Traditional Chinese Medicine for centuries as a tonic mushroom.'] },
+  { name: 'Shiitake',         symbol: '🍄', safe: true,  rarity: 2,
+    notes: ['Cultivated for 1,000+ years; second most consumed mushroom worldwide.',
+            'Contains lentinan—a polysaccharide studied for immune modulation.',
+            'The umami compound lentilic acid intensifies as the mushroom dries.'] },
+  { name: 'Porcini',          symbol: '🍄', safe: true,  rarity: 2,
+    notes: ['Broad brown cap; called "king bolete"; forms mycorrhizae with conifers.',
+            'Cannot be farmed—it requires specific live-tree root partnerships.',
+            'Drying concentrates the flavor by a factor of 10.'] },
+  { name: 'Giant Puffball',   symbol: '🍄', safe: true,  rarity: 2,
+    notes: ['Can grow to 150 cm; edible when flesh is pure white throughout.',
+            'A single specimen can produce 7 trillion spores.',
+            'Used as a wound staunching agent by Indigenous peoples for centuries.'] },
   // Inedible / toxic (safe: false)
-  { name: 'Death Cap',        symbol: '💀', safe: false, rarity: 3, note: 'Amanita phalloides — responsible for 90% of fatal mushroom poisonings.' },
-  { name: 'Destroying Angel', symbol: '💀', safe: false, rarity: 3, note: 'Pure white; no antidote; symptoms appear 6–24 hours after ingestion.' },
-  { name: 'Jack-o\'Lantern',  symbol: '🟠', safe: false, rarity: 2, note: 'Glows faint blue-green in the dark; causes severe gastrointestinal distress.' },
-  { name: 'Fly Agaric',       symbol: '🔴', safe: false, rarity: 2, note: 'Classic red-and-white; psychoactive; used ceremonially in Siberian shamanism.' },
-  { name: 'False Morel',      symbol: '⚠',  safe: false, rarity: 2, note: 'Resembles true morels; contains gyromitrin, converted to monomethylhydrazine in body.' },
+  { name: 'Death Cap',        symbol: '💀', safe: false, rarity: 3,
+    notes: ['Amanita phalloides — responsible for 90% of fatal mushroom poisonings.',
+            'Tastes pleasantly mild—the deadliest mushroom has no warning flavor.',
+            'Half a cap contains enough amatoxin to kill an adult human.'] },
+  { name: 'Destroying Angel', symbol: '💀', safe: false, rarity: 3,
+    notes: ['Pure white; no antidote; symptoms appear 6–24 hours after ingestion.',
+            'Often mistaken for edible button mushrooms by inexperienced foragers.',
+            'Amatoxins block RNA polymerase II—halting protein synthesis in cells.'] },
+  { name: "Jack-o'Lantern",   symbol: '🟠', safe: false, rarity: 2,
+    notes: ['Glows faint blue-green in the dark; causes severe gastrointestinal distress.',
+            'The bioluminescence is produced by a luciferin-luciferase reaction.',
+            'Grows at the base of oaks; looks similar to chanterelles but is deadly.'] },
+  { name: 'Fly Agaric',       symbol: '🔴', safe: false, rarity: 2,
+    notes: ['Classic red-and-white; psychoactive; used ceremonially in Siberian shamanism.',
+            'The active compounds muscimol and ibotenic acid are not psilocybin.',
+            'Reindeer seek it out intentionally for its psychoactive effects.'] },
+  { name: 'False Morel',      symbol: '⚠',  safe: false, rarity: 2,
+    notes: ['Resembles true morels; contains gyromitrin, converted to monomethylhydrazine in body.',
+            'Poisoning can occur from inhaling vapors while cooking the mushroom.',
+            'Considered a delicacy in some Eastern European countries despite toxicity.'] },
   // Network (special — not collected; reveals connections)
-  { name: 'Mycelium Node',    symbol: '🕸', safe: null,  rarity: 0, note: 'Underground hyphal networks; a single organism can span thousands of acres.' },
+  { name: 'Mycelium Node',    symbol: '🕸', safe: null,  rarity: 0,
+    notes: ['Underground hyphal networks; a single organism can span thousands of acres.',
+            'Transfers carbon, water, and nutrients between trees in a forest.',
+            'Can recognize self vs. non-self; defends territory from rival fungi.'] },
 ];
 
 const EDIBLE   = MUSHROOMS.filter(m => m.safe === true);
@@ -68,7 +108,12 @@ export class MycologyMode extends GameMode {
   }
 
   init(gameState, canvas, ctx) {
-    this.tileSize = Math.floor(canvas.width / (gameState.gridSize || 12));
+    const gridSz = gameState.gridSize || 12;
+    const HUD_H = 40;
+    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    this.tileSize = Math.floor(gridPixels / gridSz);
+    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
     gameState.player = gameState.player || { x: 1, y: 1, hp: 100, maxHp: 100, symbol: '◈', color: '#00e5ff' };
     gameState._forageLog = gameState._forageLog || { safe: 0, toxic: 0, species: {} };
     gameState.peaceCollected = 0;
@@ -76,6 +121,16 @@ export class MycologyMode extends GameMode {
     gameState.score = gameState.score || 0;
     this._buildSubstrateGrid(gameState);
     this._spawnMushrooms(gameState);
+  }
+
+  onResize(canvas, gameState) {
+    if (!gameState) return;
+    const gridSz = gameState.gridSize || 12;
+    const HUD_H = 40;
+    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    this.tileSize = Math.floor(gridPixels / gridSz);
+    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
   }
 
   _buildSubstrateGrid(gameState) {
@@ -180,19 +235,26 @@ export class MycologyMode extends GameMode {
     spawn.collected = true;
     const m = spawn.mushroom;
 
+    // Track how many times this species has been encountered to rotate notes
+    if (!gameState._forageLog.speciesCount) gameState._forageLog.speciesCount = {};
+    gameState._forageLog.speciesCount[m.name] = (gameState._forageLog.speciesCount[m.name] || 0) + 1;
+    const encounterIdx = gameState._forageLog.speciesCount[m.name] - 1;
+    const notes = m.notes || [m.note || ''];
+    const currentNote = notes[encounterIdx % notes.length];
+
     if (m.safe) {
       const pts = (m.rarity || 1) * 120 * (gameState.level || 1);
       gameState.score = (gameState.score || 0) + pts;
       gameState.peaceCollected = (gameState.peaceCollected || 0) + 1;
       gameState._forageLog.safe = (gameState._forageLog.safe || 0) + 1;
       gameState._forageLog.species[m.name] = (gameState._forageLog.species[m.name] || 0) + 1;
-      this._foragingFlash = { mushroom: m, outcome: 'safe', shownAtMs: Date.now() };
+      this._foragingFlash = { mushroom: m, outcome: 'safe', note: currentNote, shownAtMs: Date.now() };
       try { window.AudioManager?.play('spore'); } catch(e) {}
     } else {
       const dmg = 15 + m.rarity * 5;
       gameState.player.hp = Math.max(1, (gameState.player.hp || 100) - dmg);
       gameState._forageLog.toxic = (gameState._forageLog.toxic || 0) + 1;
-      this._foragingFlash = { mushroom: m, outcome: 'toxic', shownAtMs: Date.now() };
+      this._foragingFlash = { mushroom: m, outcome: 'toxic', note: currentNote, shownAtMs: Date.now() };
       // Mandatory identification challenge for toxic species
       this._launchToxicChallenge(m);
       try { window.AudioManager?.play('damage'); } catch(e) {}
@@ -267,10 +329,16 @@ export class MycologyMode extends GameMode {
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
     const now = Date.now();
+    const xOff = this._xOff || 0;
+    const yOff = this._yOff || 0;
 
-    // Background
+    // Background (full canvas)
     ctx.fillStyle = '#060c06';
     ctx.fillRect(0, 0, w, h);
+
+    // Translate context so grid is centered
+    ctx.save();
+    ctx.translate(xOff, yOff);
 
     // Substrate tiles
     for (let y = 0; y < sz; y++) {
@@ -357,7 +425,10 @@ export class MycologyMode extends GameMode {
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // HP bar
+    // ── End grid-space rendering — restore canvas transform ────────────
+    ctx.restore();
+
+    // HP bar (canvas-space overlay)
     const hpFrac = Math.max(0, (gameState.player.hp || 100) / (gameState.player.maxHp || 100));
     ctx.fillStyle = '#220022';
     ctx.fillRect(8, h - 18, 100, 10);
@@ -378,7 +449,7 @@ export class MycologyMode extends GameMode {
       const dur = 2800;
       if (age < dur) {
         const fade = Math.min(1, age / 200) * (age > dur - 500 ? (dur - age) / 500 : 1);
-        const { mushroom, outcome } = this._foragingFlash;
+        const { mushroom, outcome, note } = this._foragingFlash;
         const col = outcome === 'safe' ? '#aaffaa' : '#ff4466';
         ctx.save();
         ctx.globalAlpha = fade;
@@ -395,8 +466,8 @@ export class MycologyMode extends GameMode {
         ctx.shadowBlur = 0;
         ctx.fillStyle = '#778899';
         ctx.font = `${Math.floor(w / 36)}px monospace`;
-        // Word-aware truncation: fit note to ~80% of canvas width
-        let noteText = mushroom.note;
+        // Use the rotating note (or fallback to first note / old .note field)
+        let noteText = note || (mushroom.notes ? mushroom.notes[0] : mushroom.note) || '';
         while (noteText.length > 0 && ctx.measureText(noteText).width > w * 0.88) {
           const lastSpace = noteText.lastIndexOf(' ');
           noteText = lastSpace > 0 ? noteText.substring(0, lastSpace) + '…' : noteText.substring(0, noteText.length - 2) + '…';

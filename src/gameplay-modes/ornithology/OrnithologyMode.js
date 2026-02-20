@@ -10,28 +10,77 @@
 import GameMode from '../../core/interfaces/GameMode.js';
 
 // ── Bird data ──────────────────────────────────────────────────────────
-// Each bird: { name, symbol, rarity, habitat, note (factoid) }
+// Each bird: { name, symbol, rarity, habitat, notes: [...] }
+// Multiple facts rotate on each sighting so repeat encounters teach new things.
 const BIRDS = [
   // Common (rarity 1)
-  { name: 'House Sparrow',   symbol: '🐦', rarity: 1, habitat: 'urban',   note: 'Introduced globally; one of the most abundant birds on Earth.' },
-  { name: 'American Robin',  symbol: '🐦', rarity: 1, habitat: 'forest',  note: 'First robin of spring signals seasonal thaw in North America.' },
-  { name: 'Mallard',         symbol: '🦆', rarity: 1, habitat: 'wetland', note: 'Ancestor of most domestic duck breeds; highly adaptable.' },
-  { name: 'Rock Pigeon',     symbol: '🕊', rarity: 1, habitat: 'urban',   note: 'Carrier pigeons saved thousands of lives in WWI & WWII.' },
-  { name: 'European Starling',symbol:'🐦', rarity: 1, habitat: 'open',    note: 'Murmuration flocks can contain a million birds moving as one.' },
+  { name: 'House Sparrow',    symbol: '🐦', rarity: 1, habitat: 'urban',
+    notes: ['Introduced globally; one of the most abundant birds on Earth.',
+            'Communicates through complex chirp sequences—up to 25 distinct calls.',
+            'Builds messy nests in any cavity; will evict other nesting birds.'] },
+  { name: 'American Robin',   symbol: '🐦', rarity: 1, habitat: 'forest',
+    notes: ['First robin of spring signals seasonal thaw in North America.',
+            'Detects earthworms by tilting its head and listening—not sight.',
+            'Can migrate up to 3,000 miles; some stay year-round if food is available.'] },
+  { name: 'Mallard',          symbol: '🦆', rarity: 1, habitat: 'wetland',
+    notes: ['Ancestor of most domestic duck breeds; highly adaptable.',
+            'Females give the classic "quack"; males produce a soft raspy call.',
+            'Dabbles head-down to filter seeds and invertebrates from shallow water.'] },
+  { name: 'Rock Pigeon',      symbol: '🕊', rarity: 1, habitat: 'urban',
+    notes: ['Carrier pigeons saved thousands of lives in WWI & WWII.',
+            'Navigates using Earth\'s magnetic field, sun position, and landmarks.',
+            'One of only a handful of bird species that feeds crop milk to nestlings.'] },
+  { name: 'European Starling', symbol: '🐦', rarity: 1, habitat: 'open',
+    notes: ['Murmuration flocks can contain a million birds moving as one.',
+            'Introduced to North America in 1890 by a group trying to bring every bird from Shakespeare.',
+            'Can mimic 20+ other bird species plus mechanical and human sounds.'] },
   // Uncommon (rarity 2)
-  { name: 'Great Blue Heron',symbol: '🦤', rarity: 2, habitat: 'wetland', note: 'Stands motionless for minutes before striking at fish.' },
-  { name: 'Red-tailed Hawk', symbol: '🦅', rarity: 2, habitat: 'open',    note: 'Most common large hawk in North America; iconic screech call.' },
-  { name: 'Barn Owl',        symbol: '🦉', rarity: 2, habitat: 'forest',  note: 'Heart-shaped facial disc focuses sound like a radar dish.' },
-  { name: 'Northern Cardinal',symbol:'🐦', rarity: 2, habitat: 'forest',  note: 'One of the few songbirds where females also sing.' },
-  { name: 'Cedar Waxwing',   symbol: '🐦', rarity: 2, habitat: 'brush',   note: 'Red waxy tips on wings are pigment from berry enzymes.' },
+  { name: 'Great Blue Heron', symbol: '🦤', rarity: 2, habitat: 'wetland',
+    notes: ['Stands motionless for minutes before striking at fish.',
+            'Can swallow prey up to 30 cm long whole; occasionally drowns.',
+            'Rookeries (nesting colonies) can hold hundreds of pairs—nests reused yearly.'] },
+  { name: 'Red-tailed Hawk',  symbol: '🦅', rarity: 2, habitat: 'open',
+    notes: ['Most common large hawk in North America; iconic screech call.',
+            'Can see ultraviolet light, making rodent urine trails visible.',
+            'Mates for life; pairs perform aerial courtship displays together.'] },
+  { name: 'Barn Owl',         symbol: '🦉', rarity: 2, habitat: 'forest',
+    notes: ['Heart-shaped facial disc focuses sound like a radar dish.',
+            'Can locate and catch prey in total darkness by hearing alone.',
+            'Swallows prey whole and regurgitates compressed pellets of fur and bone.'] },
+  { name: 'Northern Cardinal', symbol: '🐦', rarity: 2, habitat: 'forest',
+    notes: ['One of the few songbirds where females also sing.',
+            'Males aggressively fight their own reflections—mistaking glass for rivals.',
+            'A group of cardinals is called a "college," "conclave," or "radiance."'] },
+  { name: 'Cedar Waxwing',    symbol: '🐦', rarity: 2, habitat: 'brush',
+    notes: ['Red waxy tips on wings are pigment from berry enzymes.',
+            'Passes berries beak-to-beak down a perched line of birds—social grooming.',
+            'Orange tail band on some birds comes from eating honeysuckle berries.'] },
   // Rare (rarity 3)
-  { name: 'Painted Bunting', symbol: '🦜', rarity: 3, habitat: 'brush',   note: 'Called "nonpareil" — without equal — for its vivid colors.' },
-  { name: 'Sandhill Crane',  symbol: '🦩', rarity: 3, habitat: 'wetland', note: 'Among the oldest living bird species; 9–10 million years old.' },
-  { name: 'Snowy Owl',       symbol: '🦉', rarity: 3, habitat: 'tundra',  note: 'Can locate prey under 12 inches of snow by hearing alone.' },
-  { name: 'Resplendent Quetzal',symbol:'🦜',rarity:3, habitat: 'forest',  note: 'Sacred to Mayan civilization; tail feathers reached 3 feet.' },
+  { name: 'Painted Bunting',  symbol: '🦜', rarity: 3, habitat: 'brush',
+    notes: ['Called "nonpareil" — without equal — for its vivid colors.',
+            'Males are fiercely territorial; fights can be fatal.',
+            'Navigates by the stars during nocturnal migration over the Gulf of Mexico.'] },
+  { name: 'Sandhill Crane',   symbol: '🦩', rarity: 3, habitat: 'wetland',
+    notes: ['Among the oldest living bird species; 9–10 million years old.',
+            'Performs elaborate pair-bonding dances: bowing, leaping, wing-flapping.',
+            'Paints its feathers with iron-rich mud for better camouflage.'] },
+  { name: 'Snowy Owl',        symbol: '🦉', rarity: 3, habitat: 'tundra',
+    notes: ['Can locate prey under 12 inches of snow by hearing alone.',
+            'Unlike most owls, snowy owls hunt during daylight hours.',
+            'Flies silently: feather edges are serrated to disrupt turbulence.'] },
+  { name: 'Resplendent Quetzal', symbol: '🦜', rarity: 3, habitat: 'forest',
+    notes: ['Sacred to Mayan civilization; tail feathers reached 3 feet.',
+            'Cannot survive in captivity—it dies of stress.',
+            'National bird of Guatemala; its image is on the flag and currency.'] },
   // Very rare (rarity 4)
-  { name: 'Albatross',       symbol: '🦅', rarity: 4, habitat: 'ocean',   note: 'Soars for years without landing; can sleep while flying.' },
-  { name: 'Birds of Paradise',symbol:'🦜', rarity: 4, habitat: 'forest',  note: 'Male performs elaborate dances; females choose the best dancer.' },
+  { name: 'Albatross',        symbol: '🦅', rarity: 4, habitat: 'ocean',
+    notes: ['Soars for years without landing; can sleep while flying.',
+            'Largest wingspan of any living bird—up to 3.5 meters.',
+            'Produces stomach oil as a high-energy food for chicks.'] },
+  { name: 'Birds of Paradise', symbol: '🦜', rarity: 4, habitat: 'forest',
+    notes: ['Male performs elaborate dances; females choose the best dancer.',
+            'Has 45 species, nearly all found only in New Guinea.',
+            'The feathers produce structural color—iridescence without pigment.'] },
 ];
 
 // Biome tile types for the ornithology grid
@@ -72,7 +121,13 @@ export class OrnithologyMode extends GameMode {
   }
 
   init(gameState, canvas, ctx) {
-    this.tileSize = Math.floor(canvas.width / (gameState.gridSize || 12));
+    // Use the shorter dimension for tile size to keep the grid square and centered
+    const gridSz = gameState.gridSize || 12;
+    const HUD_H = 40;
+    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    this.tileSize = Math.floor(gridPixels / gridSz);
+    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
     gameState._birdNotebook = gameState._birdNotebook || {};
     gameState._totalObservations = gameState._totalObservations || 0;
     gameState.peaceCollected = 0;
@@ -81,6 +136,16 @@ export class OrnithologyMode extends GameMode {
     gameState.player = gameState.player || { x: 1, y: 1, hp: 100, maxHp: 100, symbol: '◈', color: '#00e5ff' };
     this._generateBiomeGrid(gameState);
     this._spawnBirdSightings(gameState);
+  }
+
+  onResize(canvas, gameState) {
+    if (!gameState) return;
+    const gridSz = gameState.gridSize || 12;
+    const HUD_H = 40;
+    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    this.tileSize = Math.floor(gridPixels / gridSz);
+    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
   }
 
   _generateBiomeGrid(gameState) {
@@ -185,14 +250,20 @@ export class OrnithologyMode extends GameMode {
     gameState.score = (gameState.score || 0) + pts;
     gameState._totalObservations = (gameState._totalObservations || 0) + 1;
 
-    // Add to field notebook
+    // Add to field notebook — track visit count so we can rotate facts
     if (!gameState._birdNotebook[sighting.bird.name]) {
       gameState._birdNotebook[sighting.bird.name] = { count: 0, firstSeen: Date.now() };
     }
-    gameState._birdNotebook[sighting.bird.name].count++;
+    const notebookEntry = gameState._birdNotebook[sighting.bird.name];
+    notebookEntry.count++;
 
-    // Show sighting flash
-    this._sightingFlash = { bird: sighting.bird, shownAtMs: Date.now() };
+    // Pick a rotating fact based on how many times this species has been seen
+    const notes = sighting.bird.notes || [sighting.bird.note || ''];
+    const noteIdx = (notebookEntry.count - 1) % notes.length;
+    const currentNote = notes[noteIdx];
+
+    // Show sighting flash with the rotating fact
+    this._sightingFlash = { bird: sighting.bird, note: currentNote, shownAtMs: Date.now() };
     try { window.AudioManager?.play('bird'); } catch(e) {}
 
     // Rare birds (rarity 3+) trigger identification challenge
@@ -253,10 +324,16 @@ export class OrnithologyMode extends GameMode {
     const ts = this.tileSize;
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
+    const xOff = this._xOff || 0;
+    const yOff = this._yOff || 0;
 
-    // Background
+    // Background (full canvas)
     ctx.fillStyle = '#0a120a';
     ctx.fillRect(0, 0, w, h);
+
+    // Translate context so grid is centered in the full-screen canvas
+    ctx.save();
+    ctx.translate(xOff, yOff);
 
     // Render biome tiles
     for (let y = 0; y < sz; y++) {
@@ -318,7 +395,10 @@ export class OrnithologyMode extends GameMode {
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // Bird identification challenge overlay
+    // ── End grid-space rendering — restore canvas transform ────────────
+    ctx.restore();
+
+    // Bird identification challenge overlay (full-canvas)
     if (this._challengeActive) {
       this._renderChallenge(ctx, w, h);
     }
@@ -340,11 +420,13 @@ export class OrnithologyMode extends GameMode {
         ctx.textBaseline = 'middle';
         ctx.shadowColor = ctx.fillStyle;
         ctx.shadowBlur = 8;
+        // Show the current note for this sighting (rotates through multiple facts)
+        const noteText = this._sightingFlash.note || bird.note;
         ctx.fillText(`${bird.symbol}  ${bird.name}  ${'★'.repeat(bird.rarity)}`, w / 2, h * 0.88);
         ctx.shadowBlur = 0;
         ctx.fillStyle = '#778899';
         ctx.font = `${Math.floor(w / 34)}px monospace`;
-        ctx.fillText(bird.note, w / 2, h * 0.94);
+        ctx.fillText(noteText, w / 2, h * 0.94);
         ctx.restore();
       } else {
         this._sightingFlash = null;
@@ -379,7 +461,6 @@ export class OrnithologyMode extends GameMode {
     ctx.font = `${Math.floor(w / 32)}px monospace`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    const remaining = gameState.peaceTotal - (gameState.peaceCollected || 0);
     ctx.fillText(`🐦 ${gameState.peaceCollected || 0}/${gameState.peaceTotal}  ·  Score: ${gameState.score || 0}  ·  Lv.${gameState.level || 1}`, 8, 8);
     ctx.fillStyle = '#446644';
     ctx.font = `${Math.floor(w / 40)}px monospace`;

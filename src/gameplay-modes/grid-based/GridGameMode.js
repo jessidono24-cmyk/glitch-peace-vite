@@ -87,6 +87,8 @@ export class GridGameMode extends GameMode {
 
     this.playMode = config.playMode || 'ARCADE'; // Which of the 13 play modes
     this.tileSize = 0;
+    this._xOff = 0; // horizontal centering offset (pixels)
+    this._yOff = 0; // vertical centering offset (pixels)
     this.lastMoveTime = 0;
     this.moveDelay = 150; // ms between moves
     this._levelFlashMs = 0;       // countdown ms for "LEVEL COMPLETE" overlay
@@ -98,13 +100,41 @@ export class GridGameMode extends GameMode {
   }
 
   /**
+   * Calculate tile size and centering offsets based on canvas dimensions.
+   * Centers the square game grid in the full-viewport canvas.
+   */
+  _calcLayout(canvas, gridSize) {
+    const HUD_H = 40; // HUD bar height (fixed overlay at bottom)
+    const usableW = canvas.width;
+    const usableH = canvas.height - HUD_H;
+    // Fit the grid in the smallest usable dimension so tiles stay square
+    const gridPixels = Math.min(usableW, usableH);
+    this.tileSize = Math.max(1, Math.floor(gridPixels / gridSize));
+    // Center the grid horizontally and vertically in the canvas
+    this._xOff = Math.floor((usableW  - this.tileSize * gridSize) / 2);
+    this._yOff = Math.floor((usableH  - this.tileSize * gridSize) / 2);
+  }
+
+  /**
+   * Handle canvas resize — recalculate layout without reinitializing the mode.
+   */
+  onResize(canvas, gameState) {
+    if (!gameState) return;
+    this._calcLayout(canvas, gameState.gridSize || 13);
+    gameState.tileSize = this.tileSize; // keep particle system in sync
+  }
+
+  /**
    * Initialize the grid-based game mode
    */
   init(gameState, canvas, ctx) {
     console.log('[GridGameMode] Initializing grid-based mode');
     
-    // Calculate tile size
-    this.tileSize = Math.floor(canvas.width / gameState.gridSize);
+    // Calculate tile size — fit the grid into the shorter screen dimension,
+    // then center it so the game fills the entire viewport.
+    this._calcLayout(canvas, gameState.gridSize);
+    // Keep gameState.tileSize in sync (used by particles.js and legacy code)
+    gameState.tileSize = this.tileSize;
     
     // Initialize grid-specific state
     gameState.modeState = {
@@ -346,10 +376,30 @@ export class GridGameMode extends GameMode {
           const flowScore = Math.round(25 * (gameState.scoreMul || 1.0));
           gameState.score = (gameState.score || 0) + flowScore;
           if (gameState.emotionalField?.add) gameState.emotionalField.add('tender', 0.2);
+          // Behavioral tracking: prolonged stillness → idle/contemplative
+          if (gameState.emotionalField?.observeBehavior) {
+            gameState.emotionalField.observeBehavior('idle', { hp: gameState.player.hp, maxHp: gameState.player.maxHp || 100 });
+          }
         }
       } else {
         this._stillMs = 0;
         this._lastMovePos = { x: gameState.player.x, y: gameState.player.y };
+      }
+    } else if (gameState.player) {
+      // Non-flowBonus modes: track idle behavior after 3 seconds of inactivity
+      if (!this._idleTrackMs) this._idleTrackMs = 0;
+      const playerStill = this._prevPlayerPos &&
+        this._prevPlayerPos.x === gameState.player.x &&
+        this._prevPlayerPos.y === gameState.player.y;
+      if (playerStill) {
+        this._idleTrackMs += deltaTime;
+        if (this._idleTrackMs >= 3000 && gameState.emotionalField?.observeBehavior) {
+          this._idleTrackMs = 0;
+          gameState.emotionalField.observeBehavior('idle', { hp: gameState.player.hp, maxHp: gameState.player.maxHp || 100 });
+        }
+      } else {
+        this._idleTrackMs = 0;
+        this._prevPlayerPos = { x: gameState.player.x, y: gameState.player.y };
       }
     }
 
@@ -615,6 +665,12 @@ export class GridGameMode extends GameMode {
       [T.MEM]:      { bg: '#000a08', bd: '#66ccaa', sy: '#66ccaa' },
       [T.WALL]:     { bg: '#141414', bd: '#888888', sy: null },
     } : null;
+
+    // ── Translate context so the grid is centered in the full-viewport canvas ──
+    const xOff = this._xOff || 0;
+    const yOff = this._yOff || 0;
+    ctx.save();
+    ctx.translate(xOff, yOff);
 
     // Render grid tiles (with per-tile animations for GLITCH and INSIGHT)
     const nowTile = Date.now();
@@ -928,6 +984,9 @@ export class GridGameMode extends GameMode {
 
     // Recovery tool overlays (echo trail, consequence preview, impulse buffer, alerts)
     renderRecoveryOverlays(gameState, ctx, tileSize);
+
+    // ── End of grid-space rendering — restore canvas transform ────────────
+    ctx.restore();
 
     // World distortion overlay (emotional engine effect)
     const distortion = gameState.worldDistortion || 0;
@@ -1391,6 +1450,8 @@ export class GridGameMode extends GameMode {
 
   /**
    * Render fog-of-war overlay for limited-vision modes (e.g. SURVIVAL_HORROR)
+   * Called inside the grid-space translate context; compensates for the offset
+   * when filling the full canvas with darkness.
    */
   _renderFogOfWar(gameState, ctx, tileSize) {
     const radius = gameState.visionRadius; // in tiles
@@ -1398,7 +1459,9 @@ export class GridGameMode extends GameMode {
     const py = (gameState.player.y + 0.5) * tileSize;
     const pixelRadius = radius * tileSize;
 
-    // Fill entire canvas with darkness then cut out a radial gradient around the player
+    // Fill entire canvas with darkness — compensate for active translate offset
+    const xOff = this._xOff || 0;
+    const yOff = this._yOff || 0;
     const grad = ctx.createRadialGradient(px, py, pixelRadius * 0.4, px, py, pixelRadius);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
     grad.addColorStop(0.6, 'rgba(0,0,0,0.55)');
@@ -1406,7 +1469,8 @@ export class GridGameMode extends GameMode {
 
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.96)';
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    // Extend the fill to cover the full canvas accounting for the translation offset
+    ctx.fillRect(-xOff, -yOff, ctx.canvas.width, ctx.canvas.height);
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -1604,6 +1668,50 @@ export class GridGameMode extends GameMode {
         this.lastMoveTime = now;
         // Record echo position (pattern trail)
         recordEchoPosition(gameState);
+
+        // ── Behavioral emotion tracking ─────────────────────────────────
+        if (gameState.emotionalField?.observeBehavior) {
+          const behaviorCtx = {
+            hp: gameState.player?.hp,
+            maxHp: gameState.player?.maxHp || 100,
+            combo: gameState.combo || 0,
+          };
+          // Detect rapid movement (interval since last move very short)
+          const moveInterval = now - (this._prevMoveTime || 0);
+          this._prevMoveTime = now;
+          if (moveInterval < 180) {
+            gameState.emotionalField.observeBehavior('rapid_move', behaviorCtx);
+          } else {
+            gameState.emotionalField.observeBehavior('move', behaviorCtx);
+          }
+
+          // Check if the player collected a peace node this move
+          if (gameState._lastPeaceCollected !== gameState.peaceCollected) {
+            gameState.emotionalField.observeBehavior('peace_collect', behaviorCtx);
+          }
+
+          // Check if the player reversed direction vs. last move
+          if (this._lastMoveDir &&
+              dir.x === -this._lastMoveDir.x && dir.y === -this._lastMoveDir.y) {
+            gameState.emotionalField.observeBehavior('reverse', behaviorCtx);
+          }
+          this._lastMoveDir = { x: dir.x, y: dir.y };
+
+          // Check if the next tile is a hazard (approaching a hazard)
+          const nextX = gameState.player.x + dir.x;
+          const nextY = gameState.player.y + dir.y;
+          const nextTile = gameState.grid?.[nextY]?.[nextX];
+          if (nextTile && (TILE_DEF[nextTile]?.d || 0) > 0) {
+            gameState.emotionalField.observeBehavior('hazard_approach', behaviorCtx);
+          }
+
+          // Check if current tile is a hazard (player just entered one)
+          const curTile = gameState.grid?.[gameState.player.y]?.[gameState.player.x];
+          if (curTile && (TILE_DEF[curTile]?.d || 0) > 0) {
+            gameState.emotionalField.observeBehavior('hazard_enter', behaviorCtx);
+          }
+        }
+
         // Phase 9: track mindful vs. reactive move
         const usedPreview = (gameState._consequencePreview?.length > 0);
         const impulseActive = !!gameState._impulseBuffer;

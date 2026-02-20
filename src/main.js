@@ -130,19 +130,20 @@ function initUI() {
     canvas.setAttribute('aria-label', 'GLITCH·PEACE game canvas. Use arrow keys or WASD to move. Press H for help.');
   }
 
-  // Responsive canvas: fill viewport while keeping square aspect ratio
+  // Responsive canvas: fill full viewport while centering the game grid
   function _resizeCanvas() {
     if (!canvas) return;
-    // Use full viewport: subtract HUD height (40px) from height to avoid overlap
-    const hudH = 40;
+    // Fill the entire viewport for a truly full-screen experience
     const availW = window.innerWidth;
-    const availH = window.innerHeight - hudH;
-    const size = Math.min(availW, availH);
-    // Update internal resolution to match display size for crisp rendering
-    canvas.width = size;
-    canvas.height = size;
-    canvas.style.width  = `${size}px`;
-    canvas.style.height = `${size}px`;
+    const availH = window.innerHeight;
+    canvas.width = availW;
+    canvas.height = availH;
+    canvas.style.width  = `${availW}px`;
+    canvas.style.height = `${availH}px`;
+    // Notify game state of new canvas dimensions so modes can recalculate
+    if (currentMode && currentMode.onResize) {
+      currentMode.onResize(canvas, game);
+    }
   }
   _resizeCanvas();
   window.addEventListener('resize', _resizeCanvas);

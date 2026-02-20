@@ -603,7 +603,8 @@ export class MenuSystem {
   }
 
   getPlaymodeOptions() {
-    return getAvailableModes().filter(m => m.id !== 'coop'); // exclude co-op (future)
+    // Include co-op — it's playable as a local 2-keyboard mode
+    return getAvailableModes();
   }
 
   getCosmologyOptions() {

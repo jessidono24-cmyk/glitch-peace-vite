@@ -173,6 +173,7 @@ window._dreamIdx      = CFG.dreamIdx;
 window._achieveDefs   = { ACHIEVEMENT_DEFS, list: ACHIEVEMENT_DEFS };
 window._achievementQueue = [];
 window._achievementSystem = achievementSystem;
+window._alchemySystem = alchemySystem;
 
 let glitchFrames = 0, glitchTimer = 500;
 let anomalyActive = false, anomalyData = { row:-1, col:-1, t:0 };
@@ -1516,13 +1517,13 @@ window.addEventListener('keydown', e => {
       }
     }
     // Alchemy transmutation — X key: cycle elements and transmute
-    // Available in Alchemist mode and Ritual Space mode
-    if ((e.key==='x'||e.key==='X') && !e.repeat && (game.playModeId === 'alchemist' || game.playModeId === 'ritual_space')) {
+    if ((e.key==='x'||e.key==='X') && !e.repeat) {
       const seeds = alchemySystem.seeds;
       const elements = ['fire','water','earth','air','ether'];
       const ready = elements.find(el => seeds[el] >= 3);
       if (ready) {
         alchemySystem.tryTransmute(ready, game, burst, _showMsg);
+        achievementSystem.onTransmutation();
         sfxManager.resume();
         // Quest hooks: transmutation count + distinct elements used
         questSystem.onTransmutation();

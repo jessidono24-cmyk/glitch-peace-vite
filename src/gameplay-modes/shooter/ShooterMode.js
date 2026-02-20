@@ -1,12 +1,16 @@
 /**
  * ShooterMode.js - Twin-Stick Shooter Gameplay Mode
- * 
+ *
  * Top-down bullet-hell shooter with 4 weapons, wave-based enemies,
- * and score multipliers. Tests modular architecture from Phase 1.
+ * and score multipliers. Enemy collision is resolved via matter-js
+ * rigid-body physics — replacing the old verlet separation pass.
  */
 
 import GameMode from '../../core/interfaces/GameMode.js';
 import { getDreamscapeTheme } from '../../systems/dreamscapes.js';
+import Matter from 'matter-js';
+
+const { Engine, World, Bodies, Body, Events } = Matter;
 
 export default class ShooterMode extends GameMode {
   constructor() {
@@ -45,6 +49,10 @@ export default class ShooterMode extends GameMode {
     // Canvas reference
     this.canvas = null;
     this.ctx = null;
+
+    // matter-js rigid-body physics (enemy collision resolution)
+    this._physEngine = Engine.create({ gravity: { x: 0, y: 0 } });
+    this._physWorld  = this._physEngine.world;
   }
   
   /**
@@ -276,27 +284,48 @@ export default class ShooterMode extends GameMode {
   }
   
   /**
-   * Apply separation forces so enemies don't stack (verlet-style)
+   * Resolve enemy overlaps using matter-js rigid-body physics.
+   * Each enemy owns a circular Body stored on enemy._body.
+   * AI movement sets the body position each frame; the engine step
+   * resolves any penetrations so enemies never stack.
    */
   _separateEnemies() {
-    for (let i = 0; i < this.enemies.length; i++) {
-      for (let j = i + 1; j < this.enemies.length; j++) {
-        const a = this.enemies[i];
-        const b = this.enemies[j];
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 0.001;
-        const minDist = a.size + b.size;
-        if (dist < minDist) {
-          const push = (minDist - dist) / 2;
-          const nx = dx / dist;
-          const ny = dy / dist;
-          a.x -= nx * push;
-          a.y -= ny * push;
-          b.x += nx * push;
-          b.y += ny * push;
-        }
+    // 1. Sync AI positions → physics bodies
+    for (const e of this.enemies) {
+      if (e._body) Body.setPosition(e._body, { x: e.x, y: e.y });
+    }
+
+    // 2. Run a single physics step (gravity is 0; only collision response matters)
+    Engine.update(this._physEngine, 16);
+
+    // 3. Read resolved positions back into enemy objects
+    for (const e of this.enemies) {
+      if (e._body) {
+        e.x = e._body.position.x;
+        e.y = e._body.position.y;
+        // Keep bodies nearly stationary so AI stays in control
+        Body.setVelocity(e._body, { x: 0, y: 0 });
       }
+    }
+  }
+
+  /** Create a matter-js circular body for an enemy and add it to the world. */
+  _addEnemyBody(enemy) {
+    const body = Bodies.circle(enemy.x, enemy.y, enemy.size, {
+      restitution: 0.2,
+      friction: 0,
+      frictionAir: 0,
+      label: 'enemy',
+    });
+    enemy._body = body;
+    World.add(this._physWorld, body);
+  }
+
+  /** Remove a matter-js body from the world when an enemy dies. */
+  _removeEnemyBody(enemy) {
+    if (enemy._body) {
+      World.remove(this._physWorld, enemy._body);
+      enemy._body = null;
     }
   }
 
@@ -375,7 +404,8 @@ export default class ShooterMode extends GameMode {
           this.createParticles(enemy.x, enemy.y, 5, '#ff4444');
           
           if (enemy.health <= 0) {
-            // Enemy destroyed
+            // Enemy destroyed — remove its physics body from the world
+            this._removeEnemyBody(enemy);
             this.score += Math.floor(10 * this.comboMultiplier);
             this.kills++;
             this.comboMultiplier += 0.1;
@@ -501,6 +531,11 @@ export default class ShooterMode extends GameMode {
       });
       // Show boss alert via shared AudioManager if available
       try { window.AudioManager?.play('boss'); } catch (_) {}
+    }
+
+    // Register a matter-js rigid body for every newly spawned enemy
+    for (const enemy of this.enemies) {
+      if (!enemy._body) this._addEnemyBody(enemy);
     }
 
     console.log(`[ShooterMode] Wave ${waveNum} started - ${count} enemies`);
@@ -757,6 +792,10 @@ export default class ShooterMode extends GameMode {
    * Cleanup
    */
   cleanup() {
+    // Remove all enemy physics bodies and clear the world
+    for (const enemy of this.enemies) this._removeEnemyBody(enemy);
+    World.clear(this._physWorld);
+    Engine.clear(this._physEngine);
     this.bullets = [];
     this.enemies = [];
     this.particles = [];

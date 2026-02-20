@@ -2,6 +2,36 @@
 // Cache element references across frames to avoid repeated DOM queries and repaints
 const _hudCache = {};
 
+// ── Language Immersion: HUD label translations ───────────────────────────
+// Translates in-game HUD labels to the target language when langImmersion
+// is enabled in settings.  Keys match the English label strings used below.
+const HUD_TRANSLATIONS = {
+  es: { HP: 'PS', Level: 'Nivel', Score: 'Puntaje', Objective: 'Objetivo', Wave: 'Ola', Kills: 'Bajas', Combo: 'Combo', 'Power-Ups': 'Poderes', Health: 'Salud' },
+  fr: { HP: 'PV', Level: 'Niveau', Score: 'Score', Objective: 'Objectif', Wave: 'Vague', Kills: 'Victimes', Combo: 'Combo', 'Power-Ups': 'Bonus', Health: 'Santé' },
+  de: { HP: 'LP', Level: 'Stufe', Score: 'Punkte', Objective: 'Ziel', Wave: 'Welle', Kills: 'Abschüsse', Combo: 'Kombo', 'Power-Ups': 'Power-ups', Health: 'Leben' },
+  ja: { HP: 'HP', Level: 'レベル', Score: 'スコア', Objective: '目標', Wave: 'ウェーブ', Kills: '撃破', Combo: 'コンボ', 'Power-Ups': 'パワーアップ', Health: '体力' },
+  zh: { HP: '血量', Level: '等级', Score: '分数', Objective: '目标', Wave: '波次', Kills: '击杀', Combo: '连击', 'Power-Ups': '强化', Health: '生命' },
+  ko: { HP: 'HP', Level: '레벨', Score: '점수', Objective: '목표', Wave: '웨이브', Kills: '처치', Combo: '콤보', 'Power-Ups': '파워업', Health: '체력' },
+  ru: { HP: 'ОЗ', Level: 'Ур.', Score: 'Очки', Objective: 'Цель', Wave: 'Волна', Kills: 'Убийства', Combo: 'Комбо', 'Power-Ups': 'Усилитель', Health: 'Здоровье' },
+  pt: { HP: 'PV', Level: 'Nível', Score: 'Pontos', Objective: 'Objetivo', Wave: 'Onda', Kills: 'Abates', Combo: 'Combo', 'Power-Ups': 'Melhorias', Health: 'Saúde' },
+  it: { HP: 'PF', Level: 'Livello', Score: 'Punteggio', Objective: 'Obiettivo', Wave: 'Ondata', Kills: 'Uccisioni', Combo: 'Combo', 'Power-Ups': 'Potenziamenti', Health: 'Salute' },
+  ar: { HP: 'نق', Level: 'مستوى', Score: 'نتيجة', Objective: 'هدف', Wave: 'موجة', Kills: 'قتلى', Combo: 'تتابع', 'Power-Ups': 'تعزيزات', Health: 'صحة' },
+  el: { HP: 'ΥΠ', Level: 'Επίπεδο', Score: 'Σκορ', Objective: 'Στόχος', Wave: 'Κύμα', Kills: 'Θύματα', Combo: 'Κόμπο', 'Power-Ups': 'Δυνάμεις', Health: 'Υγεία' },
+};
+
+/**
+ * Return a HUD label translated to the active target language.
+ * Falls back to English when immersion is off or the language/key is missing.
+ * @param {string} key    English label (e.g. 'Health', 'Score')
+ * @param {object} settings  game.settings
+ */
+function hudLabel(key, settings) {
+  if (!settings?.langImmersion || !settings?.targetLanguage) return key;
+  const lang = String(settings.targetLanguage);
+  const dict = HUD_TRANSLATIONS[lang] || HUD_TRANSLATIONS[lang.substring(0, 2)] || {};
+  return dict[key] || key;
+}
+
 export function updateHUD(game) {
   if (!game || !game.player) return;
   // ensure hud exists
@@ -43,7 +73,7 @@ export function updateHUD(game) {
     // Shooter: show wave and kill count
     const waveNum = game._waveNumber || 1;
     const killCount = game._killCount || 0;
-    objParts = [`Wave ${waveNum} · Kills: ${killCount}`];
+    objParts = [`${hudLabel('Wave', game.settings)} ${waveNum} · ${hudLabel('Kills', game.settings)}: ${killCount}`];
   } else if (modeType === 'ornithology') {
     const remaining = Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0));
     objParts = [`🐦 ×${remaining}`];
@@ -180,9 +210,10 @@ export function updateHUD(game) {
 export function renderHUD(game) {
   // Basic HUD HTML generator
   if (!game || !game.player) return '';
+  const s = game.settings || {};
   let powerupHTML = '';
   if (Array.isArray(game.activePowerups) && game.activePowerups.length > 0) {
-    powerupHTML = `<div class="hud-section" title="Active Power-Ups: Temporary abilities. Timer bar shows duration."><div class="hud-item"><span class="hud-label">Power-Ups</span>`;
+    powerupHTML = `<div class="hud-section" title="Active Power-Ups: Temporary abilities. Timer bar shows duration."><div class="hud-item"><span class="hud-label">${hudLabel('Power-Ups', s)}</span>`;
     for (const p of game.activePowerups) {
       const timeLeft = Math.max(0, Math.floor((p.expiresAt - Date.now()) / 1000));
       const total = Math.max(1, Math.floor((p.expiresAt - (p.duration ? (p.expiresAt - p.duration) : Date.now())) / 1000));
@@ -193,19 +224,19 @@ export function renderHUD(game) {
   }
   let comboHTML = '';
   if (game.combo && game.combo > 1) {
-    comboHTML = `<div class="hud-section" title="Combo: Consecutive successful actions. Higher combo = more score!"><div class="hud-item"><span class="hud-label">Combo</span> <span style="color:#ffcc00;font-size:18px;">x${game.combo}</span></div></div>`;
+    comboHTML = `<div class="hud-section" title="Combo: Consecutive successful actions. Higher combo = more score!"><div class="hud-item"><span class="hud-label">${hudLabel('Combo', s)}</span> <span style="color:#ffcc00;font-size:18px;">x${game.combo}</span></div></div>`;
   }
   return `
     <div class="hud-section" title="Health: If this reaches 0, you lose.">
       <div class="hud-item">
-        <span class="hud-label">Health</span>
+        <span class="hud-label">${hudLabel('Health', s)}</span>
         <div id="hp-bar"><div id="hp-fill" style="width:${(game.player.hp / (game.player.maxHp || 100)) * 100}%"></div><div id="hp-text">${game.player.hp}/${game.player.maxHp || 100}</div></div>
       </div>
     </div>
     <div class="hud-section" title="Level, Score, and Objective (Peace nodes to collect)">
-      <div class="hud-item"><span class="hud-label">Level</span><span class="hud-value" id="level">${game.level}</span></div>
-      <div class="hud-item"><span class="hud-label">Score</span><span class="hud-value" id="score">${game.score}</span></div>
-      <div class="hud-item"><span class="hud-label">Objective</span><span class="hud-value" id="objective">◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}</span></div>
+      <div class="hud-item"><span class="hud-label">${hudLabel('Level', s)}</span><span class="hud-value" id="level">${game.level}</span></div>
+      <div class="hud-item"><span class="hud-label">${hudLabel('Score', s)}</span><span class="hud-value" id="score">${game.score}</span></div>
+      <div class="hud-item"><span class="hud-label">${hudLabel('Objective', s)}</span><span class="hud-value" id="objective">◈ ×${Math.max(0, (game.peaceTotal || 0) - (game.peaceCollected || 0))}</span></div>
     </div>
     ${powerupHTML}
     ${comboHTML}

@@ -624,7 +624,7 @@ export class GridGameMode extends GameMode {
         const tileDef = TILE_DEF[tile] || {};
         const hcDef   = HC_TILE?.[tile];
         
-        // Draw tile
+        // Draw tile background
         ctx.fillStyle = hcDef ? hcDef.bg : (tileDef.bg || '#1a1a2e');
         ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
 
@@ -641,8 +641,8 @@ export class GridGameMode extends GameMode {
           ctx.globalAlpha = 0.55 + 0.45 * ((flicker % 2) === 0 ? 1 : 0.4);
           ctx.fillStyle = glitchColors[flicker];
           ctx.shadowColor = glitchColors[flicker];
-          ctx.shadowBlur = 6;
-          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.shadowBlur = 8;
+          ctx.font = `bold ${tileSize * 0.65}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText('?', x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
@@ -651,89 +651,161 @@ export class GridGameMode extends GameMode {
           continue;
         }
 
-        // ── INSIGHT tile: slow shimmer glow ──────────────────────────────
+        // ── INSIGHT tile: slow shimmer glow with radial gradient ─────────
         if (tile === T.INSIGHT) {
           const shimmer = 0.55 + 0.45 * Math.sin(nowTile / 900 + x * 1.1 + y * 0.7);
           ctx.save();
+          // Radial gradient glow behind symbol
+          const cx2 = x * tileSize + tileSize / 2;
+          const cy2 = y * tileSize + tileSize / 2;
+          const grad = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, tileSize * 0.7);
+          grad.addColorStop(0, `rgba(0,255,238,${shimmer * 0.4})`);
+          grad.addColorStop(1, 'rgba(0,255,238,0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
           ctx.globalAlpha = shimmer;
           ctx.shadowColor = '#00ffee';
-          ctx.shadowBlur = 6 + shimmer * 8;
+          ctx.shadowBlur = 8 + shimmer * 10;
           ctx.fillStyle = '#00ffee';
           ctx.font = `${tileSize * 0.6}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('◆', x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
+          ctx.fillText('◆', cx2, cy2);
           ctx.shadowBlur = 0;
           ctx.restore();
           continue;
         }
 
-        // Draw symbol (default)
-        if (tileDef.sy) {
-          ctx.fillStyle = hcDef?.sy || tileDef.g || tileDef.bd || '#fff';
+        // ── ARCH tile: golden star shimmer ───────────────────────────────
+        if (tile === T.ARCH && !hcDef) {
+          const shimmer = 0.6 + 0.4 * Math.sin(nowTile / 1100 + x * 0.9 + y * 1.3);
+          ctx.save();
+          const cx2 = x * tileSize + tileSize / 2;
+          const cy2 = y * tileSize + tileSize / 2;
+          const grad = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, tileSize * 0.8);
+          grad.addColorStop(0, `rgba(255,220,0,${shimmer * 0.35})`);
+          grad.addColorStop(1, 'rgba(255,220,0,0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+          ctx.globalAlpha = 0.7 + shimmer * 0.3;
+          ctx.shadowColor = '#ffee44';
+          ctx.shadowBlur = 6 + shimmer * 8;
+          ctx.fillStyle = '#ffee44';
           ctx.font = `${tileSize * 0.6}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(
-            tileDef.sy,
-            x * tileSize + tileSize / 2,
-            y * tileSize + tileSize / 2
-          );
+          ctx.fillText('☆', cx2, cy2);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
+        // ── PEACE tile (grid cell, not peaceNode): soft green glow ───────
+        if (tile === T.PEACE && !hcDef) {
+          const pulse = 0.55 + 0.45 * Math.sin(nowTile / 700 + x * 0.5 + y * 0.7);
+          ctx.save();
+          const cx2 = x * tileSize + tileSize / 2;
+          const cy2 = y * tileSize + tileSize / 2;
+          const grad = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, tileSize * 0.7);
+          grad.addColorStop(0, `rgba(0,255,136,${pulse * 0.3})`);
+          grad.addColorStop(1, 'rgba(0,255,136,0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
+          ctx.globalAlpha = 0.7 + pulse * 0.3;
+          ctx.shadowColor = '#00ff88';
+          ctx.shadowBlur = 6 + pulse * 6;
+          ctx.fillStyle = '#00ffcc';
+          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('◈', cx2, cy2);
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          continue;
+        }
+
+        // Draw symbol (default for all other tile types)
+        if (tileDef.sy) {
+          const symColor = hcDef?.sy || tileDef.g || tileDef.bd || '#fff';
+          // Hazard tiles get a subtle glow for readability
+          const isHazard = (tileDef.d || 0) > 0;
+          ctx.save();
+          if (isHazard && !hcDef) {
+            ctx.shadowColor = symColor;
+            ctx.shadowBlur = 4;
+          }
+          ctx.fillStyle = symColor;
+          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(tileDef.sy, x * tileSize + tileSize / 2, y * tileSize + tileSize / 2);
+          if (isHazard && !hcDef) ctx.shadowBlur = 0;
+          ctx.restore();
         }
       }
     }
 
-    // Render peace nodes with animated pulse glow
+    // Render peace nodes with animated radial pulse glow
     const peaceNodes = gameState.peaceNodes;
     if (peaceNodes) {
       const nowPeace = Date.now();
       peaceNodes.forEach((node, idx) => {
         if (!node.collected) {
-          const pulse = 0.55 + 0.45 * Math.sin(nowPeace / 700 + idx * 0.8);
-          const px = node.x * tileSize + tileSize / 2;
-          const py = node.y * tileSize + tileSize / 2;
+          const pulse = 0.55 + 0.45 * Math.sin(nowPeace / 600 + idx * 0.8);
+          const pcx = node.x * tileSize + tileSize / 2;
+          const pcy = node.y * tileSize + tileSize / 2;
           ctx.save();
-          // Glow halo
-          ctx.globalAlpha = pulse * 0.35;
-          ctx.fillStyle = '#00ff88';
-          ctx.shadowColor = '#00ff88';
-          ctx.shadowBlur = 10;
-          ctx.fillRect(node.x * tileSize, node.y * tileSize, tileSize, tileSize);
+          // Radial gradient glow halo
+          const grad = ctx.createRadialGradient(pcx, pcy, 0, pcx, pcy, tileSize * 0.9);
+          grad.addColorStop(0, `rgba(0,255,136,${pulse * 0.5})`);
+          grad.addColorStop(0.5, `rgba(0,255,136,${pulse * 0.2})`);
+          grad.addColorStop(1, 'rgba(0,255,136,0)');
+          ctx.fillStyle = grad;
+          ctx.fillRect(node.x * tileSize - tileSize * 0.3, node.y * tileSize - tileSize * 0.3, tileSize * 1.6, tileSize * 1.6);
           // Symbol
           ctx.globalAlpha = 0.7 + pulse * 0.3;
           ctx.shadowColor = '#00ff88';
-          ctx.shadowBlur = 8 + pulse * 6;
-          ctx.fillStyle = TILE_DEF[T.PEACE].g || '#00ff88';
-          ctx.font = `${tileSize * 0.6}px monospace`;
+          ctx.shadowBlur = 10 + pulse * 8;
+          ctx.fillStyle = '#00ffcc';
+          ctx.font = `bold ${tileSize * 0.7}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(TILE_DEF[T.PEACE].sy, px, py);
+          ctx.fillText('◈', pcx, pcy);
           ctx.shadowBlur = 0;
           ctx.restore();
         }
       });
     }
 
-    // Render enemies (use gameState.enemies)
+    // Render enemies with color-coded glows per behavior type
     const enemies = gameState.enemies;
     if (enemies) {
+      const nowEnemy = Date.now();
       enemies.forEach(enemy => {
         if (enemy.active !== false) {
           if (enemy.isBoss) {
-            // Boss: pulsing magenta glow, bigger symbol, HP bar
-            const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 250);
+            // Boss: pulsing magenta glow + bigger symbol + HP bar
+            const pulse = 0.5 + 0.5 * Math.sin(nowEnemy / 250);
             ctx.save();
-            ctx.globalAlpha = 0.55 + 0.25 * pulse;
+            // Glow halo
+            const bcx = enemy.x * tileSize + tileSize / 2;
+            const bcy = enemy.y * tileSize + tileSize / 2;
+            const bGrad = ctx.createRadialGradient(bcx, bcy, 0, bcx, bcy, tileSize * 1.2);
+            bGrad.addColorStop(0, `rgba(255,0,170,${0.4 + pulse * 0.3})`);
+            bGrad.addColorStop(1, 'rgba(255,0,170,0)');
+            ctx.fillStyle = bGrad;
+            ctx.fillRect(enemy.x * tileSize - tileSize * 0.5, enemy.y * tileSize - tileSize * 0.5, tileSize * 2, tileSize * 2);
+            ctx.globalAlpha = 0.7 + pulse * 0.3;
             ctx.fillStyle = '#ff00aa';
-            ctx.fillRect(enemy.x * tileSize - 2, enemy.y * tileSize - 2, tileSize + 4, tileSize + 4);
+            ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize, tileSize, tileSize);
             ctx.globalAlpha = 1.0;
             ctx.fillStyle = '#fff';
-            ctx.font = `bold ${tileSize * 0.75}px monospace`;
+            ctx.font = `bold ${tileSize * 0.8}px monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.shadowColor = '#ff44aa';
-            ctx.shadowBlur = 12;
-            ctx.fillText('◆', enemy.x * tileSize + tileSize / 2, enemy.y * tileSize + tileSize / 2);
+            ctx.shadowBlur = 14 + pulse * 8;
+            ctx.fillText('◆', bcx, bcy);
             ctx.shadowBlur = 0;
             // HP bar below boss
             if (enemy.hp !== undefined && enemy.maxHp) {
@@ -746,39 +818,71 @@ export class GridGameMode extends GameMode {
             }
             ctx.restore();
           } else {
-            ctx.fillStyle = enemy.color || '#ff6600';
-            ctx.fillRect(enemy.x * tileSize, enemy.y * tileSize, tileSize, tileSize);
+            // Regular enemies: color-coded by behavior
+            const eColor = enemy.color || '#ff6600';
+            const ecx = enemy.x * tileSize + tileSize / 2;
+            const ecy = enemy.y * tileSize + tileSize / 2;
+            ctx.save();
+            // Simple solid fill + glowing border
+            ctx.globalAlpha = 0.9;
+            ctx.fillStyle = eColor;
+            ctx.fillRect(enemy.x * tileSize + 2, enemy.y * tileSize + 2, tileSize - 4, tileSize - 4);
+            ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = eColor;
+            ctx.lineWidth = 1;
+            ctx.shadowColor = eColor;
+            ctx.shadowBlur = 6;
+            ctx.strokeRect(enemy.x * tileSize + 1, enemy.y * tileSize + 1, tileSize - 2, tileSize - 2);
+            ctx.shadowBlur = 0;
             ctx.fillStyle = '#fff';
             ctx.font = `${tileSize * 0.6}px monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(enemy.symbol || '■', enemy.x * tileSize + tileSize / 2, enemy.y * tileSize + tileSize / 2);
+            ctx.fillText(enemy.symbol || '■', ecx, ecy);
+            ctx.restore();
           }
         }
       });
     }
 
-    // Render player
+    // Render player with animated cyan halo + glowing symbol
     if (gameState.player) {
-      const px = gameState.player.x * tileSize;
-      const py = gameState.player.y * tileSize;
+      const plx = gameState.player.x * tileSize;
+      const ply = gameState.player.y * tileSize;
+      const plcx = plx + tileSize / 2;
+      const plcy = ply + tileSize / 2;
+      const nowPl = Date.now();
+      const plPulse = 0.6 + 0.4 * Math.sin(nowPl / 500);
       
-      // Player glow
+      ctx.save();
+      // Outer radial glow halo
+      const plGrad = ctx.createRadialGradient(plcx, plcy, 0, plcx, plcy, tileSize * 0.9);
+      plGrad.addColorStop(0, `rgba(0,229,255,${plPulse * 0.55})`);
+      plGrad.addColorStop(0.5, `rgba(0,180,255,${plPulse * 0.2})`);
+      plGrad.addColorStop(1, 'rgba(0,100,255,0)');
+      ctx.fillStyle = plGrad;
+      ctx.fillRect(plx - tileSize * 0.3, ply - tileSize * 0.3, tileSize * 1.6, tileSize * 1.6);
+      // Solid inner tile
+      ctx.globalAlpha = 0.2 + plPulse * 0.15;
       ctx.fillStyle = '#00e5ff';
-      ctx.globalAlpha = 0.3;
-      ctx.fillRect(px, py, tileSize, tileSize);
+      ctx.fillRect(plx, ply, tileSize, tileSize);
       ctx.globalAlpha = 1.0;
-      
+      // Glowing border
+      ctx.strokeStyle = '#00e5ff';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#00e5ff';
+      ctx.shadowBlur = 8 + plPulse * 6;
+      ctx.strokeRect(plx + 1, ply + 1, tileSize - 2, tileSize - 2);
       // Player symbol
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 10 + plPulse * 8;
       ctx.fillStyle = '#ffffff';
-      ctx.font = `${tileSize * 0.7}px monospace`;
+      ctx.font = `bold ${tileSize * 0.7}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(
-        PLAYER.symbol,
-        px + tileSize / 2,
-        py + tileSize / 2
-      );
+      ctx.fillText(PLAYER.symbol, plcx, plcy);
+      ctx.shadowBlur = 0;
+      ctx.restore();
     }
 
     // Limited vision (fog of war) — SURVIVAL_HORROR mode
@@ -1707,8 +1811,8 @@ export class GridGameMode extends GameMode {
     ctx.globalAlpha = fadeIn * 0.18;
     ctx.strokeStyle = '#882244';
     ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(w * 0.1, h * 0.35); ctx.lineTo(w * 0.9, h * 0.35); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(w * 0.1, h * 0.68); ctx.lineTo(w * 0.9, h * 0.68); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w * 0.1, h * 0.28); ctx.lineTo(w * 0.9, h * 0.28); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w * 0.1, h * 0.72); ctx.lineTo(w * 0.9, h * 0.72); ctx.stroke();
     ctx.globalAlpha = fadeIn;
 
     // Header
@@ -1716,25 +1820,57 @@ export class GridGameMode extends GameMode {
     ctx.font = `bold ${Math.floor(w / 13)}px monospace`;
     ctx.shadowColor = '#ff2244';
     ctx.shadowBlur = 18;
-    ctx.fillText('PATTERN INCOMPLETE', w / 2, h * 0.25);
+    ctx.fillText('PATTERN INCOMPLETE', w / 2, h * 0.20);
     ctx.shadowBlur = 0;
 
     // Compassionate message
     ctx.fillStyle = '#aabbcc';
     ctx.font = `${Math.floor(w / 26)}px monospace`;
-    ctx.fillText(this._gameOverMsg, w / 2, h * 0.40);
+    ctx.fillText(this._gameOverMsg, w / 2, h * 0.32);
 
-    // Stats
+    // Stats row 1: Score & Level
+    ctx.fillStyle = '#ffdd88';
+    ctx.font = `bold ${Math.floor(w / 26)}px monospace`;
+    ctx.fillText(`Score: ${(gameState.score || 0).toLocaleString()}`, w / 2, h * 0.42);
+
     ctx.fillStyle = '#667799';
     ctx.font = `${Math.floor(w / 30)}px monospace`;
-    ctx.fillText(`Score: ${(gameState.score || 0).toLocaleString()}  ·  Level ${gameState.level || 1}`, w / 2, h * 0.51);
-    ctx.fillText(`Peace nodes collected: ${gameState.peaceCollected || 0}`, w / 2, h * 0.57);
+    ctx.fillText(`Level ${gameState.level || 1}  ·  ◈ ${gameState.peaceCollected || 0} peace collected`, w / 2, h * 0.49);
+
+    // Stats row 2: RPG level + quests (if available)
+    const rpgLevel = gameState._rpgLevel;
+    const questsDone = gameState._questsCompleted || 0;
+    if (rpgLevel || questsDone > 0) {
+      ctx.fillStyle = '#8899bb';
+      ctx.font = `${Math.floor(w / 34)}px monospace`;
+      const rpgLine = [
+        rpgLevel ? `RPG Lv.${rpgLevel}` : null,
+        questsDone > 0 ? `${questsDone} quest${questsDone > 1 ? 's' : ''} completed` : null,
+      ].filter(Boolean).join('  ·  ');
+      if (rpgLine) ctx.fillText(rpgLine, w / 2, h * 0.555);
+    }
+
+    // Stats row 3: Alchemy progress (if any transmutations)
+    const transCount = gameState._alchemyTransmutations || 0;
+    if (transCount > 0) {
+      const alchPhase = gameState._alchemyPhase || 'Novice';
+      ctx.fillStyle = '#cc88ff';
+      ctx.font = `${Math.floor(w / 36)}px monospace`;
+      ctx.fillText(`Alchemy: ${alchPhase}  ·  ${transCount} transmutation${transCount !== 1 ? 's' : ''}`, w / 2, h * 0.60);
+    }
+
+    // Dreamscape + play mode line
+    const ds = gameState.currentDreamscape || 'RIFT';
+    const pm = gameState.playMode && gameState.playMode !== 'ARCADE' ? `  ·  ${gameState.playMode}` : '';
+    ctx.fillStyle = '#445566';
+    ctx.font = `${Math.floor(w / 38)}px monospace`;
+    ctx.fillText(`${ds}${pm}  ·  ${gameState.settings?.difficulty || 'normal'} difficulty`, w / 2, h * 0.645);
 
     // Leaderboard rank (show only for valid 1-based ranks 1–10)
     if (gameState._leaderboardRank >= 1 && gameState._leaderboardRank <= 10) {
       ctx.fillStyle = gameState._leaderboardRank <= 3 ? '#ffcc44' : '#778899';
       ctx.font = `${Math.floor(w / 32)}px monospace`;
-      ctx.fillText(`Personal best #${gameState._leaderboardRank} for this run`, w / 2, h * 0.63);
+      ctx.fillText(`Personal best #${gameState._leaderboardRank} for this run`, w / 2, h * 0.685);
     }
 
     // Action prompts (appear after 1.2s)
@@ -1743,10 +1879,10 @@ export class GridGameMode extends GameMode {
       ctx.globalAlpha = fadeIn * promptFade;
       ctx.fillStyle = '#99aacc';
       ctx.font = `${Math.floor(w / 28)}px monospace`;
-      ctx.fillText('ENTER  · try again', w / 2, h * 0.70);
+      ctx.fillText('ENTER  · try again', w / 2, h * 0.75);
       ctx.fillStyle = '#556677';
       ctx.font = `${Math.floor(w / 36)}px monospace`;
-      ctx.fillText('ESC  · return to menu', w / 2, h * 0.78);
+      ctx.fillText('ESC  · return to menu', w / 2, h * 0.82);
       ctx.globalAlpha = fadeIn;
     }
 

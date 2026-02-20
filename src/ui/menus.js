@@ -24,14 +24,16 @@ export class MenuSystem {
     this.onRestart = onRestart;
     this.onSelectDreamscape = onSelectDreamscape;
 
-    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology' | 'onboarding' | 'highscores'
+    this.screen = 'title'; // 'title' | 'pause' | 'options' | 'tutorial' | 'credits' | 'dreamscape' | 'playmode' | 'cosmology' | 'gamemode' | 'onboarding' | 'highscores'
     this.sel = 0;
     this.tutPage = 0;
     this.dreamscapeSel = 0;
     this.playmodeSel = 0;
     this.cosmologySel = 0;
+    this.gamemodeSel = 0;
     this._pendingDreamscape = null; // dreamscape id chosen before play mode
     this._pendingPlaymode = null;   // play mode id chosen before cosmology
+    this._pendingCosmology = null;  // cosmology id chosen before game mode
 
     // Onboarding state
     this._onboardingStep = 0;      // 0=welcome 1=age 2=nativeLang 3=targetLang
@@ -62,6 +64,7 @@ export class MenuSystem {
     if (screen === 'dreamscape') this.dreamscapeSel = 0;
     if (screen === 'playmode') this.playmodeSel = 0;
     if (screen === 'cosmology') this.cosmologySel = 0;
+    if (screen === 'gamemode') this.gamemodeSel = 0;
     if (screen === 'onboarding') { this._onboardingStep = 0; this._onboardingAge = 1; this._nativeLangSel = 0; this._targetLangSel = 0; }
     // Note: Canvas-based rendering happens in draw() method, not _render()
   }
@@ -94,6 +97,10 @@ export class MenuSystem {
         this.open('playmode');
         return { consumed: true };
       }
+      if (this.screen === 'gamemode') {
+        this.open('cosmology');
+        return { consumed: true };
+      }
       if (this.screen === 'onboarding') {
         // ESC during onboarding = skip setup and go to title
         this._finaliseOnboarding();
@@ -124,6 +131,10 @@ export class MenuSystem {
 
     if (this.screen === 'cosmology') {
       return this._handleCosmology(k);
+    }
+
+    if (this.screen === 'gamemode') {
+      return this._handleGamemode(k);
     }
 
     if (this.screen === 'credits') {
@@ -281,17 +292,41 @@ export class MenuSystem {
     }
     if (k === 'Enter' || k === ' ') {
       const cosmo = cosmologies[this.cosmologySel];
+      this._pendingCosmology = cosmo?.id || null;
+      this.open('gamemode'); // proceed to game mode selection
+      return { consumed: true };
+    }
+    if (k === 'Backspace') {
+      this.open('playmode');
+      return { consumed: true };
+    }
+    return { consumed: false };
+  }
+
+  _handleGamemode(k) {
+    const modes = this.getGamemodeOptions();
+    if (k === 'ArrowUp' || k === 'w' || k === 'W') {
+      this.gamemodeSel = (this.gamemodeSel - 1 + modes.length) % modes.length;
+      return { consumed: true };
+    }
+    if (k === 'ArrowDown' || k === 's' || k === 'S') {
+      this.gamemodeSel = (this.gamemodeSel + 1) % modes.length;
+      return { consumed: true };
+    }
+    if (k === 'Enter' || k === ' ') {
+      const gm = modes[this.gamemodeSel];
       if (this.onSelectDreamscape) {
         this.onSelectDreamscape(
           this._pendingDreamscape || 'RIFT',
           this._pendingPlaymode || 'ARCADE',
-          cosmo?.id || null, // null = no cosmology
+          this._pendingCosmology || null,
+          gm?.id || 'grid-classic',
         );
       }
       return { consumed: true };
     }
     if (k === 'Backspace') {
-      this.open('playmode');
+      this.open('cosmology');
       return { consumed: true };
     }
     return { consumed: false };
@@ -517,6 +552,11 @@ export class MenuSystem {
         value: cfg.sessionReminders !== false ? 'ON' : 'OFF',
         toggle: () => (cfg.sessionReminders = cfg.sessionReminders === false ? true : false),
       },
+      {
+        label: 'PAUSE FOR MESSAGES',
+        value: cfg.messagePause !== false ? 'ON' : 'OFF',
+        toggle: () => (cfg.messagePause = cfg.messagePause === false ? true : false),
+      },
       // ── LANGUAGE SETTINGS ────────────────────────────────────────
       {
         label: 'NATIVE LANGUAGE',
@@ -575,6 +615,20 @@ export class MenuSystem {
     ];
   }
 
+  getGamemodeOptions() {
+    return [
+      { id: 'grid-classic',   name: 'Grid Roguelike',      desc: 'Pattern-based grid exploration & peace nodes', icon: '◈' },
+      { id: 'shooter',        name: 'Twin-Stick Shooter',  desc: 'Bullet-hell wave survival with 4 weapons',     icon: '⚡' },
+      { id: 'rpg',            name: 'RPG Adventure',       desc: 'Dialogue trees, quests, and character growth',  icon: '⚔' },
+      { id: 'ornithology',    name: 'Ornithology',         desc: 'Explore biomes and observe rare bird species',  icon: '🦅' },
+      { id: 'mycology',       name: 'Mycology',            desc: 'Forage mushrooms and identify toxic species',   icon: '🍄' },
+      { id: 'architecture',   name: 'Architecture',        desc: 'Design and build tile-based structures',        icon: '🏛' },
+      { id: 'constellation',  name: 'Constellation',       desc: 'Navigate stars and activate sequences',         icon: '✦' },
+      { id: 'alchemy',        name: 'Alchemy',             desc: 'Collect elements and transmute them in the Athanor', icon: '⚗' },
+      { id: 'rhythm',         name: 'Rhythm',              desc: 'Move to the beat and build score multipliers',  icon: '♪' },
+    ];
+  }
+
   // ────────────────────────────────────────────────────────────────────
   //  DRAWING
   // ────────────────────────────────────────────────────────────────────
@@ -598,6 +652,7 @@ export class MenuSystem {
     if (this.screen === 'dreamscape') return this._drawDreamscape(ctx, w, h);
     if (this.screen === 'playmode') return this._drawPlaymode(ctx, w, h);
     if (this.screen === 'cosmology') return this._drawCosmology(ctx, w, h);
+    if (this.screen === 'gamemode') return this._drawGamemode(ctx, w, h);
     if (this.screen === 'credits') return this._drawCredits(ctx, w, h);
     if (this.screen === 'onboarding') return this._drawOnboarding(ctx, w, h);
     if (this.screen === 'highscores') return this._drawHighScores(ctx, w, h);
@@ -626,7 +681,7 @@ export class MenuSystem {
 
   _drawList(ctx, w, h) {
     const isPause = this.screen === 'pause';
-    this._drawHeader(ctx, w, h, isPause ? 'PAUSED' : 'v1.0 · base layer');
+    this._drawHeader(ctx, w, h, isPause ? 'PAUSED' : 'v2.1 · 9 modes · 18 dreamscapes · 17 play styles');
 
     const items = this.getItems();
     const boxW = 360;
@@ -944,22 +999,101 @@ export class MenuSystem {
     ctx.textAlign = 'left';
   }
 
+  _drawGamemode(ctx, w, h) {
+    const dreamId = this._pendingDreamscape || 'RIFT';
+    const playMode = this._pendingPlaymode || 'ARCADE';
+    this._drawHeader(ctx, w, h, `SELECT GAME MODE · ${dreamId} · ${playMode}`);
+
+    const modes = this.getGamemodeOptions();
+    const boxW = 500;
+    const rowH = 44;
+    const paddingV = 14;
+    const boxH = modes.length * rowH + paddingV * 2;
+    const bx = (w - boxW) / 2;
+    const by = h / 2 - boxH / 2 + 10;
+
+    ctx.fillStyle = 'rgba(7,7,20,0.92)';
+    ctx.fillRect(bx, by, boxW, boxH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(bx, by, boxW, boxH);
+
+    const pulse = 0.6 + 0.4 * Math.sin(this._pulseT * 0.004);
+
+    for (let i = 0; i < modes.length; i++) {
+      const gm = modes[i];
+      const isSel = i === this.gamemodeSel;
+      const rowY = by + paddingV + i * rowH;
+
+      if (isSel) {
+        ctx.fillStyle = `rgba(0,255,136,${0.07 + pulse * 0.10})`;
+        ctx.fillRect(bx + 10, rowY, boxW - 20, rowH - 4);
+        ctx.strokeStyle = `rgba(0,255,136,${0.28 + pulse * 0.20})`;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx + 10, rowY, boxW - 20, rowH - 4);
+      }
+
+      // Icon + name
+      ctx.fillStyle = isSel ? '#00ff88' : '#b8b8d0';
+      ctx.font = isSel ? 'bold 12px Courier New' : '11px Courier New';
+      ctx.textAlign = 'left';
+      ctx.fillText((isSel ? '▶ ' : '  ') + gm.icon + '  ' + gm.name, bx + 26, rowY + rowH / 2 - 3);
+
+      // Description
+      const descLine = gm.desc.length > 44 ? gm.desc.slice(0, 42) + '…' : gm.desc;
+      ctx.fillStyle = isSel ? '#88ffcc' : '#445566';
+      ctx.font = '9px Courier New';
+      ctx.textAlign = 'right';
+      ctx.fillText(descLine, bx + boxW - 20, rowY + rowH / 2 - 3);
+      ctx.textAlign = 'left';
+    }
+
+    ctx.fillStyle = '#445566';
+    ctx.font = '8px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('↑/↓ choose · ENTER start · BKSP back', w / 2, by + boxH + 22);
+    ctx.textAlign = 'left';
+  }
+
   _drawCredits(ctx, w, h) {
     this._drawHeader(ctx, w, h, 'CREDITS');
 
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#b8b8d0';
-    ctx.font = '12px Courier New';
-    ctx.fillText('Made for play, pattern, and glow.', w / 2, h / 2 - 10);
-    ctx.fillText('Begin in stillness. Emerge through pattern recognition.', w / 2, h / 2 + 20);
 
-    ctx.fillStyle = '#667099';
-    ctx.font = '9px Courier New';
-    ctx.fillText('MenuSystem ported from _archive/glitch-peace-v5', w / 2, h / 2 + 50);
+    // Tagline
+    ctx.fillStyle = '#00e5ff';
+    ctx.font = `bold ${Math.floor(w / 28)}px Courier New`;
+    ctx.shadowColor = '#00e5ff';
+    ctx.shadowBlur = 10;
+    ctx.fillText('Begin in stillness. Emerge through pattern.', w / 2, h * 0.28);
+    ctx.shadowBlur = 0;
+
+    // Description rows
+    const lines = [
+      { text: 'GLITCH·PEACE is free — always. No ads, no trackers, no cost.', col: '#b8b8d0' },
+      { text: 'A consciousness engine built on neuroscience, wisdom traditions,', col: '#778899' },
+      { text: 'and compassionate game design. Suitable for all ages.', col: '#778899' },
+      { text: '', col: '' },
+      { text: '9 gameplay modes  ·  18 dreamscapes  ·  17 play styles', col: '#88ffcc' },
+      { text: '12 cosmological frameworks  ·  19-language vocabulary system', col: '#88ffcc' },
+      { text: '', col: '' },
+      { text: 'Research base: Kaplan (1989) · LaBerge (1990) · Csikszentmihalyi (1990)', col: '#445566' },
+      { text: 'Thaut (2015) · Mahasi Sayadaw (1971) · Jung (1951) · Rogers (1961)', col: '#445566' },
+      { text: '', col: '' },
+      { text: 'Source code: github.com/jessidono24-cmyk/glitch-peace-vite', col: '#334455' },
+      { text: 'License: MIT — free forever', col: '#334455' },
+    ];
+
+    ctx.font = `${Math.floor(w / 42)}px Courier New`;
+    lines.forEach((line, i) => {
+      if (!line.text) return;
+      ctx.fillStyle = line.col;
+      ctx.fillText(line.text, w / 2, h * 0.36 + i * (h * 0.045));
+    });
 
     ctx.fillStyle = '#445566';
-    ctx.font = '8px Courier New';
-    ctx.fillText('ENTER to return', w / 2, h / 2 + 75);
+    ctx.font = '9px Courier New';
+    ctx.fillText('ENTER or ESC to return', w / 2, h * 0.92);
     ctx.textAlign = 'left';
   }
 

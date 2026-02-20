@@ -172,6 +172,7 @@ window._dreamIdx      = CFG.dreamIdx;
 // SteamPack: expose achievement defs for drawAchievements
 window._achieveDefs   = { ACHIEVEMENT_DEFS, list: ACHIEVEMENT_DEFS };
 window._achievementQueue = [];
+window._achievementSystem = achievementSystem;
 
 let glitchFrames = 0, glitchTimer = 500;
 let anomalyActive = false, anomalyData = { row:-1, col:-1, t:0 };
@@ -1113,6 +1114,7 @@ function loop(ts) {
   }
 
   drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, hallucinations, anomalyActive, anomalyData, glitchFrames, DPR, consequencePreview.getGhostPath());
+  drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
   // Phase 11: Draw dashboard overlay if visible
   if (dashboard.visible) drawDashboard(ctx, CW(), CH());
   animId = requestAnimationFrame(loop);

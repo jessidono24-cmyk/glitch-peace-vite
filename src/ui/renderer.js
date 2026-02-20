@@ -641,6 +641,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
   drawEmpathyFlash(ctx, w, h);
   drawTutorialHint(ctx, w);
   drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive);
+  drawDashboard(ctx, w, h);
 }
 
 function drawTutorialHint(ctx, w) {
@@ -1375,4 +1376,75 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
     }
   }
+}
+
+// ─── D1 Integration Dashboard overlay ────────────────────────────────────
+function drawDashboard(ctx, w, h) {
+  if (!window._dashboardOpen) return;
+
+  // Backdrop
+  ctx.globalAlpha = 0.93;
+  ctx.fillStyle = '#04080c';
+  ctx.fillRect(0, 0, w, h);
+  ctx.globalAlpha = 1;
+
+  // Border
+  ctx.strokeStyle = '#00ff88'; ctx.lineWidth = 1;
+  ctx.strokeRect(12, 12, w - 24, h - 24);
+
+  // Title
+  ctx.font = 'bold 13px Courier New'; ctx.fillStyle = '#00ff88';
+  ctx.textAlign = 'center';
+  ctx.fillText('INTEGRATION DASHBOARD', w / 2, 34);
+  ctx.font = '7px Courier New'; ctx.fillStyle = '#336633';
+  ctx.fillText('[H] close', w / 2, 46);
+
+  // Helper
+  const row = (label, value, color, y) => {
+    ctx.font = '8px Courier New'; ctx.textAlign = 'left';
+    ctx.fillStyle = '#446644'; ctx.fillText(label, 24, y);
+    ctx.fillStyle = color || '#00ff88'; ctx.textAlign = 'right';
+    ctx.fillText(String(value ?? '--'), w - 24, y);
+    ctx.textAlign = 'left';
+  };
+
+  let y = 66;
+  const gap = 14;
+
+  // Intelligence scores
+  ctx.font = '7px Courier New'; ctx.fillStyle = '#225522';
+  ctx.fillText('-- INTELLIGENCE --', 24, y); y += gap;
+  row('IQ SCORE',       window._logicPuzzles?.iqScore ?? '--',            '#aaddff', y); y += gap;
+  row('STRATEGIC',      window._strategicThinking?.strategicScore ?? '--','#ffcc44', y); y += gap;
+  row('EQ SCORE',       window._emotionRecognition?.eqScore ?? '--',      '#ff88bb', y); y += gap;
+  row('EMPATHY',        window._empathyTraining?.empathyScore ?? '--',    '#aaddff', y); y += gap;
+
+  // Awareness
+  y += 4;
+  ctx.fillStyle = '#225522';
+  ctx.fillText('-- AWARENESS --', 24, y); y += gap;
+  row('LUCIDITY',       window._dreamYoga?.lucidity ?? '--',              '#cc88ff', y); y += gap;
+  row('EMERGENCE',      window._emergenceIndicators?.levelLabel ?? '--',  '#ffaa44', y); y += gap;
+  row('REFLECTIONS',    window._selfReflection?.totalReflections ?? '--', '#88ccff', y); y += gap;
+
+  // Alchemy & Temporal
+  y += 4;
+  ctx.fillStyle = '#225522';
+  ctx.fillText('-- ALCHEMY & TIME --', 24, y); y += gap;
+  row('ALCH PHASE',     window._alchemySystem?.phase ?? '--',             '#cc88ff', y); y += gap;
+  row('TRANSMUTATIONS', window._alchemySystem?.transmutations ?? '--',    '#cc88ff', y); y += gap;
+  row('LUNAR',          window._tmods?.lunarName ?? '--',                 '#88aaff', y); y += gap;
+  row('PLANET',         window._tmods?.planetName ?? '--',                '#ffcc44', y); y += gap;
+
+  // Achievements
+  y += 4;
+  ctx.fillStyle = '#225522';
+  ctx.fillText('-- ACHIEVEMENTS --', 24, y); y += gap;
+  const ach = window._achievementSystem;
+  row('UNLOCKED',       ach ? (ach.unlockedCount + ' / ' + ach.totalCount) : '--', '#ffdd00', y); y += gap;
+
+  // Footer hint
+  ctx.font = '7px Courier New'; ctx.fillStyle = '#1a2a1a'; ctx.textAlign = 'center';
+  ctx.fillText('scores update live during play', w / 2, h - 20);
+  ctx.textAlign = 'left';
 }

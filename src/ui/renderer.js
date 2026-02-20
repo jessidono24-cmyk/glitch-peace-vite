@@ -638,7 +638,25 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
   biomeSystem.draw(ctx, w, h, ts);
   drawRealityCheck(ctx, w, h);
   drawEmotionFlash(ctx, w, h);
+  drawEmpathyFlash(ctx, w, h);
   drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive);
+}
+
+function drawEmpathyFlash(ctx, w, h) {
+  const et = window._empathyTraining;
+  if (!et) return;
+  const flash = et.compassPhrase || et.flashEmotion;
+  if (!flash) return;
+  const alpha = (typeof et.flashAlpha === 'number') ? et.flashAlpha : 0.9;
+  if (alpha < 0.02) return;
+
+  ctx.globalAlpha = alpha * 0.85;
+  ctx.textAlign = 'center';
+  ctx.font = '8px Courier New';
+  ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 6;
+  ctx.fillText(flash.text || flash.phrase || flash.label || '', w / 2, h - 50);
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
 
 function drawEmotionFlash(ctx, w, h) {

@@ -201,8 +201,14 @@ export function stepEnemies(game, dt, keys, matrixActive, hallucinations, showMs
 
     // Hit player
     if (e.y === g.player.y && e.x === g.player.x) {
+      if (window._empathyTraining && e.behavior) {
+        window._empathyTraining.onEnemyEncounter?.(e.behavior);
+      }
       if (UPG.shield && UPG.shieldTimer > 0) {
         e.stunTimer = 1300;
+        if (window._empathyTraining && e.behavior) {
+          window._empathyTraining.onEnemyStunned?.(e.behavior);
+        }
         showMsg('SHIELD HELD!', '#00ffcc', 38);
         burst(g, g.player.x, g.player.y, '#00ffcc', 14, 3);
       } else {

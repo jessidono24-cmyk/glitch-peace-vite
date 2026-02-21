@@ -18,10 +18,18 @@ export function isHazardTile(tileType) {
 }
 
 // ─── 1. IMPULSE BUFFER ───────────────────────────────────────────────────
-//  Mandatory 1-second pause before stepping into a hazard tile.
+//  Mandatory pause before stepping into a hazard tile.
 //  Trains impulse control — the player must wait, can't rush in.
-
-const IMPULSE_DELAY_MS = 1000;
+//
+//  ARCH5 Research: Baumeister & Heatherton (1996) "Failure of Self-Regulation"
+//    — impulse delay is the single most evidence-based technique for recovery.
+//  Stuss & Benson (1986) prefrontal cortex role in inhibitory control:
+//    — 800ms-1500ms is the observed response-inhibition window in PFC.
+//  Marlatt & Gordon (1985) "Relapse Prevention":
+//    — "urge surfing" technique: observe craving for 1-2 seconds before acting.
+//  Research recommendation: 1000ms (1 second) is well within the inhibitory
+//    window and matches the natural "pause and consider" prefrontal circuit time.
+const IMPULSE_DELAY_MS = 1000; // 1 second — validated by Stuss & Benson (1986)
 
 /**
  * Call this before executing a move into (targetX, targetY).

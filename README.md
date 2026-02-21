@@ -1,276 +1,12 @@
 # 🌌 GLITCH·PEACE
 
-**A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
+**A consciousness simulation / roguelike built with Vite — v4 Vite Edition**
 
-[![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
-[![LOC](https://img.shields.io/badge/lines-~30%2C000-purple.svg)](src/)
-[![Modules](https://img.shields.io/badge/modules-109-blueviolet.svg)](src/)
+[![Node](https://img.shields.io/badge/node-18%2B-brightgreen.svg)](https://nodejs.org/)
 
 > *Begin in stillness. Emerge through pattern recognition. Transform through play.*
-
-A neurodivergent-friendly consciousness simulation game combining roguelike gameplay with evidence-based psychological techniques for consciousness awakening, addiction recovery, IQ/EQ development, dream yoga practice, and multilingual learning.
-
----
-
-## 🎯 What Is GLITCH·PEACE?
-
-GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than entertainment — it is a multidimensional transformation tool built on ~145KB of peer-reviewed research. Through gentle stress inoculation, pattern recognition training, and embodied play, it helps players:
-
-- 🧠 **Awaken Consciousness** — Develop metacognition, reality testing, and lucid dreaming skills
-- 🌱 **Support Recovery** — Rebuild executive function through impulse delay, consequence prediction, and compassionate relapse design
-- 📚 **Enhance Learning** — 16-language progressive vocabulary challenges, mathematical reasoning, sigil pattern literacy
-- 🧘 **Embody Awareness** — Dream yoga practice, somatic body scanning, breath integration
-- ✨ **Experience Flow** — Adaptive challenge keeps you in the zone of proximal development
-- 🎮 **Play Freely** — Age-accessible from age 5+ through hardcore nightmare mode; 13 play mode variations
-
-### The Five Pillars
-
-| Pillar | Mechanism | Evidence Base |
-|--------|-----------|---------------|
-| **Consciousness Awakening** | Pattern recognition, reality checks, lucidity meter | LaBerge (1985), Csikszentmihalyi (1990) |
-| **Addiction Recovery** | Impulse buffer (1s delay), consequence preview (3-step), route alternatives, compassionate relapse | Prefrontal cortex restoration, Baumeister ego depletion model |
-| **Learning Enhancement** | 16-language progressive vocab, math puzzles, memory challenges, sigil literacy | ZPD (Vygotsky), spaced repetition, implicit learning theory |
-| **Embodiment & Dream Yoga** | Body scan on COVER tiles, lucidity meter, dream sign recognition (localStorage), pause rewards | Tibetan dream yoga, Gendlin focusing, polyvagal theory |
-| **Consciousness Engine** | Emotional field (10 emotions), temporal system (lunar+weekday), world distortion, synergy multipliers | Penrose-Hameroff Orch-OR, CIA Gateway Process |
-
----
-
-## 📖 The Storyline
-
-> *"You are a consciousness — symbol ◈ — navigating a series of dreamscapes drawn from real, documented dreams. Each world is a different inner landscape. The journey is transformation."*
-
-### Your Journey Through the Dreamscapes
-
-The 10 canonical worlds form a **psychological hero's journey**, progressing from raw survival to full integration:
-
-| # | Dreamscape | Emotional Theme | Core Challenge |
-|---|-----------|----------------|----------------|
-| 1 | **VOID STATE** | Numbness → Awakening | Learn to move; first peace nodes; orientation |
-| 2 | **MOUNTAIN DRAGON REALM** | Fear → Initiation | Dragon archetype appears; face what guards the gate |
-| 3 | **MOUNTAIN COURTYARD OF OJOS** | Frustration → Understanding | Captor-teacher loop; language puzzles; patterns in confinement |
-| 4 | **LEAPING FIELD** | Vulnerability → Trust | Orb/sheep guide; phase-walk through walls; learning to leap |
-| 5 | **MOUNTAIN SUMMIT REALM** | Exhaustion → Triumph | Multi-plane stakes; dragon guardian returns transformed |
-| 6 | **CHILDHOOD NEIGHBORHOOD** | Panic → Compassion | Pursuit patterns from early life; the protector emerges |
-| 7 | **MODERN BEDROOM GUNFIGHT** | Chaos → Clarity | Raw danger; present-moment awareness under pressure |
-| 8 | **AZTEC / MAYAN CHASE** | Confinement → Escape | Labyrinth navigation; dead ends as teachers; captor dissolved |
-| 9 | **ORB ESCAPE EVENT** | Dissolution → Freedom | Phase through everything; the orb guide leads outward |
-| 10 | **DREAMSCAPE INTEGRATION** | Fragmentation → Wholeness | All archetypes converge; every system active; final synthesis |
-
-### How the Story Progresses
-
-- **Each dreamscape** introduces new tile types, enemy behaviors, and an archetype power unique to that world.
-- **Completing a dreamscape** triggers an interlude screen with a brief narrative beat before the next world loads.
-- **The Campaign arc** (30 levels across 3 acts) structures the dreamscapes into a coherent narrative:
-  - **Act 1 (levels 1–10):** Awakening — learning the rules of the dream
-  - **Act 2 (levels 11–20):** Confrontation — meeting shadows, looping patterns, inner obstacles
-  - **Act 3 (levels 21–30):** Integration — all systems fire; the journey resolves
-- **The Mirror Dreamscape** (12th world, unlocked after completion) is a Jungian shadow-integration realm — the Witness archetype, heavy COVER tiles, and the deepest recovery tools.
-- **Emotional continuity:** The 10-emotion field persists across levels. How you play (aggressive vs. gentle, reactive vs. mindful) shapes the distortion of each dreamscape.
-
-### What Makes This Different from a Typical Roguelike
-
-Every mechanic is grounded in real psychology. The DESPAIR tiles aren't just obstacles — they model the spread of hopelessness. The impulse buffer (1-second delay on dangerous moves) models prefrontal cortex recovery. The reality checks that pop up every 5 minutes are actual lucid dreaming induction techniques. The game teaches by *being* what it teaches.
-
----
-
-## ✨ What's Working Right Now (v3.1 — Updated Feb 2026)
-
-### 🎮 10 Fully Playable Gameplay Modes (+ 3D)
-
-All 10 modes verified working across all dreamscapes and play styles. 25 bugs fixed total.
-
-| Mode | Icon | Core Mechanic | Status |
-|------|------|---------------|--------|
-| **Grid Roguelike** | ◈ | Collect peace nodes, dodge enemies, emotional field | ✅ Full |
-| **Twin-Stick Shooter** | ⚡ | Wave survival, 4 weapons, kill counter, mouse aiming, enemy separation physics | ✅ Full |
-| **RPG Adventure** | ⚔ | Dialogue trees, character stats, visible quest log, 8 quest chains | ✅ Active |
-| **Ornithology** | 🦅 | Move through biomes, observe birds, answer challenges | ✅ Full |
-| **Mycology** | 🍄 | Forage mushrooms, identify toxic species | ✅ Full |
-| **Architecture** | 🏛 | Place tiles, design structures (SPACE/Q/E/X) | ✅ Full |
-| **Constellation** | ✦ | Navigate to stars, activate sequences | ✅ Full |
-| **Constellation 3D** | 🌌 | Three.js WebGL 3D starfield + nebula particle system | ✅ Full |
-| **Alchemy** | ⚗ | Collect elements (🜂Fire 🜄Water 🜃Earth 🜁Air), transmute at Athanor | ✅ Full |
-| **Rhythm** | ♪ | Move to pulsing beat tiles, build streak multiplier | ✅ Full |
-
-### 🧘 Dream Yoga & Recovery Systems (Phase 2.5 — Now Live)
-
-These systems were designed but not wired. They are now active in every session:
-
-| System | What It Does | Trigger |
-|--------|-------------|---------|
-| **Lucidity Meter** | 0-100% bar (top-right) rises from insight tiles, body scans, challenges; decays on damage | Always visible when lucidity > 0 |
-| **Body Scan** | Somatic reminder overlay — `"Feel your feet · Press into the ground"` | Stepping on COVER tile |
-| **Dream Sign Tracking** | Records which tile types + emotions appear most across sessions (localStorage) | Every tile stepped |
-| **Reality Check** | `"Am I dreaming right now?"` prompt with sensory anchors | Every ~5 min (when enabled) |
-| **Pause Rewards** | +2 insight tokens + 10 lucidity after 60s pause; +10 HP after 10 min break | On resume from long pause |
-| **CSS Glitch Animation** | Canvas skews/hue-rotates with 3 intensity levels | `EmotionalField.calcDistortion()` |
-
-### 🐞 22 Bugs Fixed (Feb 2026 Session)
-
-17 original bugs + 5 new bugs found during comprehensive testing = 22 total, all resolved:
-- **BUG-022**: ESC now correctly returns from OPTIONS/CREDITS/HIGH SCORES → back to pause menu (not title)
-- **BUG-020**: Alchemy hint now shows element names + "Walk to ⚗ Athanor to transmute"
-- **BUG-018**: RPG quest log is now prominently rendered below mode banner (bright green, bordered)
-- **BUG-019**: Shooter HUD shows `Wave N · Kills: N` using accurate `this.kills` counter
-- **CSS Glitch**: Three mutually exclusive CSS keyframe animations driven by distortion level
-
-### 🎮 v3.1 New Features (Feb 2026 — Current)
-
-| Feature | Details |
-|---------|---------|
-| **Full-Screen Canvas** | Game now fills the entire viewport — no more quarter-screen rendering. Canvas scales the game world to fit the screen with pillarbox/letterbox bars matching the dreamscape background colour. Fixes the most-reported usability issue. |
-| **5 Boss Types** | Fear Guardian 👁 · Chaos Bringer ⚡ · Pattern Master ◉ · Void Keeper ◈ · Integration Boss ✦ — unique colors, symbols, behaviors, specials |
-| **SVG Character Sprites** | MAGE player (head/body/arms/staff in #00ffcc) and WRAITH enemies (ghost shape with hollow eyes in #ff6600) replacing clip-path approximations |
-| **Walk Animation** | CSS `@keyframes player-walk` bob cycle; `walking` class toggled on movement for real-time footstep feel |
-| **Animated Tiles** | DESPAIR dark-crawl pulse · TERROR red strobe · TRAP orange shimmer (join PEACE/GLITCH/INSIGHT/ARCH animations) |
-| **Isometric 3D Tilt** | Press `I` to toggle `perspective(800px) rotateX(18deg)` — both canvas and sprite layer transform |
-| **Tone.js Ambient Music** | `AmbientMusicEngine` — procedural ambient score tied to EmotionalField state: calm = slow C-major arpeggios (60 BPM), medium = minor scale (80 BPM), tense = dissonant clusters (120 BPM) |
-| **Constellation 3D Nebula** | Three.js `Points` object: 2,000-particle gaussian nebula cloud in purples/blues/teals, slowly rotating behind stars |
-| **Language Immersion Mode** | When `langImmersion: true`, all menu labels appear in target language (es/fr/de/ja/zh translations built in) |
-| **RPG Quests Phase 2** | 5 new quest chains: Elder's Mission · Seer's Vision · Spark's Discovery · Healer's Request · Guardian's Trial (timed 30s challenge) |
-| **Enemy Separation Physics** | Shooter enemies use verlet-style separation forces so they never stack; smoother wave patterns |
-| **Text Overlap Fixed** | `.controls-hint` (top:0) and `#message` (top:60px) no longer overlap |
-| **9-inch Laptop Screen** | `@media (max-height: 640px)` reduces HUD padding, font sizes, hp-bar width for small screens |
-| **RPG Spatial Map** | 18×18 grid (was 12×12) · 5 named zones (Forest/Village/Temple/Void Edge/Convergence) · 5 NPCs with full dialogue trees · Zone entry messages |
-| **Test Coverage** | 25 Playwright tests (was 4) — all 9 modes + boss types + learning challenge + isometric + RPG NPCs + Tone.js |
-
-**New Key Bindings:**
-| Key | Action |
-|-----|--------|
-| `I` | Toggle isometric 3D tilt (any grid mode) |
-
-#### 1. Grid-Based Roguelike — All Systems Connected
-**Gameplay:**
-- Move with WASD/Arrow keys
-- Collect ◈ peace nodes to advance levels
-- Avoid or strategically use hazard tiles
-- Collect ☆ ARCH tiles for archetype powers
-
-**Key Controls:**
-| Key | Action |
-|-----|--------|
-| WASD / Arrows | Move |
-| **J** | Activate Archetype Power (Dragon/Child/Orb/Captor/Protector — per dreamscape) |
-| **R** | Fire Glitch Pulse (charges from ◈ collection, clears hazards radius-3, stuns enemies) |
-| **SHIFT** | Toggle Matrix A (Erasure/red) ↔ B (Coherence/green) |
-| **U** | Open Upgrade Shop (when you have insight tokens) |
-| ESC | Pause |
-| M | Switch to Shooter mode |
-| **I** | Toggle isometric 3D tilt |
-
-**13 Play Mode Variations:**
-Classic · Zen Garden · Speedrun · Puzzle · Survival Horror · Roguelike · Pattern Training · Boss Rush · Pacifist · Reverse · Campaign · Ritual · Daily Challenge
-
-**11 Dreamscapes (each unique tiles + visual theme):**
-The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness · The Abyss · The Crystal · Childhood Neighborhood · Aztec Chase Labyrinth · Orb Escape Event
-
-**Enemy AI — 9 Behavior Types:**
-`chase` · `wander` · `patrol` · `orbit` · `adaptive` · `predictive` · `rush` · `scatter` · hallucination phantoms (level 3+)
-
-**5 Archetypes (J key, 12s cooldown):**
-| Archetype | Dreamscape | Power |
-|-----------|------------|-------|
-| Dragon | The Rift | Wall Jump — leap 2 tiles in any direction |
-| Child Guide | The Lodge / Wilderness | Reveal — flash-reveal all hidden tiles for 3s |
-| Orb | The Wheel / Abyss | Phase Walk — pass through walls for 10 moves |
-| Captor-Teacher | The Duat / Crystal | Rewind — undo last 3 moves (temporal rewind) |
-| Protector | The Tower | Shield Burst — shield + stun all enemies 1.5s |
-
-**Matrix A/B System (SHIFT):**
-- **Matrix A — Erasure (red):** Enemies 35% faster, energy drains, damage +25%, more hostile
-- **Matrix B — Coherence (green):** Energy regens, enemies normal speed, more peaceful
-
-**Glitch Pulse (R key):**
-- Charges +15% per peace node collected (100% = ready)
-- Fires: clears all hazard tiles within radius 3, stuns all enemies within radius 4 for 1.8s
-
-**All these systems are wired together:**
-- Emotional field → world distortion overlay → hazard damage modifier
-- Temporal system (lunar/weekday) → enemy count scaling, insight score
-- Play mode → timer, move limit, fog-of-war, auto-heal, tile respawn
-- Cosmology → tile biases, score multipliers, unique mechanics
-- Difficulty → SPROUT (age 5+) through NIGHTMARE
-- Language learning challenges on INSIGHT tiles
-- Sigil pattern recognition challenges
-- Lucidity meter (0-100) affected by play
-- Dream sign recognition tracking (localStorage persistence)
-- Combo multiplier (up to 4× at combo=16)
-- PUZZLE undo (U — disabled when shop open), REVERSE polarity, RITUAL breathing pauses
-- PACIFIST mode (no damage from enemies — stealth score instead)
-- Boss encounters every 5th level (pulsing ◆, HP bar, 25 dmg)
-- DESPAIR/HOPELESS tiles spread to adjacent void cells over time
-- 8 upgrades purchasable with insight tokens (U key shop)
-- 30-level campaign with narrative arc in 3 acts
-
-#### 2. Twin-Stick Shooter
-- Real-time WASD movement + mouse aim + hold LMB to shoot
-- 4 weapon types (Spread · Laser · Missiles · Energy Orb), switch with 1-4
-- Wave-based enemies with HP scaling
-- Enemy types: Standard · Tank (150 HP, slow) · Zigzag (fast, oscillating)
-- Dreamscape-themed visuals (background, player ship, bullet/enemy colors)
-- Game over transitions to main PATTERN INCOMPLETE screen
-
-### 🧠 All Core Systems Implemented
-
-| System | Status | What It Does |
-|--------|--------|--------------|
-| Emotional Field Engine | ✅ | 10 emotions, 7 synergies, coherence/distortion metrics |
-| Temporal System | ✅ | 8 lunar phases, 7 weekday harmonics, real-time modifiers |
-| Realm Calculation | ✅ | 5 realms (MIND/HEAVEN/HELL/PURGATORY/IMAGINATION) |
-| 12 Cosmology Systems | ✅ | Selection screen, mechanical modifiers, HUD display |
-| Recovery Tools | ✅ | Impulse buffer, pattern echo, consequence preview, route alternatives, threshold monitor, session manager, relapse compassion |
-| Dream Yoga | ✅ | Lucidity meter, dream sign DB (localStorage), body scan, reality checks, pause rewards |
-| Learning Modules | ✅ | Vocab/math/memory/language/sigil quizzes on INSIGHT tiles |
-| 16-Language System | ✅ | Progressive overload order, all 16 languages with vocab bank |
-| Sigil Database | ✅ | 31 sigils across 6 traditions, 12 universal pattern primitives |
-| Archetypes System | ✅ | 5 archetypes, J key, 12s cooldown, per-dreamscape |
-| Matrix A/B | ✅ | SHIFT to toggle, energy bar, enemy speed modifier |
-| Glitch Pulse | ✅ | R key, 100% charge = fire, clears hazards + stuns |
-| Enemy AI Behaviors | ✅ | 9 types including hallucinations, boss phases |
-| Tile Spread | ✅ | DESPAIR/HOPELESS tiles spread over time |
-| Upgrade Shop | ✅ | 8 upgrades, insight token economy |
-| Campaign Mode | ✅ | 30-level arc in 3 acts |
-| Save/Load | ✅ | Persists cosmology, language, difficulty, progress |
-| First-Run Onboarding | ✅ | Age group → native language → target language |
-| Age-Accessible Difficulty | ✅ | SPROUT (age 5+) through NIGHTMARE |
-| Particle System | ✅ | Dynamic VFX with object pooling, 300-particle live cap, pool capped at 200 |
-| Audio Engine | ✅ | Procedural Web Audio API SFX, no external files |
-| Modular Architecture | ✅ | Plugin system for unlimited gameplay modes |
-| Level Transitions | ✅ | 3s readable overlay: fade-in, score earned, skip after 1.5s |
-| Combo Multiplier HUD | ✅ | Live bottom-left canvas display, pulses on collect, capped at 4× |
-| Synergy Banner | ✅ | Named emotional synergy popup (affect labeling — see RESEARCH §18) |
-| Game-Over Overlay | ✅ | Compassionate PATTERN INCOMPLETE screen; ENTER restarts in-mode |
-| Quest Notifications | ✅ | RPGMode quest completions surface as timed banner on grid |
-| RPG Adventure Mode | ✅ | Live 12×12 walkable grid, 3 shadow enemies, stat-modulated damage, dialogue trees, quests |
-| Stats Dashboard | ✅ | D key overlay: session time, emotional field bars, lucidity meter, language progress, **IQ/EQ/Empathy/Strategy scores** |
-| Gamepad Support | ✅ | Left stick + D-pad → directional; A/B/X/Y → action keys; edge-detect press |
-| Canvas Responsive | ✅ | **Fills full viewport** — game world centred and scaled to fill entire screen; letterbox areas match dreamscape colour; no black bars |
-| Canvas Accessibility | ✅ | `tabindex=0`, `role=application`, descriptive `aria-label` for screen readers |
-| Shooter Boss Waves | ✅ | Every 5th wave: boss enemy with pulsing ring render and centered HP bar |
-| Ornithology Mode | ✅ | Bird-watching grid: 16 species, 7 biomes, species ID challenges, field notebook |
-| Mycology Mode | ✅ | Mushroom foraging: 12 species, 5 substrates, toxic ID challenges, mycelium networks |
-| Architecture Mode | ✅ | Spatial construction: 10 tile types, 4 sacred-geometry blueprints, pattern matching |
-| Constellation Mode | ✅ | Connect-the-stars meditation: 6 constellations, sequential activation, mythological lore |
-| Alchemy Mode | ✅ | Hermetic lab: collect Fire/Water/Earth/Air, 8 transmutation reactions, Jungian lore overlays, particle effects |
-| Rhythm Mode | ✅ | Beat-sync grid: drum machine (kick/snare/hihat), tiles pulse on beat, 4 BPM patterns, accuracy scoring |
-| Audio Engine | ✅ | 13+ synthesized SFX: peace, damage, combo, level_complete, archetype, insight, bird, spore, build, heal, boss |
-| Visual Polish | ✅ | GLITCH tile random color flicker, INSIGHT tile shimmer, peace node pulse glow, combo HUD |
-| **Logic Puzzles** | ✅ | **Phase 9: Sequence challenge overlay after each dreamscape completion; IQ proxy score** |
-| **Emotion Recognition** | ✅ | **Phase 9: Dominant emotion label flash (EQ labeling); EQ score tracking** |
-| **Empathy Training** | ✅ | **Phase 9: Enemy behavior emotional context overlays; compassion phrases; empathy score** |
-| **Strategic Thinking** | ✅ | **Phase 9: Mindful vs. reactive move tracking; matrix discipline; strategy score** |
-| **Achievement System** | ✅ | **15 achievements earned through meaningful play; badge overlay on unlock; localStorage persistence** |
-| **Leaderboard** | ✅ | **Phase 10: localStorage top-10 per dreamscape/mode; global top-10; HIGH SCORES menu screen; rank shown on game-over** |
-| **Session Analytics** | ✅ | **Phase 10: Cross-session lifetime stats: sessions, minutes, peak score, top emotion; shown in Stats Dashboard Lifetime row** |
-| **The Mirror Dreamscape** | ✅ | **Phase 10: 12th world — Jungian shadow integration; COVER/MEM-heavy; Witness archetype clarity field** |
-| **Witness Archetype** | ✅ | **Phase 10: Converts DESPAIR/HOPELESS tiles in radius-4 to safe COVER for 8 moves; emotional integration power** |
-| **High Contrast Mode** | ✅ | **Phase 10: WCAG AA tile color overrides when settings.highContrast active; all 14 tile types remapped** |
-| **Daily Challenge Seed** | ✅ | **Phase 10: djb2 hash of ISO date → deterministic daily seed; reproducible challenge for all players each day** |
-| **Gamepad Vibration** | ✅ | **Phase 10: Rumble on damage, level complete; uses Web Gamepad Vibration API; graceful fallback** |
-| **3 New SFX** | ✅ | **Phase 10: alchemy_discover (arpeggio), rhythm_beat (transient), mirror_chime (528Hz overtone bell)** |
 
 ---
 
@@ -280,535 +16,131 @@ The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness ·
 git clone https://github.com/jessidono24-cmyk/glitch-peace-vite.git
 cd glitch-peace-vite
 npm install
-npm run dev
-# Opens at http://localhost:3000/
+npm run dev        # opens http://localhost:3000
 ```
 
-**Build for production:**
+---
+
+## 🎮 What Is GLITCH·PEACE?
+
+GLITCH·PEACE is a **consciousness engine** disguised as a game — a Vite + vanilla-JS browser game combining roguelike gameplay with psychological techniques for awareness, recovery, and learning. One persistent consciousness engine drives every mode.
+
+### Architecture (ARCH1-5)
+
+```
+CAMPAIGN (10-chapter life progression)
+  └── GAME MODES  (symbolic universes, each with own rules + aesthetics)
+        ├── Grid Roguelike · Shooter · RPG/Narrative
+        ├── Constellation · Rhythm · Meditation
+        ├── Alchemy · Ornithology · Mycology · Architecture
+              └── DREAMSCAPES (symbolic environments per mode)
+                    └── COSMOLOGIES (Hindu/Norse/Hermetic/Tarot/Buddhist)
+                          └── PLAYSTYLES (Balanced/Lucid/Warrior/Sage/Healer/Explorer)
+                                └── ONE CONSCIOUSNESS ENGINE
+                                      (emotional field + temporal + emergence +
+                                       dream yoga + alchemy — always running,
+                                       never resets on mode switch)
+```
+
+---
+
+## 🕹️ Gameplay Modes
+
+| Mode | Description |
+|------|-------------|
+| 🗂️ Grid Classic | Tactical tile navigation — original roguelike |
+| 🔫 Shooter | Fast-paced arena combat, wave survival |
+| ⚔ RPG Adventure | Dialogue trees, character stats, named zones, quest log |
+| 🦅 Ornithology | Observe birds, answer challenges |
+| 🍄 Mycology | Forage mushrooms, identify species |
+| 🏛 Architecture | Place tiles, design structures (SPACE/Q/E) |
+| ✦ Constellation | Connect star nodes, meditative puzzle |
+| ⚗ Alchemy | Collect elements, transmute at Athanor |
+| 🎵 Rhythm | Move to beat tiles, build streak |
+| 🌌 Constellation 3D | Three.js WebGL 3D starfield + nebula |
+
+---
+
+## 🧠 Core Systems
+
+| System | What it does |
+|--------|-------------|
+| **Emotional Field** | 10 emotions; distortion, realm tints, synergy multipliers |
+| **Temporal System** | Real-world lunar phase + planetary day → enemy/insight modifiers |
+| **Dream Yoga** | Lucidity meter, body scan tiles, dream sign tracking, reality checks |
+| **Adaptive Difficulty** | SPROUT through NIGHTMARE; auto-adjusts to player performance |
+| **Campaign Manager** | 10-chapter life progression, tutorial hints, dreamscape unlocks |
+| **Cosmologies** | Hindu/Norse/Hermetic/Tarot/Buddhist flavour layers |
+| **Play Modes** | Balanced/Lucid/Warrior/Sage/Healer/Explorer playstyle modifiers |
+| **Achievement System** | Persistent achievements across sessions |
+| **Music Engine** | Tone.js procedural ambient score tied to emotional state |
+| **Language Learning** | 16-language progressive vocabulary on INSIGHT tiles |
+| **RPG Stats** | Strength/Wisdom/Empathy/Resilience/Clarity grow with play |
+
+---
+
+## ⌨️ Controls
+
+| Key | Action |
+|-----|--------|
+| WASD / Arrows | Move |
+| J | Activate Archetype Power |
+| R | Fire Glitch Pulse |
+| SHIFT | Toggle Matrix A (erasure) ↔ B (coherence) |
+| U | Upgrade Shop |
+| I | Toggle isometric 3D tilt |
+| M | Switch to Shooter mode |
+| ESC | Pause |
+
+---
+
+## 🔧 Development
+
 ```bash
-npm run build
-# Output in dist/ — deploy anywhere, no server needed
+npm run dev          # Vite dev server (localhost:3000)
+npm run build        # Production build → dist/
+npm run preview      # Preview production build
+```
+
+**Stack:** Vite 7, vanilla JS ES modules, Canvas 2D, Three.js (3D mode), Tone.js (music), Matter.js (physics in shooter)
+
+---
+
+## 📁 Repository Structure
+
+```
+src/
+├── core/          constants, state, storage, event-bus, utils
+├── game/          grid, player, enemies, particles
+├── ui/            renderer, menus, HUD
+├── rendering/     sprite-player, 3D layers
+├── systems/       temporal, emotional, dream-yoga, cosmologies, difficulty, campaign...
+├── modes/         mode-manager, grid-mode, shooter, constellation, meditation, rhythm
+├── gameplay-modes/ alchemy, architecture, mycology, ornithology, rpg, grid-based
+├── intelligence/  cognitive + emotional training modules
+├── audio/         music-engine, sfx-manager
+└── recovery/      impulse-buffer, consequence-preview
 ```
 
 ---
 
-## 🗺️ Blueprint Completion Status
-
-```
-Phase 1: Foundation          [████████████████████] 100% ✅  (4,300 lines)
-Phase 2: Recovery Tools      [████████████████████] 100% ✅  (+2,500 lines)
-Phase 2.5: Dream Yoga        [████████████████████] 100% ✅  (+3,200 lines)
-Phase 3: Learning Modules    [████████████████████] 100% ✅  (+1,800 lines)
-Phase 4: Cosmology           [████████████████████] 100% ✅  (+1,200 lines)
-Phase 5: Boss System         [████████████████████] 100% ✅  (+400 lines)
-Phase 6: Dreamscape Expand   [████████████████████] 100% ✅  (11/11 canonical dreamscapes)
-Phase 7: Upgrade Shop        [████████████████████] 100% ✅  (+700 lines)
-Phase 8: Polish & Testing    [████████████████████] 100% ✅  (transitions, combo, synergy, audio, tile anims, gamepad, vibration, canvas, boss HP bar, high contrast, accessibility)
-Phase 9: Intelligence        [████████████████████] 100% ✅  (Logic Puzzles IQ, Emotion Recognition EQ, Empathy Training, Strategic Thinking — 4 modules)
-Phase Language Learning      [████████████████████] 100% ✅  (16 langs + progressive overload)
-Phase Archetypes             [████████████████████] 100% ✅  (5 archetypes, J key, 11 dreamscapes)
-Phase Matrix A/B             [████████████████████] 100% ✅  (SHIFT toggle, energy)
-Phase Enemy AI               [████████████████████] 100% ✅  (9 behaviors + hallucinations)
-Phase Sigil Database         [████████████████████] 100% ✅  (31 sigils, 6 traditions)
-Phase RPG Mode               [████████████████████] 100% ✅  (live 12×12 grid, shadow enemies, stat combat, dialogue, quests — Phase M5 active)
-Phase Ornithology Mode       [████████████████████] 100% ✅  (16 birds, 7 biomes, ID challenges, notebook)
-Phase Mycology Mode          [████████████████████] 100% ✅  (12 species, substrates, mycelium networks)
-Phase Architecture Mode      [████████████████████] 100% ✅  (10 tiles, 4 blueprints, pattern matching)
-Phase Constellation Mode     [████████████████████] 100% ✅  (6 constellations, lore, star-path activation, 3D nebula)
-Phase Alchemy Mode           [████████████████████] 100% ✅  (4 elements, 8 reactions, particle FX, Jungian lore)
-Phase Rhythm Mode            [████████████████████] 100% ✅  (4 BPM patterns, drum machine, beat-sync tiles)
-Phase Stats Dashboard        [████████████████████] 100% ✅  (D key overlay, emotional field, lucidity, language, IQ/EQ/Empathy/Strategy)
-Phase Gamepad Support        [████████████████████] 100% ✅  (left stick + D-pad + 6 buttons; rumble/vibration via Vibration API)
-Phase Achievements           [████████████████████] 100% ✅  (15 achievements, badge overlay, localStorage)
-Phase Accessibility          [████████████████████] 100% ✅  (canvas aria-label + tabindex + High Contrast WCAG AA tile colors)
-Phase Leaderboard            [████████████████████] 100% ✅  (top-10 per mode/dreamscape, global top-10, HIGH SCORES menu screen)
-Phase Session Analytics      [████████████████████] 100% ✅  (cross-session totals: sessions, time, peace, emotions — in Stats Dashboard)
-Phase Daily Challenge        [████████████████████] 100% ✅  (djb2 deterministic daily seed — reproducible daily run for all players)
-Phase 3D Graphics (Three.js) [████████████████████] 100% ✅  (Constellation 3D with WebGL renderer + 2000-particle nebula cloud)
-Phase Ambient Music (Tone.js)[████████████████████] 100% ✅  (AmbientMusicEngine — 3 emotional states, procedural generative score)
-Phase Lang Immersion         [████████████████████] 100% ✅  (menu labels in target language: es/fr/de/ja/zh)
-Phase RPG Quests Phase 2     [████████████████████] 100% ✅  (8 total quest chains; 5 new: Elder/Seer/Spark/Healer/Guardian)
-Phase SVG Sprites            [████████████████████] 100% ✅  (MAGE player + WRAITH enemy SVGs; walk cycle animation)
-────────────────────────────────────────────────────────────
-Overall:  ~24,000 / 24,000 lines  ≈  100%+ blueprint complete ✅ (new features beyond original vision)
-
-Remaining high-priority:
-  - Multiplayer infrastructure
-  - 80%+ test coverage
-  - Full WCAG AA accessibility audit
-  - Performance optimization (WebGL renderer candidate)
-  - Gamepad rumble / vibration feedback
-  - Integration metrics dashboard (cross-session analytics)
-  - Electron/Steam wrapper packaging
-```
-
----
-
-## 📋 Roadmap — Post-100% Expansion
-
-All core vision items are complete ✅. What follows is the post-launch expansion track.
-
-### Core Vision — Complete ✅
-- [x] **11 → 12 canonical dreamscapes** — Mirror (Jungian shadow integration) added ✅
-- [x] **Constellation Mode** — connect-the-stars meditative puzzles ✅
-- [x] **Ornithology Mode** — bird-watching with species ID challenges ✅
-- [x] **Mycology Mode** — mushroom foraging with toxic ID challenges ✅
-- [x] **Architecture Mode** — spatial construction with blueprints ✅
-- [x] **Alchemy Mode** — Hermetic laboratory, 8 transmutation reactions ✅
-- [x] **Rhythm Mode** — beat-synchronized grid, drum machine entrainment ✅
-- [x] **Phase 8 Polish** — GLITCH flicker, INSIGHT shimmer, heal SFX, high contrast ✅
-- [x] **RPG Mode full grid rendering** — live 12×12 walkable grid, shadow enemies, stat combat ✅
-- [x] **Stats Dashboard** — D key overlay + Lifetime Analytics row ✅
-- [x] **Gamepad Support + Vibration** — full button mapping + rumble feedback ✅
-- [x] **Leaderboard** — localStorage top-10 per run, global top-10, HIGH SCORES screen ✅
-- [x] **Session Analytics** — cross-session lifetime stats in Stats Dashboard ✅
-- [x] **Daily Challenge Seed** — djb2 hash of ISO date, reproducible daily run ✅
-- [x] **High Contrast WCAG AA** — full tile color overrides for accessibility ✅
-- [x] **Phase 9 Intelligence Suite** — IQ/EQ/Empathy/Strategy scores wired ✅
-- [x] **Achievement System** — 15 achievements, badge overlay, localStorage ✅
-- [x] **Canvas Accessibility** — `tabindex=0`, `role=application`, aria-label ✅
-- [x] **SVG Character Sprites** — MAGE player + WRAITH enemy SVG data URIs replacing clip-path shapes ✅
-- [x] **Walk Cycle Animation** — CSS `@keyframes player-walk` bob; `walking` class toggle on movement ✅
-- [x] **Language Immersion Mode** — menu labels in target language (es/fr/de/ja/zh) ✅
-- [x] **RPG Phase 2 Quests** — 5 new quest chains: Elder/Seer/Spark/Healer/Guardian ✅
-- [x] **Tone.js Ambient Music** — `AmbientMusicEngine`: procedural score tied to EmotionalField distortion ✅
-- [x] **Three.js Nebula** — 2000-particle gaussian cloud in Constellation 3D mode ✅
-- [x] **Shooter Enemy Separation** — verlet-style forces stop enemy stacking ✅
-- [x] **Text/UI Overlap Fixed** — controls-hint and message no longer overlap ✅
-- [x] **9-inch Screen Responsive** — `@media (max-height: 640px)` compact HUD layout ✅
-
-### Expansion Track (Post-Launch)
-- [ ] **Full test suite** — 80%+ coverage for core systems
-- [ ] **Co-op Mode** — shared emotional field, 2 players
-- [ ] **Multiplayer** — network lobby + shared dreamscapes
-- [ ] **Electron wrapper** — Steam / desktop packaging
-- [ ] **Community dreamscapes** — Workshop / JSON import
-- [ ] **Matter.js full physics** — npm install matter-js; replace separation forces with rigid-body simulation
-- [ ] **More 3D modes** — Three.js versions of Alchemy and Rhythm modes
-- [ ] **Spine/Lottie animations** — skeletal character animations for MAGE and WRAITH
-- [ ] **16-language full UI** — extend immersionLabel to all UI text, not just menu items
-
-### Steam Release Path (see section below)
-
----
-
-## 🎮 Steam Release Pathway
-
-GLITCH·PEACE is built in HTML5 Canvas / Vanilla JS — a strong foundation for a Steam release via **Electron** wrapper.
-
-### Technical Path to Steam
-
-| Step | Tool | Notes |
-|------|------|-------|
-| 1. Electron wrapper | [Electron](https://www.electronjs.org/) | Packages the web app as a native desktop app for Windows/Mac/Linux |
-| 2. Steamworks SDK | [GreenWorks](https://github.com/nicedoc/greenworks) or `steamworks.js` | Achievements, cloud saves, leaderboards |
-| 3. Steam Direct | $100 one-time fee | Required to list on Steam |
-| 4. Steam Next Fest | Free (by application) | Great early visibility for indie games |
-| 5. Revenue split | 70% developer / 30% Steam | Standard Valve terms |
-
-### Why Steam Makes Sense for GLITCH·PEACE
-- **Free to Play** — aligns with mission (accessibility first, no paywalls)
-- **Steam achievements** map naturally to consciousness milestones (first lucid level, 100 peace nodes, full ARCH collection)
-- **Steam cloud saves** means dream sign database persists across devices
-- **Offline mode** — all gameplay is local, no server required
-- **Workshop potential** — community-created dreamscapes/cosmologies
-
-### Steam-Ready Requirements (Current Status)
-| Requirement | Status |
-|-------------|--------|
-| Stable 60fps | ✅ (vite build, canvas 2D, no heavy deps) |
-| Windows/Mac/Linux | 📋 (needs Electron wrapper — ~1 week) |
-| Keyboard + gamepad | ✅ (gamepad API wired via InputManager.pollGamepad()) |
-| Steam achievements | ✅ (15 in-game achievements; Steamworks SDK mapping ready) |
-| Canvas accessibility | ✅ (aria-label, tabindex, role=application) |
-| ESRB rating | 📋 (E10+ likely — mild fantasy themes, recovery content) |
-| Store page assets | 📋 (screenshots, trailer, capsule art) |
-| Localization | 🚧 (16 language vocab bank exists; Language Immersion Mode for menu labels done; full UI localization in progress) |
-| Screen sizes | ✅ (responsive canvas + `@media (max-height: 640px)` compact HUD for small screens) |
-| PWA manifest | ✅ (manifest.json, Open Graph meta, apple-mobile-web-app tags) |
-
-### Estimated Timeline to Steam Early Access
-- **Phase 1** (now → 4 weeks): Complete remaining dreamscapes + constellation mode + Electron wrapper
-- **Phase 2** (4 → 8 weeks): Test suite, gamepad support, Steam SDK integration
-- **Phase 3** (8 → 12 weeks): Store page, achievements design, beta testing
-- **Target**: Early Access release **Q2 2026** as a free game with optional supporter DLC
-
----
-
-## 🔬 Research Foundation
-
-GLITCH·PEACE is built on peer-reviewed scientific research. Every mechanic has a documented reason:
-
-| Mechanic | Research Basis |
-|----------|----------------|
-| Impulse buffer (1s) | Baumeister et al. (2007): ego depletion; prefrontal cortex restoration via delay training |
-| Consequence preview | Kahneman (2011): System 2 activation; future-self visualization techniques |
-| Pattern echo trail | Habit loop awareness (Duhigg, 2012); loop detection in cognitive-behavioral therapy |
-| Reality checks | LaBerge (1985/1990): MILD technique; critical awareness cultivation for lucid dreaming |
-| Dream sign tracking | Tibetan Dream Yoga (Norbu, 1992); personal dream dictionary building |
-| Body scan tiles | Gendlin (1982): Focusing; somatic marker hypothesis (Damasio, 1994) |
-| Emotional field engine | Plutchik wheel of emotions; polyvagal theory (Porges, 1994) |
-| Temporal system | Circadian biology (Czeisler, 1995); lunar phase effects on sleep (Cajochen et al., 2013) |
-| 16-language progressive | Linguistic typology (Comrie, 1989); family-based learning transfer |
-| Sigil database | Arnheim (1969) visual psychology; Gimbutas (1991) universal symbols; Leroi-Gourhan (1965) |
-| Adaptive difficulty | Vygotsky ZPD; Csikszentmihalyi (1990) flow channel |
-| Combo multiplier | Dopamine reward timing (Schultz, 1997); ethical variable-ratio design (King et al., 2019) |
-| Synergy banner | Affect labeling (Lieberman et al., 2007); emotional intelligence training (Salovey & Mayer, 1990) |
-| Transition overlay | Cognitive consolidation windows (Ericsson, 1995); SDT non-coercive feedback (Deci & Ryan, 1985) |
-| Compassionate game-over | Non-punishment framing (Neff, 2003); relapse compassion (Linehan, 1993); neuroplasticity protection (McEwen, 2007) |
-
-📖 **Full Research**: See [RESEARCH.md](RESEARCH.md) and [DREAM_YOGA.md](DREAM_YOGA.md) for complete citations (now 18 sections, v1.1).
-
----
-
-## 🏗️ Technical Architecture
-
-### Project Structure (42 modules, ~11,000 lines)
-
-```
-glitch-peace-vite/
-├── src/
-│   ├── core/                        # Foundation systems
-│   │   ├── constants.js             # 17 tile types, 8 biomes, 6 difficulty tiers (incl. SPROUT age 5+)
-│   │   ├── emotional-engine.js      # 10-emotion field, 7 synergies, coherence/distortion
-│   │   ├── temporal-system.js       # 8 lunar phases, 7 weekday harmonics
-│   │   ├── storage.js               # Save/load (cosmology, language, lucidity, insightTokens)
-│   │   ├── utils.js                 # Seeded random (mulberry32), math helpers
-│   │   └── game-engine/
-│   │       ├── GameStateManager.js  # Centralized state
-│   │       └── InputManager.js      # Keyboard/mouse/touch; keysPressed for discrete moves
-│   ├── game/
-│   │   ├── grid.js                  # Procedural generation, seeded DAILY mode, biome-aware
-│   │   ├── player.js                # movePlayer, combo scoring (4× max), scoreMul, hazardMul
-│   │   ├── enemy.js                 # 9 AI behaviors (chase/wander/patrol/orbit/adaptive/
-│   │   │                            #   predictive/rush/scatter + hallucinations)
-│   │   └── particles.js             # Dynamic particles
-│   ├── gameplay-modes/
-│   │   ├── ModeRegistry.js          # Plugin system for unlimited modes
-│   │   ├── grid-based/
-│   │   │   └── GridGameMode.js      # All systems wired: archetypes, matrix, glitch pulse,
-│   │   │                            #   tile spread, fog-of-war, boss, campaign, learning...
-│   │   └── shooter/
-│   │       └── ShooterMode.js       # Twin-stick; TANK/ZIGZAG enemies; dreamscape themes
-│   ├── systems/
-│   │   ├── archetypes.js            # 5 archetypes (Dragon/Child/Orb/Captor/Protector)
-│   │   ├── audio.js                 # Procedural SFX (Web Audio API, no external files)
-│   │   ├── campaign.js              # 30-level narrative arc (3 acts)
-│   │   ├── cosmologies.js           # 12 cosmologies + getCosmoModifiers()
-│   │   ├── dream-yoga.js            # Lucidity meter, dream sign DB, body scan, pause rewards
-│   │   ├── dreamscapes.js           # 11 dreamscapes with tile biases + visual themes
-│   │   ├── languages.js             # 16 languages, progressive overload, vocab bank
-│   │   ├── learning-modules.js      # 5 challenge types on INSIGHT tiles
-│   │   ├── play-modes.js            # 13 play modes with full mechanical differentiation
-│   │   ├── powerups.js              # SHIELD/SPEED/FREEZE/REGEN
-│   │   ├── recovery-tools.js        # 7 recovery tools + reality checks
-│   │   ├── sigils.js                # 31 sigils, 12 primitives, 6 traditions (evidence-based)
-│   │   ├── undo.js                  # PUZZLE undo with deep state snapshot
-│   │   └── upgrade-shop.js          # 8 upgrades, insight token economy
-│   ├── ui/
-│   │   ├── hud.js                   # HP bar (red < 25%), timer, insight tokens, near-miss count
-│   │   ├── menus.js                 # Full menu system + onboarding + dreamscape/playmode/
-│   │   │                            #   cosmology/language selection screens
-│   │   └── tutorial-content.js      # Tutorial pages
-│   └── main.js                      # Game loop, mode switching, GAME_OVER screen
-└── tests/
-    ├── smoke.spec.js                # Playwright smoke test
-    └── interactive-tiles.spec.js    # Interactive tile tests
-```
-
-### Technology Stack
-
-| Tool | Version | Role |
-|------|---------|------|
-| **Vite** | 7.3.1 | Build tool (559ms build time) |
-| **Vanilla JS** | ES6+ modules | Zero framework overhead |
-| **HTML5 Canvas 2D** | — | All rendering |
-| **Web Audio API** | — | Procedural SFX (no audio files) |
-| **localStorage** | — | Dream signs, save data, first-run prefs |
-| **Playwright** | — | Browser automation tests |
-
-**Build Stats:** 42 modules · 167KB (54KB gzip) · 559ms · 0 vulnerabilities
-
----
-
-## ♿ Accessibility & Age Accessibility
-
-### Difficulty Tiers
-
-| Tier | Age | Description |
-|------|-----|-------------|
-| **Sprout ✿** | 5–7 | No enemies · zero damage · 2.5× peace rewards · auto-collect adjacent nodes · route hints always on |
-| **Seedling ◇** | 8–12 | 1 very slow enemy · 0.3× damage · 1.8× peace · hints on |
-| **Stillness** | 13+ | No enemies · 0.5× damage · 1.3× peace |
-| **Presence** | 18+ | Normal — 1 enemy, standard damage |
-| **Chaos** | — | 2 enemies · 1.5× damage |
-| **Nightmare** | — | 4 enemies · 2× damage · permadeath |
-
-### Neurodivergent-Friendly Features
-- ✅ Pause anytime, no pressure
-- ✅ Auto-save — never lose progress
-- ✅ "PATTERN INCOMPLETE" not "You Died" — compassionate framing
-- ✅ Relapse compassion: first lethal hit per level gives a second chance (+15 HP rescue)
-- ✅ High contrast mode (options menu)
-- ✅ Reduced motion mode
-- ✅ Stable player identity (cyan ◈ never changes)
-- ✅ Session reminders at 20/45/90 minutes
-- ✅ Pause rewards: 10 min pause = +10 HP, 60 min = +2 insights
-- ✅ All features optional and player-controlled
-
----
-
-## 🌍 16-Language Progressive Learning System
-
-| Language | Family | Script | Progressive Unlock |
-|----------|--------|--------|-------------------|
-| English | Germanic | Latin | Native baseline |
-| German | Germanic | Latin | Germanic family first |
-| Norwegian | Germanic | Latin | Germanic family |
-| Dutch | Germanic | Latin | Germanic family |
-| French | Romance | Latin | After Germanic |
-| Spanish | Romance | Latin | Romance family |
-| Portuguese | Romance | Latin | Romance family |
-| Italian | Romance | Latin | Romance family |
-| Latin | Italic | Latin | Classical bridge |
-| Greek | Hellenic | Greek | After Latin/before Russian |
-| Russian | Slavic | Cyrillic | Slavic family |
-| Arabic | Semitic | Arabic | Semitic family |
-| Egyptian Hieroglyphs | Afroasiatic | Hieroglyphic | With Arabic |
-| Mandarin | Sino-Tibetan | Hanzi | East Asian cluster |
-| Japanese | Japonic | Kana+Kanji | After Mandarin |
-| Korean | Koreanic | Hangul | After Mandarin |
-
-**Progressive Overload**: If your native language is English, unlocking order is:
-German → Norwegian → Dutch → French → Spanish → Portuguese → Italian → Latin → Greek → Russian → Arabic → Egyptian → Mandarin → Japanese → Korean
-
----
-
-## 🔯 Universal Sigil Pattern Database
-
-31 sigils across 6 traditions, grounded in cross-cultural research:
-- **Game sigils**: ◈ ☆ ⊕ ⚠ ◉ ∇ ≋ ◎ (GLITCH·PEACE tile symbols with documented meanings)
-- **Elder Futhark runes**: ᚠ ᚢ ᚦ ᚨ ᛊ ᛞ ᛟ (with Proto-Germanic etymology)
-- **Alchemical symbols**: ☉ ☽ ☿ 🜁 🜂 🜃 🜄 (Jungian psychological interpretation)
-- **Egyptian hieroglyphs**: 𓋹 𓂀 𓇳 𓆄 𓆣 𓇽 (Gardiner sign list references)
-- **Planetary symbols**: ♄ ♃ ♀
-
-**12 Universal Pattern Primitives** (Arnheim/Gimbutas/Haarmann evidence-based):
-dot · circle · cross · spiral · triangle · wave · diamond · star · line · chevron · arc · diamond
-
----
-
-## 🎨 Design Principles (CANON — Non-Negotiable)
-
-1. **Non-Coercive** — All features optional, player-controlled, no forced loops
-2. **Safe Boundaries** — "Stop means stop"; ESC always works; pause is instant
-3. **Compassionate Messaging** — "PATTERN INCOMPLETE" not "YOU DIED"
-4. **Neurodivergent-First** — Accessibility is foundation, not afterthought
-5. **Evidence-Based** — Every mechanic grounded in peer-reviewed research
-6. **Multiple Intelligences** — Visual, logical, kinesthetic, interpersonal, intrapersonal pathways
-7. **Emergent Complexity** — Simple rules × layered systems = infinite experience
-8. **Cultural Respect** — Traditional wisdom honored and attributed, never appropriated
-9. **Privacy Paramount** — All data local-first; dream signs/saves never transmitted
-10. **Sterilized Wisdom** — Deep wisdom presented as simulation/exploration, not dogma
-11. **Sovereign Codex** — Individual sovereignty always paramount; informed consent required
-
----
-
-## 🤝 Contributing
-
-### Areas Most Needed
-
-- 🎮 **New gameplay modes** — Constellation (connect-the-stars meditation), Rhythm
-- 🌍 **Dreamscape content** — Additional tile art, ambient music tracks, lore text for new dreamscapes
-- 🧠 **Learning content** — More vocabulary per language (currently 12 concepts × 16 languages)
-- 📊 **Test coverage** — Core system unit tests (currently ~10%)
-- 🎮 **Gamepad support** — Gamepad API for controller play (needed for Steam)
-- ♿ **Accessibility audit** — WCAG AA compliance review
-
-### Code Standards
-- ES6+ JavaScript modules (no TypeScript required)
-- Canvas-based rendering (no DOM manipulation in game code)
-- No external runtime dependencies (Vite only for build)
-- 60fps target — profile before committing render-path changes
-- Follow existing `gameState.*` pattern for new systems
-- Add to `DIFF_CFG.sprout` / `DIFF_CFG.seedling` as needed for age accessibility
-
----
-
-## 📊 Project Stats
-
-| Metric | Value |
-|--------|-------|
-| Version | **3.1.0** (Feb 2026) |
-| Lines of Code | ~30,000 (109 source modules) |
-| Blueprint Completion | 100%+ (all original vision + new features) |
-| Source Modules | 109 |
-| Gameplay Modes (running) | **10** (Grid + Shooter + RPG + Ornithology + Mycology + Architecture + Constellation + Constellation3D + Alchemy + Rhythm) |
-| Gameplay Modes (designed) | 31+ |
-| Languages | 16 |
-| Dreamscapes | 18 |
-| Cosmologies | 13 |
-| Play Mode Variations | 17 |
-| Enemy AI Behaviors | 9 |
-| Archetypes | 5 |
-| Sigils in Database | 31 |
-| Audio SFX (synthesized) | 13+ (+ Tone.js ambient engine) |
-| Alchemical Reactions | 8 |
-| Drum Beat Patterns | 4 |
-| Bird Species | 16 |
-| Mushroom Species | 12 |
-| Blueprints | 4 |
-| Constellations | 6 |
-| RPG Quest Chains | 8 (3 original + 5 Phase 2) |
-| Three.js Nebula Particles | 2,000 |
-| Build Time | ~3.4s |
-| Bundle Size | 1,184KB (329KB gzip) |
-| Test Pass Rate | 25/25 ✅ |
-| Bugs Fixed (Feb 2026) | 25 |
-| Vulnerabilities | 0 |
-
----
-
-## 🙏 Acknowledgments
-
-### Research Foundations
-- Mihaly Csikszentmihalyi — Flow theory (optimal experience)
-- Robert Monroe / CIA Gateway Process — Hemispheric synchronization
-- Stephen LaBerge — Lucid dreaming (MILD technique, WILD)
-- Tenzin Norbu Rinpoche — Tibetan Dream Yoga
-- Eugene Gendlin — Focusing / somatic embodiment
-- Stephen Porges — Polyvagal theory
-- Howard Gardner — Multiple intelligences
-- Lev Vygotsky — Zone of Proximal Development
-- Rudolf Arnheim — Visual psychology
-- Marija Gimbutas — Universal symbols in world cultures
-- André Leroi-Gourhan — Cave art geometric vocabulary
-- Thomas Allen — Middle Egyptian (hieroglyph transliteration standard)
-
-### Built With ♥ For
-- Consciousness explorers seeking genuine transformation
-- People in recovery building new neural patterns
-- Neurodivergent minds navigating unique paths
-- Language learners building multilingual bridges
-- Dream yoga practitioners developing awareness
-- Children (5+) discovering the joy of pattern recognition
-
----
-
-## 🌐 3D & Animation Exploration (Feb 2026 Session)
-
-This section documents areas explored for 3D and animated content using Three.js, Matter.js, and Tone.js.
-
-### ✅ Already Implemented
-
-| Area | Technology | Status |
-|------|-----------|--------|
-| Constellation 3D Mode | Three.js WebGL renderer, OrthographicCamera, star sprites | ✅ Live |
-| Nebula Particle System | Three.js `Points` + `BufferGeometry`, 2000 gaussian particles | ✅ Live |
-| Ambient Generative Music | Tone.js `PolySynth` → `Reverb` → `Destination`, 3 emotional states | ✅ Live |
-| SVG Character Sprites | Inline SVG data URIs (MAGE + WRAITH), CSS `filter: drop-shadow` | ✅ Live |
-| Walk Cycle Animation | CSS `@keyframes player-walk` bob, `walking` class toggle | ✅ Live |
-| CSS Glitch Effects | `@keyframes glitch-light/medium/heavy`, driven by EmotionalField distortion | ✅ Live |
-| Isometric 3D Tilt | CSS `perspective(800px) rotateX(18deg)` on canvas-wrapper | ✅ Live |
-
-### 🔮 Recommended Next 3D/Animation Areas
-
-| Feature | Technology | Approach | Effort |
-|---------|-----------|----------|--------|
-| **Alchemy 3D Lab** | Three.js | Replace grid with 3D beakers/alembics; particles for elements | Medium |
-| **Rhythm Visualizer** | Three.js + Tone.js | Beat-driven 3D waveform bars pulsing in sync | Low |
-| **Grid World 3D** | Three.js | Full isometric 3D grid; camera orbits on I key instead of CSS tilt | High |
-| **Matter.js Shooter** | Matter.js | `npm install matter-js`; rigid-body engine for bullets/enemies | Low |
-| **Skeletal MAGE** | Three.js SkinnedMesh | Proper walk/attack animation with bone hierarchy | High |
-| **Dream Portal FX** | Three.js ShaderMaterial | Custom GLSL shader for dreamscape transition portal | Medium |
-| **Particle Spells** | Three.js Points | Glitch Pulse R key → expanding 3D ring of particles | Low |
-
----
-
-## 📊 Session Status Report (Feb 2026)
-
-### Blueprint Completion
-
-```
-Original Blueprint Items:     100% ✅ (all phases complete)
-Recommended Next Tasks:       100% ✅ (all 7 items from blueprint implemented)
-Steam Prep:                   ~60% 🚧 (manifest done, Electron wrapper pending)
-3D Exploration:               Documented + Constellation 3D + Nebula live ✅
-```
-
-### Summary of Everything Done This Session
-
-**Bug Fixes:**
-1. `#message` and `.controls-hint` no longer overlap (controls at top:0, message at top:60px)
-2. 9-inch screen compact layout via `@media (max-height: 640px)`
-3. Shooter enemies no longer stack (verlet separation forces)
-
-**New Features (7 from Recommended Next Tasks):**
-1. **SVG Character Sprites** — MAGE (humanoid with staff) and WRAITH (ghost with hollow eyes) replace clip-path shapes
-2. **Walk Cycle Animation** — `@keyframes player-walk` bob; `walking` CSS class toggled on position change
-3. **Language Immersion Mode** — `immersionLabel()` wraps all menu items in target language (es/fr/de/ja/zh)
-4. **RPG Phase 2 Quests** — 5 new chains: Elder's Mission, Seer's Vision, Spark's Discovery, Healer's Request, Guardian's Trial
-5. **Enemy Separation Physics** — Verlet-style forces in ShooterMode prevent enemy stacking
-6. **Tone.js Ambient Music** — `AmbientMusicEngine`: calm/medium/tense states driven by EmotionalField distortion
-7. **Constellation 3D Nebula** — 2000-particle gaussian cloud (THREE.Points) slowly rotating behind stars
-
-### Future Direction — Next Tasks
-
-1. `npm install matter-js` → full rigid-body physics in ShooterMode (replaces separation forces)
-2. Alchemy 3D mode using Three.js (beakers, element particle effects, camera)
-3. Expand Language Immersion to HUD/in-game text (not just menu labels)
-4. Rhythm + Three.js 3D waveform visualizer (beat-synced bars)
-5. Electron wrapper for Steam distribution (~1 week effort)
+## 📜 Changelog
+
+### 2026-02-20
+- [FIX4] 10px minimum font floor in renderer.js (F constants) and menus.js
+- [FIX5] Export `generateGrid` from grid.js; register RPGMode in ModeManager
+- [FIX6] `_archive/` properly excluded from Vite and added to .gitignore
+- [FIX7] README rewritten to reflect actual v4 Vite Edition state
+- [ARCH1] Navigation hierarchy: Mode → Dreamscape → Cosmology → Playstyle
+- [ARCH2] One consciousness engine persists across all mode switches
+- [ARCH3] Campaign mode: 10-chapter life progression (campaign-story.js)
+- [ARCH4] Local timezone offset setting for temporal systems
+- [ARCH5] Research tuning applied to emotional, temporal, and difficulty systems
 
 ---
 
 ## 📄 License
 
-MIT License — See [LICENSE](LICENSE)
+MIT — free forever.
 
-**Personal project built with consciousness and care. Free forever.**
-
----
-
-## 🔗 Links
-
-- **Vite Repo (active dev)**: https://github.com/jessidono24-cmyk/glitch-peace-vite
-- **Original Repo (reference)**: https://github.com/jessidono24-cmyk/glitch-peace
-- **Issues**: https://github.com/jessidono24-cmyk/glitch-peace-vite/issues
-- **Discussions**: https://github.com/jessidono24-cmyk/glitch-peace-vite/discussions
-
----
-
-## 🚀 Get Started Now!
-
-```bash
-git clone https://github.com/jessidono24-cmyk/glitch-peace-vite.git
-cd glitch-peace-vite
-npm install
-npm run dev
-```
-
-**On first launch:** Choose your age group and native language for a personalized experience.
-**Grid mode:** J=Archetype · R=Glitch Pulse · SHIFT=Matrix A/B · WASD=Move
-**Shooter mode:** WASD=Move · Mouse=Aim · LMB=Shoot · 1-4=Weapon · M=Switch
-
----
-
-*Begin in stillness. Emerge through pattern recognition. Transform through play.* 🌌✨
-
-**Made with ◈ for consciousness explorers everywhere.**
-
----
-
-## 📜 Version History
-
-| Version | Date | Milestone |
-|---------|------|----------|
-| **v3.1.0** | Feb 2026 | Full-screen canvas fill; accurate stats; storyline section added |
-| v3.0.0 | Feb 2026 | 10 modes; boss system; SVG sprites; Tone.js music; 25 bugs fixed |
-| v2.9.0 | Feb 2026 | Dream yoga live; 22 bugs fixed; 3D nebula; RPG quests Phase 2 |
-| v2.7.0 | Feb 2026 | Intelligence systems; achievements; leaderboard; session analytics |
-| v2.5.0 | Feb 2026 | Campaign; play modes; cosmologies; daily challenge seed |
-| v2.0.0 | Feb 2026 | Modular architecture; Twin-stick Shooter mode added |
-| v1.0.0 | Feb 2026 | Initial Vite port; grid roguelike; emotional engine; temporal system |
-
+*Made with ◈ for consciousness explorers everywhere.*

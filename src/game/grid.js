@@ -125,3 +125,40 @@ export function buildDreamscape(ds, sz, level, prevScore, prevHp, maxHp, dreamHi
     slowMoves: false, speedBoost: false, emotionTimer: 0,
   };
 }
+
+/**
+ * generateGrid(state) — FIX5
+ * Populates state.grid and related fields in-place.
+ * Used by RPGMode and GridGameMode for mode-local grid states.
+ * @param {Object} state - must contain .gridSize; may contain .hazardMul, .peaceMul, .level
+ */
+export function generateGrid(state) {
+  const sz        = state.gridSize || 13;
+  const hazardMul = state.hazardMul ?? 1.0;
+  const peaceMul  = state.peaceMul  ?? 1.0;
+  const level     = state.level     ?? 1;
+
+  const grid = makeGrid(sz);
+  grid[0][0] = T.VOID;
+  if (sz > 1) { grid[0][1] = T.VOID; grid[1][0] = T.VOID; }
+
+  const peaceCount = Math.max(1, Math.round((fibonacci(level + 2) + Math.max(0, sz - 13)) * peaceMul));
+  const hazCount   = Math.max(0, Math.round(Math.max(0, sz - 8) * hazardMul));
+
+  spawnTile(grid, hazCount,   T.WALL,      sz, true);
+  spawnTile(grid, peaceCount, T.PEACE,     sz, true);
+  spawnTile(grid, Math.ceil(peaceCount / 5), T.INSIGHT, sz, true);
+  spawnTile(grid, 1,          T.GROUNDING, sz, true);
+
+  const peaceNodes = [];
+  for (let y = 0; y < sz; y++) {
+    for (let x = 0; x < sz; x++) {
+      if (grid[y][x] === T.PEACE) peaceNodes.push({ x, y });
+    }
+  }
+
+  state.grid         = grid;
+  state.peaceNodes   = peaceNodes;
+  state.peaceTotal   = peaceNodes.length;
+  state.peaceCollected = 0;
+}

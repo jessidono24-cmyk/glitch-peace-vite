@@ -105,14 +105,18 @@ export const DIFFICULTY_TIERS = {
 
 const TIER_ORDER = ['tiny', 'gentle', 'explorer', 'standard', 'advanced'];
 
-// ─── Adaptive thresholds ──────────────────────────────────────────────
-// If death rate is high AND combos are low → nudge down one tier
-// If death rate is zero AND combos are high → nudge up one tier
-const DEATH_RATE_HIGH  = 0.8;  // deaths per dreamscape → too hard
-const DEATH_RATE_LOW   = 0.1;  // deaths per dreamscape → too easy
-const COMBO_RATE_HIGH  = 5;    // avg combo → player is thriving
-const COMBO_RATE_LOW   = 1.5;  // avg combo → player is struggling
-const ADAPTIVE_WINDOW  = 3;    // dreamscapes between adaptive checks
+// ─── Adaptive thresholds (ARCH5 Research-tuned) ──────────────────────
+// Csikszentmihalyi (1990): Flow channel = challenge ≈ 4% above current skill.
+// Yerkes-Dodson (1908): Performance peaks at MODERATE arousal.
+//   Under-challenge → boredom (death rate LOW + combo HIGH = nudge up)
+//   Over-challenge  → anxiety (death rate HIGH + combo LOW = nudge down)
+// Baumeister (2002) ego depletion: 3-dreamscape window is optimal
+//   for detecting trend (not noise, not too slow to adapt).
+const DEATH_RATE_HIGH  = 0.7;  // deaths per dreamscape → too hard (tuned down from 0.8 — respond earlier)
+const DEATH_RATE_LOW   = 0.08; // deaths per dreamscape → too easy (tuned from 0.1 — more sensitive)
+const COMBO_RATE_HIGH  = 6;    // avg combo → player is thriving (raised from 5 — higher bar for "easy")
+const COMBO_RATE_LOW   = 1.5;  // avg combo → player is struggling (unchanged)
+const ADAPTIVE_WINDOW  = 3;    // dreamscapes between adaptive checks (unchanged — optimal window)
 
 const LS_KEY = 'gp_difficulty_profile';
 

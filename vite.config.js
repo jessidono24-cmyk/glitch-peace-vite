@@ -14,4 +14,8 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['_archive'],
   },
+  // FIX6: Exclude legacy _archive directory from all Vite processing
+  resolve: {
+    exclude: ['_archive'],
+  },
 });

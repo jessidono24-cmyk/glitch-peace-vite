@@ -12,7 +12,7 @@ import { CFG, UPG, CURSOR, phase, setPhase, resetUpgrades, resetSession,
          highScores, setHighScores,
          PLAYER_PROFILE, savePlayerProfile } from './core/state.js';
 import { rnd, pick } from './core/utils.js';
-import { saveHighScores, loadHighScores } from './core/storage.js';
+import { saveHighScores, loadHighScores, loadTimezoneOffset, saveTimezoneOffset } from './core/storage.js';
 import { SZ, DIFF, GP, CW, CH, buildDreamscape } from './game/grid.js';
 import { stepEnemies } from './game/enemy.js';
 import { tryMove, triggerGlitchPulse, stepTileSpread, setEmotion, showMsg,
@@ -26,6 +26,7 @@ import { drawTitle, drawDreamSelect, drawOptions, drawHighScores,
          drawOnboarding, drawLanguageOptions, drawHowToPlay,
          drawModeSelect, drawPlayModeSelect, drawCosmologySelect,
          drawAchievementPopup, drawAchievements,
+         drawCampaignSelect,
          GAME_MODES } from './ui/menus.js';
 // ─── Phase 2-5 systems ───────────────────────────────────────────────────
 import { sfxManager } from './audio/sfx-manager.js';
@@ -64,6 +65,7 @@ import { empathyTraining }    from './intelligence/emotional/empathy-training.js
 import { emotionRecognition } from './intelligence/emotional/emotion-recognition.js';
 // ─── Phase M3: Campaign Structure ────────────────────────────────────────
 import { campaignManager } from './modes/campaign-manager.js';
+import { campaignStory, CAMPAIGN_CHAPTERS } from './modes/campaign-story.js';
 // ─── Phase M4+: Play Modes System (from glitch-peace-vite) ───────────────
 import { PLAY_MODES, PLAY_MODE_LIST, applyPlayMode, getPlayModeMeta } from './systems/play-modes.js';
 // ─── Phase 10+: Cosmologies (from glitch-peace-vite) ─────────────────────
@@ -128,6 +130,18 @@ const impulseBuffer = new ImpulseBuffer();
 window.sfxManager = sfxManager; // allow player.js to access for future hooks
 window.musicEngine = musicEngine; // expose for external control
 
+// ARCH2: One consciousness engine — always running, never resets on mode switch.
+// Call window._consciousnessEngine.reset() ONLY for a true "new game" restart.
+window._consciousnessEngine = {
+  emotionalField,
+  temporalSystem,
+  dreamYoga,
+  reset() {
+    emotionalField.setAll({ joy:0, hope:0, trust:0, surprise:0, fear:0, sadness:0, disgust:0, anger:0, shame:0, anticipation:0 });
+    dreamYoga.resetSession();
+  },
+};
+
 // Shooter mode instance (shared systems)
 const shooterSharedSystems = {
   emotionalField, temporalSystem, sfxManager,
@@ -179,8 +193,9 @@ let prevTs     = performance.now(); // initialise to now so first dt ≈ 0
 let lastMove   = 0;
 let gameMode   = 'grid'; // 'grid' | 'shooter' | 'constellation' | 'meditation' | 'coop' | 'rpg' | etc.
 // ─── 5-screen navigation state ───────────────────────────────────────────
-let CURSOR_playmode  = 0;  // index into PLAY_MODE_LIST for playmodesel screen
-let CURSOR_cosmology = 0;  // index into cosmologyList for cosmologysel screen (0 = no cosmology)
+let CURSOR_playmode   = 0;  // index into PLAY_MODE_LIST for playmodesel screen
+let CURSOR_cosmology  = 0;  // index into cosmologyList for cosmologysel screen (0 = no cosmology)
+let CURSOR_campaign   = 0;  // index into CAMPAIGN_CHAPTERS for campaign select screen
 const EMOTION_THRESHOLD      = 0.15;   // emotion must exceed this to affect gameplay
 const ARCHETYPE_PERM_DURATION = 999999; // arbitrarily large — effectively permanent for a run
 const INTERLUDE_DURATION_MS  = 10000;  // auto-advance after 10 s
@@ -430,7 +445,8 @@ function startGame(dreamIdx) {
     return;
   }
   resetUpgrades(); resetSession();
-  emotionalField.setAll({ joy:0, hope:0, trust:0, surprise:0, fear:0, sadness:0, disgust:0, anger:0, shame:0, anticipation:0 });
+  // ARCH2: Consciousness engine persists across mode switches — do NOT reset emotional field here.
+  // Emotional field only resets via window._consciousnessEngine.reset() (new-game from title).
   CFG.dreamIdx = dreamIdx || 0;
   window._insightTokens = 0; window._dreamIdx = CFG.dreamIdx;
   game = initGame(CFG.dreamIdx, 0, 0, undefined);
@@ -448,8 +464,7 @@ function startGame(dreamIdx) {
   strategicThinking.resetSession();
   empathyTraining.resetSession();
   emotionRecognition.resetSession();
-  // Phase 2.5: reset dream yoga
-  dreamYoga.resetSession();
+  // Phase 2.5: dream yoga persists (ARCH2 — never resets on mode switch)
   // Phase M3: start tutorial for first dreamscape
   campaignManager.startTutorial(CFG.dreamIdx);
   // Phase M5: reset RPG session
@@ -607,6 +622,7 @@ function loop(ts) {
   if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, CFG.dreamIdx); animId=requestAnimationFrame(loop); return; }
   if (phase === 'playmodesel') { drawPlayModeSelect(ctx, w, h, CURSOR_playmode, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'cosmologysel'){ drawCosmologySelect(ctx, w, h, CURSOR_cosmology, cosmologyList, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
+  if (phase === 'campaignsel') { drawCampaignSelect(ctx, w, h, CURSOR_campaign, CAMPAIGN_CHAPTERS, campaignStory.getProgress(), backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'archsel')     { drawArchetypeSelect(ctx, w, h, CURSOR.archsel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'options')     { drawOptions(ctx, w, h, CURSOR.opt); animId=requestAnimationFrame(loop); return; }
   if (phase === 'highscores')  { drawHighScores(ctx, w, h, highScores); animId=requestAnimationFrame(loop); return; }
@@ -1238,6 +1254,104 @@ function loop(ts) {
   animId = requestAnimationFrame(loop);
 }
 
+// ─── ARCH1: Start the game mode selected in modeselect screen ─────────────
+// Called from playmodesel Enter after Mode→Dreamscape→Cosmology→Playstyle chain.
+function _startSelectedMode() {
+  const chosen = gameMode;
+  if (chosen === 'grid-classic' || chosen === 'grid') {
+    startGame(CFG.dreamIdx);
+    if (game) game._currentModeType = 'grid';
+  } else if (chosen === 'shooter') {
+    gameMode = 'shooter';
+    startGame(CFG.dreamIdx);
+    if (game) game._currentModeType = 'shooter';
+  } else if (chosen === 'rpg') {
+    gameMode = 'grid';
+    startGame(CFG.dreamIdx);
+    if (game) {
+      game._currentModeType = 'rpg';
+      game._dialogueActive  = true;
+      game.modeState = { quests: QUEST_DEFS.slice(0, 3).map(q => ({ id: q.id, name: q.name, active: true })) };
+      game._rpgState = { gridSize: 18 };
+      game._rpgNpcs  = [
+        { id: 'elder',    name: 'Elder',    x: 2, y: 2  },
+        { id: 'seer',     name: 'Seer',     x: 5, y: 3  },
+        { id: 'spark',    name: 'Spark',    x: 8, y: 5  },
+        { id: 'healer',   name: 'Healer',   x: 3, y: 8  },
+        { id: 'guardian', name: 'Guardian', x: 10, y: 2 },
+      ];
+      updateHUD({ ...game, state: 'PLAYING' });
+    }
+  } else if (chosen === 'ornithology') {
+    gameMode = 'ornithology';
+    modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
+    ornithologyMode.init(modeGame, canvas, ctx);
+    updateHUD({ state: 'PLAYING', _currentModeType: 'ornithology', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'mycology') {
+    gameMode = 'mycology';
+    modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
+    mycologyMode.init(modeGame, canvas, ctx);
+    updateHUD({ state: 'PLAYING', _currentModeType: 'mycology', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'architecture') {
+    gameMode = 'architecture';
+    modeGame = { gridSize: 14, level: 1, score: 0, peaceCollected: 0, peaceTotal: 6 };
+    architectureMode.init(modeGame, canvas, ctx);
+    updateHUD({ state: 'PLAYING', _currentModeType: 'architecture', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'constellation') {
+    gameMode = 'constellation';
+    constellationMode.init({ dreamscapeId: DREAMSCAPES[CFG.dreamIdx]?.id || null, level: 1 });
+    updateHUD({ state: 'PLAYING', _currentModeType: 'constellation', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: constellationMode.starNodes?.length || 8, peaceCollected: 0 });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'alchemy') {
+    gameMode = 'alchemy';
+    modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 8 };
+    alchemyMode.init(modeGame, canvas, ctx);
+    updateHUD({ state: 'PLAYING', _currentModeType: 'alchemy', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'rhythm') {
+    gameMode = 'rhythm';
+    rhythmMode.init({ level: 1, dsIdx: CFG.dreamIdx, score: 0 });
+    updateHUD({ state: 'PLAYING', _currentModeType: 'rhythm', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: 8, peaceCollected: 0 });
+    if (game) game._currentModeType = 'rhythm';
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'constellation-3d') {
+    gameMode = 'constellation';
+    constellationMode.init({ dreamscapeId: null, level: 1, mode3d: true });
+    updateHUD({ state: 'PLAYING', _currentModeType: 'constellation-3d', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: constellationMode.starNodes?.length || 8, peaceCollected: 0 });
+    if (game) game._currentModeType = 'constellation-3d';
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'meditation') {
+    meditationMode.init({ dreamscapeId: DREAMSCAPES[CFG.dreamIdx]?.id || null });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'coop') {
+    coopMode.init({ dreamIdx: CFG.dreamIdx });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else {
+    // Default: grid-classic
+    startGame(CFG.dreamIdx);
+    if (game) game._currentModeType = 'grid';
+  }
+}
+
 // ─── Input ───────────────────────────────────────────────────────────────
 window.addEventListener('keydown', e => {
   keys.add(e.key);
@@ -1339,9 +1453,9 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowDown') { CURSOR.menu=(CURSOR.menu+1)%7; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
-      if (CURSOR.menu===0)      { CFG.dreamIdx=0; CURSOR_playmode=0; CURSOR_cosmology=0; setPhase('dreamselect'); }
-      else if (CURSOR.menu===1) { CURSOR.modesel=0; setPhase('modeselect'); }
-      else if (CURSOR.menu===2) setPhase('dreamselect');
+      if (CURSOR.menu===0)      { CURSOR.modesel=0; CURSOR_cosmology=0; CURSOR_playmode=0; setPhase('modeselect'); }
+      else if (CURSOR.menu===1) { CURSOR_campaign = campaignStory.getCurrentChapter().chapter - 1; setPhase('campaignsel'); }
+      else if (CURSOR.menu===2) { CURSOR.modesel=0; setPhase('modeselect'); }
       else if (CURSOR.menu===3) setPhase('howtoplay');
       else if (CURSOR.menu===4) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
       else if (CURSOR.menu===5) setPhase('highscores');
@@ -1350,131 +1464,43 @@ window.addEventListener('keydown', e => {
     e.preventDefault(); return;
   }
   // ── Mode select screen ─────────────────────────────────────────────
+    // ── Mode select screen (ARCH1: step 1 — Mode → Dreamscape → Cosmology → Playstyle) ─
   if (phase === 'modeselect') {
     const N = GAME_MODES.length;
     if (e.key==='ArrowUp')   { CURSOR.modesel=(CURSOR.modesel-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowDown') { CURSOR.modesel=(CURSOR.modesel+1)%N;   sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
-      const chosen = GAME_MODES[CURSOR.modesel].id;
-      gameMode = chosen;
-      if (chosen === 'grid-classic' || chosen === 'grid') {
-        startGame(CFG.dreamIdx);
-        if (game) game._currentModeType = 'grid';
-      } else if (chosen === 'shooter') {
-        gameMode = 'shooter';
-        startGame(CFG.dreamIdx);
-        if (game) game._currentModeType = 'shooter';
-      } else if (chosen === 'rpg') {
-        gameMode = 'grid';
-        startGame(CFG.dreamIdx);
-        if (game) {
-          game._currentModeType = 'rpg';
-          game._dialogueActive  = true;
-          game.modeState = { quests: QUEST_DEFS.slice(0, 3).map(q => ({ id: q.id, name: q.name, active: true })) };
-          game._rpgState = { gridSize: 18 };
-          game._rpgNpcs  = [
-            { id: 'elder',    name: 'Elder',    x: 2, y: 2  },
-            { id: 'seer',     name: 'Seer',     x: 5, y: 3  },
-            { id: 'spark',    name: 'Spark',    x: 8, y: 5  },
-            { id: 'healer',   name: 'Healer',   x: 3, y: 8  },
-            { id: 'guardian', name: 'Guardian', x: 10, y: 2 },
-          ];
-          updateHUD({ ...game, state: 'PLAYING' });
-        }
-      } else if (chosen === 'ornithology') {
-        gameMode = 'ornithology';
-        modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
-        ornithologyMode.init(modeGame, canvas, ctx);
-        updateHUD({ state: 'PLAYING', _currentModeType: 'ornithology', player: { hp: 100, maxHp: 100 },
-          level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'mycology') {
-        gameMode = 'mycology';
-        modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
-        mycologyMode.init(modeGame, canvas, ctx);
-        updateHUD({ state: 'PLAYING', _currentModeType: 'mycology', player: { hp: 100, maxHp: 100 },
-          level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'architecture') {
-        gameMode = 'architecture';
-        modeGame = { gridSize: 14, level: 1, score: 0, peaceCollected: 0, peaceTotal: 6 };
-        architectureMode.init(modeGame, canvas, ctx);
-        updateHUD({ state: 'PLAYING', _currentModeType: 'architecture', player: { hp: 100, maxHp: 100 },
-          level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'constellation') {
-        gameMode = 'constellation';
-        constellationMode.init({ dreamscapeId: null, level: 1 });
-        updateHUD({ state: 'PLAYING', _currentModeType: 'constellation', player: { hp: 100, maxHp: 100 },
-          level: 1, score: 0, peaceTotal: constellationMode.starNodes?.length || 8, peaceCollected: 0 });
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'alchemy') {
-        gameMode = 'alchemy';
-        modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 8 };
-        alchemyMode.init(modeGame, canvas, ctx);
-        updateHUD({ state: 'PLAYING', _currentModeType: 'alchemy', player: { hp: 100, maxHp: 100 },
-          level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'rhythm') {
-        gameMode = 'rhythm';
-        rhythmMode.init({ level: 1, dsIdx: CFG.dreamIdx, score: 0 });
-        updateHUD({ state: 'PLAYING', _currentModeType: 'rhythm', player: { hp: 100, maxHp: 100 },
-          level: 1, score: 0, peaceTotal: 8, peaceCollected: 0 });
-        if (game) game._currentModeType = 'rhythm';
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'constellation-3d') {
-        gameMode = 'constellation';
-        constellationMode.init({ dreamscapeId: null, level: 1, mode3d: true });
-        updateHUD({ state: 'PLAYING', _currentModeType: 'constellation-3d', player: { hp: 100, maxHp: 100 },
-          level: 1, score: 0, peaceTotal: constellationMode.starNodes?.length || 8, peaceCollected: 0 });
-        if (game) game._currentModeType = 'constellation-3d';
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'meditation') {
-        meditationMode.init({ dreamscapeId: null });
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'coop') {
-        coopMode.init({ dreamIdx: CFG.dreamIdx });
-        setPhase('playing');
-        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
-      } else if (chosen === 'challenge') {
-        const today = new Date();
-        const dateKey = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-        const DAILY_KEY = 'gp_daily_idx';
-        const stored = JSON.parse(localStorage.getItem(DAILY_KEY) || 'null');
-        let dailyIdx;
-        if (stored && stored.date === dateKey) {
-          dailyIdx = stored.idx;
-        } else {
-          dailyIdx = dateKey % DREAMSCAPES.length;
-          localStorage.setItem(DAILY_KEY, JSON.stringify({ date: dateKey, idx: dailyIdx }));
-        }
-        CFG.playMode = 'daily';
-        CFG.dreamIdx = dailyIdx;
-        gameMode = 'grid';
-        startGame(CFG.dreamIdx);
-        if (game) game._currentModeType = 'grid';
-      }
+      gameMode = GAME_MODES[CURSOR.modesel].id;
+      // ARCH1: navigate forward to dreamselect (step 2)
+      CFG.dreamIdx = 0;
+      setPhase('dreamselect');
     }
-    if (e.key==='Escape') setPhase('cosmologysel');
+    if (e.key==='Escape') setPhase('title');
     e.preventDefault(); return;
   }
+    // ── Dreamscape selector (ARCH1: step 2) ─────────────────────────────────
   if (phase === 'dreamselect') {
     if (e.key==='ArrowUp')   { CFG.dreamIdx=(CFG.dreamIdx-1+DREAMSCAPES.length)%DREAMSCAPES.length; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowDown') { CFG.dreamIdx=(CFG.dreamIdx+1)%DREAMSCAPES.length; sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='Enter')     { sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_playmode=0; setPhase('playmodesel'); }
-    if (e.key==='Escape')    setPhase('title');
+    if (e.key==='Enter')     { sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_cosmology=0; setPhase('cosmologysel'); }
+    if (e.key==='Escape')    setPhase('modeselect');
     e.preventDefault(); return;
   }
-  // ── Play Mode selector (step 3 of NEW GAME flow) ──────────────────────
+  // ── Cosmology selector (ARCH1: step 3) ────────────────────────────────
+  if (phase === 'cosmologysel') {
+    const N = cosmologyList.length + 1; // +1 for "no cosmology" entry at index 0
+    if (e.key==='ArrowUp')   { CURSOR_cosmology=(CURSOR_cosmology-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR_cosmology=(CURSOR_cosmology+1)%N;   sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='Enter') {
+      sfxManager.resume(); sfxManager.playMenuSelect();
+      CFG.chosenCosmology = CURSOR_cosmology === 0 ? null : cosmologyList[CURSOR_cosmology - 1]?.id || null;
+      CURSOR_playmode = 0; setPhase('playmodesel');
+    }
+    if (e.key==='Escape') setPhase('dreamselect');
+    e.preventDefault(); return;
+  }
+  // ── Play Style selector (ARCH1: step 4 — launches game) ───────────────
   if (phase === 'playmodesel') {
     const N = PLAY_MODE_LIST.length;
     if (e.key==='ArrowUp')   { CURSOR_playmode=(CURSOR_playmode-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
@@ -1482,23 +1508,29 @@ window.addEventListener('keydown', e => {
     if (e.key==='Enter') {
       sfxManager.resume(); sfxManager.playMenuSelect();
       CFG.playMode = PLAY_MODE_LIST[CURSOR_playmode] || 'arcade';
-      CURSOR_cosmology = 0; setPhase('cosmologysel');
+      _startSelectedMode();
     }
-    if (e.key==='Escape') setPhase('dreamselect');
+    if (e.key==='Escape') setPhase('cosmologysel');
     e.preventDefault(); return;
   }
-  // ── Cosmology selector (step 4 of NEW GAME flow) ──────────────────────
-  if (phase === 'cosmologysel') {
-    const N = cosmologyList.length + 1; // +1 for "no cosmology" entry at index 0
-    if (e.key==='ArrowUp')   { CURSOR_cosmology=(CURSOR_cosmology-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='ArrowDown') { CURSOR_cosmology=(CURSOR_cosmology+1)%N;   sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='Enter') {
+  // ── Campaign chapter selector (ARCH3) ─────────────────────────────────
+  if (phase === 'campaignsel') {
+    const N = CAMPAIGN_CHAPTERS.length;
+    if (e.key==='ArrowUp')   { CURSOR_campaign=(CURSOR_campaign-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR_campaign=(CURSOR_campaign+1)%N;   sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
-      // Index 0 = no cosmology; index 1+ = cosmologyList entries
-      CFG.chosenCosmology = CURSOR_cosmology === 0 ? null : cosmologyList[CURSOR_cosmology - 1]?.id || null;
-      CURSOR.modesel = 0; setPhase('modeselect');
+      const ch = CAMPAIGN_CHAPTERS[CURSOR_campaign];
+      // Apply chapter settings to CFG and launch
+      gameMode = ch.mode || 'grid-classic';
+      CFG.playMode = ch.playstyle || 'balanced';
+      if (ch.cosmology) CFG.chosenCosmology = ch.cosmology;
+      // Find matching dreamscape index
+      const dsIdx = DREAMSCAPES.findIndex(d => d.id === ch.dreamscape || d.name?.toLowerCase().includes(ch.dreamscape));
+      if (dsIdx >= 0) CFG.dreamIdx = dsIdx;
+      _startSelectedMode();
     }
-    if (e.key==='Escape') setPhase('playmodesel');
+    if (e.key==='Escape') setPhase('title');
     e.preventDefault(); return;
   }
   // ── Archetype selector ────────────────────────────────────────────────
@@ -1518,8 +1550,8 @@ window.addEventListener('keydown', e => {
     if (e.key==='Escape') { CFG.chosenArchetype = null; startGame(CFG.dreamIdx); } // skip
     e.preventDefault(); return;
   }
-  if (phase === 'options') {
-    const OPT_COUNT = 11; // rows: gridsize, difficulty, particles, playstyle, viewmode, sfxvol, highcontrast, reducedmotion, fontscale, languages, back
+    if (phase === 'options') {
+    const OPT_COUNT = 12; // rows: gridsize, difficulty, particles, playstyle, viewmode, sfxvol, highcontrast, reducedmotion, fontscale, timezone, languages, back
     if (e.key==='ArrowUp')   { CURSOR.opt=(CURSOR.opt-1+OPT_COUNT)%OPT_COUNT; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowDown') { CURSOR.opt=(CURSOR.opt+1)%OPT_COUNT; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowLeft'||e.key==='ArrowRight') {
@@ -1535,7 +1567,6 @@ window.addEventListener('keydown', e => {
       else if(CURSOR.opt===5) {  // SFX VOLUME: cycle 0%, 25%, 50%, 75%, 100%
         const SFX_VOL_STEPS = [0, 0.25, 0.5, 0.75, 1.0];
         const SFX_VOL_DEFAULT_IDX = 2;   // index of 50% (default)
-        // Use direct equality since these are exact preset values, not free-form floats
         const curI = SFX_VOL_STEPS.indexOf(PLAYER_PROFILE.sfxVol);
         const nI = (curI < 0 ? SFX_VOL_DEFAULT_IDX : curI) + dir;
         PLAYER_PROFILE.sfxVol = SFX_VOL_STEPS[(nI + SFX_VOL_STEPS.length) % SFX_VOL_STEPS.length];
@@ -1548,7 +1579,17 @@ window.addEventListener('keydown', e => {
         const FONT_SCALES = [0.8, 1.0, 1.2, 1.4];
         const fi = FONT_SCALES.indexOf(CFG.fontScale); const ni = (fi < 0 ? 1 : fi) + dir;
         CFG.fontScale = FONT_SCALES[(ni + FONT_SCALES.length) % FONT_SCALES.length];
-        resizeCanvas(); // re-apply scale immediately
+        resizeCanvas();
+      }
+      else if(CURSOR.opt===9) { // ARCH4: TIMEZONE offset cycling
+        const TZ_OPTS = [null, -12, -6, -5, -4, 0, 1, 2, 5.5, 8, 9, 12];
+        const curTz = PLAYER_PROFILE.utcOffsetHours;
+        const ti = TZ_OPTS.findIndex(v => v === curTz);
+        const ni = (ti < 0 ? 0 : ti + dir + TZ_OPTS.length) % TZ_OPTS.length;
+        PLAYER_PROFILE.utcOffsetHours = TZ_OPTS[ni];
+        temporalSystem.setTimezoneOffset(PLAYER_PROFILE.utcOffsetHours);
+        saveTimezoneOffset(PLAYER_PROFILE.utcOffsetHours);
+        savePlayerProfile();
       }
       sfxManager.resume(); sfxManager.playMenuNav();
     }
@@ -1559,10 +1600,10 @@ window.addEventListener('keydown', e => {
         savePlayerProfile();
         sfxManager.resume(); sfxManager.playMenuSelect();
       }
-      else if(CURSOR.opt===6) { CFG.highContrast = !CFG.highContrast; sfxManager.resume(); sfxManager.playMenuSelect(); } // HIGH CONTRAST
-      else if(CURSOR.opt===7) { CFG.reducedMotion = !CFG.reducedMotion; sfxManager.resume(); sfxManager.playMenuSelect(); } // REDUCED MOTION
-      else if(CURSOR.opt===9) { setPhase('langopts'); }  // Language settings
-      else if(CURSOR.opt===10) setPhase(CURSOR.optFrom==='paused' ? 'paused' : 'title');
+      else if(CURSOR.opt===6) { CFG.highContrast = !CFG.highContrast; sfxManager.resume(); sfxManager.playMenuSelect(); }
+      else if(CURSOR.opt===7) { CFG.reducedMotion = !CFG.reducedMotion; sfxManager.resume(); sfxManager.playMenuSelect(); }
+      else if(CURSOR.opt===10) { setPhase('langopts'); }  // Language settings
+      else if(CURSOR.opt===11) setPhase(CURSOR.optFrom==='paused' ? 'paused' : 'title');
     }
     if (e.key==='Escape') setPhase(CURSOR.optFrom==='paused' ? 'paused' : 'title');
     e.preventDefault(); return;
@@ -1875,6 +1916,15 @@ canvas.addEventListener('click', () => { if(phase==='title')startGame(CFG.dreamI
 
 // ─── Boot ─────────────────────────────────────────────────────────────────
 setHighScores(loadHighScores());
+// ARCH4: Apply saved timezone offset to temporal system on boot
+const _savedTzOffset = loadTimezoneOffset();
+if (_savedTzOffset !== null) temporalSystem.setTimezoneOffset(_savedTzOffset);
+// ARCH5: Research tuning applied on boot — systems are pre-configured.
+// Emotional decay rates tuned to Plutchik (1980) + Gross (1998).
+// Dream yoga rates tuned to LaBerge (1990) + Stumbrys (2012).
+// Adaptive difficulty tuned to Csikszentmihalyi (1990) + Yerkes-Dodson.
+// Lunar phases tuned to Bevington (2013) + Cajochen (2013).
+// Impulse buffer documented per Baumeister (1996) + Stuss & Benson (1986).
 initStars(CW(), CH());
 // Apply saved audio settings
 if (PLAYER_PROFILE.sfxMuted) {

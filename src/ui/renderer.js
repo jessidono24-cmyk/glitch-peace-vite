@@ -13,17 +13,19 @@ const MSG_FONT_MEDIUM = '17';
 const MSG_FONT_LARGE  = '23';
 
 // ── Responsive font sizes — scale relative to the medium-grid logical world (644 px wide)
-const _RB = 644; // medium-grid logical baseline width
-const F6  = `${Math.round(_RB * 0.016)}px Courier New`; // ≈10px
-const F7  = `${Math.round(_RB * 0.019)}px Courier New`; // ≈12px
-const F8  = `${Math.round(_RB * 0.020)}px Courier New`; // ≈13px
-const F9  = `${Math.round(_RB * 0.022)}px Courier New`; // ≈14px
-const F10 = `${Math.round(_RB * 0.024)}px Courier New`; // ≈15px
-const F12 = `${Math.round(_RB * 0.027)}px Courier New`; // ≈17px
-const F14 = `${Math.round(_RB * 0.033)}px Courier New`; // ≈21px
-const F16 = `${Math.round(_RB * 0.037)}px Courier New`; // ≈24px
-const F18 = `${Math.round(_RB * 0.042)}px Courier New`; // ≈27px
-const F19 = `${Math.round(_RB * 0.044)}px Courier New`; // ≈28px
+// 10px is the minimum floor — no rendered text goes below this size
+const _RB  = 644; // medium-grid logical baseline width
+const _F   = (mul) => `${Math.max(10, Math.round(_RB * mul))}px Courier New`;
+const F6  = _F(0.016); // ≈10px (floor)
+const F7  = _F(0.019); // ≈12px
+const F8  = _F(0.020); // ≈13px
+const F9  = _F(0.022); // ≈14px
+const F10 = _F(0.024); // ≈15px
+const F12 = _F(0.027); // ≈17px
+const F14 = _F(0.033); // ≈21px
+const F16 = _F(0.037); // ≈24px
+const F18 = _F(0.042); // ≈27px
+const F19 = _F(0.044); // ≈28px
 
 export function PAL(matrixActive) {
   if (CFG.highContrast) return PAL_HC;

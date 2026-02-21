@@ -32,6 +32,10 @@ export class ModeManager {
     this.sharedSystems = sharedSystems;
     this.config = {};                 // Mode-specific configs
 
+    // ARCH2: Bind to the persistent consciousness engine (window._consciousnessEngine)
+    // so all modes receive the same live emotional field across mode switches.
+    this._consciousness = (typeof window !== 'undefined' && window._consciousnessEngine) || null;
+
     // Pre-register gameplay-modes/ implementations
     this.registerMode('alchemy',      AlchemyMode);
     this.registerMode('architecture', ArchitectureMode);
@@ -75,6 +79,8 @@ export class ModeManager {
 
   /**
    * Switch to a different gameplay mode
+   * ARCH2: The consciousness engine (emotionalField, temporalSystem, dreamYoga)
+   * persists across this switch — it is never reset here.
    * @param {string} name - Mode name to switch to
    * @param {Object} config - Configuration for the mode
    * @returns {boolean} true if switch successful
@@ -86,20 +92,26 @@ export class ModeManager {
       return false;
     }
 
-    // Cleanup current mode
+    // Cleanup current mode (saves mode-local state, does NOT reset consciousness engine)
     if (this.currentMode) {
       this.currentMode.cleanup();
     }
 
-    // Switch to new mode
+    // Switch to new mode — consciousness engine continues uninterrupted
     this.currentMode = newMode;
     this.currentModeName = name;
     this.config[name] = config;
 
-    // Initialize new mode
-    this.currentMode.init(config);
+    // Pass persistent consciousness engine into mode config
+    const enrichedConfig = {
+      ...config,
+      consciousness: this._consciousness,
+    };
 
-    console.log(`[ModeManager] Switched to mode: ${name}`);
+    // Initialize new mode
+    this.currentMode.init(enrichedConfig);
+
+    console.log(`[ModeManager] Switched to mode: ${name} (consciousness engine persists)`);
     return true;
   }
 

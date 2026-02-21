@@ -46,6 +46,8 @@ export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
   ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT GAME MODE', w / 2, 52); ctx.shadowBlur = 0;
   ctx.fillStyle = '#223322'; ctx.font = '10px Courier New';
   ctx.fillText('choose your path through the dreamscapes', w / 2, 70);
+  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.fillText('STEP 1 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 86);
 
   const rowH = 70, startY = 100;
   GAME_MODES.forEach((mode, i) => {
@@ -167,7 +169,9 @@ export function drawDreamSelect(ctx, w, h, dreamIdx) {
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
   ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT DREAMSCAPE', w / 2, 50); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#223322'; ctx.font = '10px Courier New'; ctx.fillText('journey begins from your chosen entry point', w / 2, 68);
+  ctx.fillStyle = '#223322'; ctx.font = '10px Courier New'; ctx.fillText('choose your symbolic environment', w / 2, 68);
+  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.fillText('STEP 2 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
   const visible = Math.min(DREAMSCAPES.length, 6);
   const startI = Math.max(0, Math.min(dreamIdx - Math.floor(visible / 2), DREAMSCAPES.length - visible));
   for (let i = 0; i < visible; i++) {
@@ -216,6 +220,8 @@ export function drawOptions(ctx, w, h, optIdx) {
   const sfxMuted = PLAYER_PROFILE.sfxMuted || false;
   const FONT_SCALE_LABELS = { 0.8: 'S', 1.0: 'M', 1.2: 'L', 1.4: 'XL' };
   const fontScaleLabel = FONT_SCALE_LABELS[CFG.fontScale] || 'M';
+  const tzOffset = PLAYER_PROFILE.utcOffsetHours;
+  const tzLabel = tzOffset === null || tzOffset === undefined ? 'AUTO' : (tzOffset >= 0 ? '+' : '') + tzOffset;
   const rows = [
     { label:'GRID SIZE',      opts:OPT_GRID, cur:CFG.gridSize },
     { label:'DIFFICULTY',     opts:OPT_DIFF, cur:CFG.difficulty },
@@ -227,6 +233,7 @@ export function drawOptions(ctx, w, h, optIdx) {
     { label:'HIGH CONTRAST',  opts:['off','on'], cur: CFG.highContrast ? 'on' : 'off', hint: 'colorblind-friendly palette' },
     { label:'REDUCED MOTION', opts:['off','on'], cur: CFG.reducedMotion ? 'on' : 'off', hint: 'no screen shake or flash' },
     { label:'FONT SCALE',     opts:['S','M','L','XL'], cur: fontScaleLabel, hint: 'text size: S=80%  M=100%  L=120%  XL=140%' },
+    { label:'TIMEZONE (UTC)', opts:['AUTO','-12','-6','-5','-4','+0','+1','+2','+5.5','+8','+9','+12'], cur: tzLabel, hint: 'ARCH4: sets planetary day for temporal engine' },
     { label:'LANGUAGES',      opts:['OPEN →'], cur:'OPEN →', hint: (langMeta.emoji||'') + ' → ' + (tgtMeta.emoji||'') + ' ' + (tgtMeta.name||'') },
     { label:'',               opts:['← BACK'], cur:'← BACK' },
   ];
@@ -1169,6 +1176,8 @@ export function drawPlayModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
   ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT PLAY STYLE', w / 2, 52); ctx.shadowBlur = 0;
   ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
   ctx.fillText('how do you want to experience this dreamscape?', w / 2, 70);
+  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.fillText('STEP 4 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
   const rowH = 32, startY = 90;
   PLAY_MODE_LIST.forEach((id, i) => {
     const meta = PLAY_MODES[id]; if (!meta) return;
@@ -1193,6 +1202,8 @@ export function drawCosmologySelect(ctx, w, h, cosmoIdx, cosmologyList, backgrou
   ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT COSMOLOGY', w / 2, 52); ctx.shadowBlur = 0;
   ctx.fillStyle = '#334455'; ctx.font = '10px Courier New';
   ctx.fillText('choose a world tradition (optional — affects tile lore)', w / 2, 70);
+  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.fillText('STEP 3 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
   const entries = [{ id: null, name: '  NONE  ', emoji: '○', color: '#aaaaaa', subtitle: 'No cosmological overlay' }, ...cosmologyList];
   const rowH = 32, startY = 90;
   entries.forEach((c, i) => {
@@ -1206,5 +1217,51 @@ export function drawCosmologySelect(ctx, w, h, cosmoIdx, cosmologyList, backgrou
   });
   ctx.fillStyle = '#0d1a0d'; ctx.font = '10px Courier New';
   ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 15);
+  ctx.textAlign = 'left';
+}
+
+// ─── Campaign Story Select Screen (ARCH3) ─────────────────────────────────
+export function drawCampaignSelect(ctx, w, h, chapterIdx, chapters, progress, backgroundStars, ts) {
+  ctx.fillStyle = '#02010a'; ctx.fillRect(0, 0, w, h);
+  if (backgroundStars) {
+    for (const s of backgroundStars) {
+      ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(ts * 0.0008 + s.phase));
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffcc44'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 18;
+  ctx.font = 'bold 20px Courier New'; ctx.fillText('CAMPAIGN', w / 2, 46); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#554422'; ctx.font = '10px Courier New';
+  ctx.fillText('10-chapter life progression · mirrors consciousness development', w / 2, 64);
+  if (progress) {
+    ctx.fillStyle = '#665533'; ctx.font = '10px Courier New';
+    ctx.fillText(`${progress.completedCount}/${progress.totalChapters} chapters complete  ·  ${progress.percentComplete}%`, w / 2, 80);
+  }
+  const rowH = 54, startY = 96, visN = Math.min(chapters.length, 8);
+  const startI = Math.max(0, Math.min(chapterIdx - 3, chapters.length - visN));
+  for (let i = 0; i < visN; i++) {
+    const ci = startI + i;
+    if (ci >= chapters.length) break;
+    const ch = chapters[ci], sel = ci === chapterIdx;
+    const done = progress?.completedChapters?.has ? progress.completedChapters.has(ch.chapter) : false;
+    const y = startY + i * rowH;
+    if (sel) {
+      ctx.fillStyle = 'rgba(255,204,68,0.07)'; ctx.fillRect(w / 2 - 195, y - 18, 390, 48);
+      ctx.strokeStyle = 'rgba(255,204,68,0.35)'; ctx.strokeRect(w / 2 - 195, y - 18, 390, 48);
+    }
+    ctx.fillStyle = done ? '#446644' : sel ? '#ffcc44' : '#443322';
+    ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New';
+    ctx.fillText((done ? '✓ ' : `${ch.chapter}. `) + ch.title.toUpperCase(), w / 2, y);
+    ctx.fillStyle = sel ? '#667755' : '#332211'; ctx.font = '10px Courier New';
+    ctx.fillText(ch.subtitle + '  ·  ' + ch.theme, w / 2, y + 16);
+    if (sel) {
+      ctx.fillStyle = '#554433'; ctx.font = '10px Courier New';
+      ctx.fillText(ch.narrative[0], w / 2, y + 30);
+    }
+  }
+  ctx.fillStyle = '#221100'; ctx.font = '10px Courier New';
+  ctx.fillText('↑↓ navigate  ·  ENTER begin chapter  ·  ESC back', w / 2, h - 18);
   ctx.textAlign = 'left';
 }

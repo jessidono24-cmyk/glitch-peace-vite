@@ -55,23 +55,44 @@ function getLunarPhase() {
   return phase;
 }
 
-function getPlanetaryDay() {
-  const dayOfWeek = new Date().getDay(); // 0=Sun … 6=Sat
+function getPlanetaryDay(utcOffsetHours) {
+  let dayOfWeek;
+  if (utcOffsetHours !== null && utcOffsetHours !== undefined) {
+    // ARCH4: Use player-configured UTC offset for accurate local day
+    const nowUtcMs = Date.now() + utcOffsetHours * 3600000;
+    dayOfWeek = new Date(nowUtcMs).getUTCDay(); // 0=Sun … 6=Sat in configured tz
+  } else {
+    dayOfWeek = new Date().getDay(); // 0=Sun … 6=Sat in browser local time
+  }
   return PLANETARY_DAYS[dayOfWeek];
 }
 
 // ── Public API ────────────────────────────────────────────────────────────
 export class TemporalSystem {
   constructor() {
+    this._utcOffsetHours = null; // ARCH4: null = use browser local time
     this._lunar  = getLunarPhase();
-    this._planet = getPlanetaryDay();
+    this._planet = getPlanetaryDay(this._utcOffsetHours);
     this._lastRefresh = 0;
+  }
+
+  // ARCH4: Set UTC offset (hours from UTC, e.g. -5 for EST, +9 for JST).
+  // Pass null to revert to browser local time.
+  setTimezoneOffset(utcOffsetHours) {
+    this._utcOffsetHours = (utcOffsetHours !== null && utcOffsetHours !== undefined)
+      ? Math.max(-12, Math.min(14, Number(utcOffsetHours)))
+      : null;
+    this.refresh();
+  }
+
+  getTimezoneOffset() {
+    return this._utcOffsetHours;
   }
 
   // Call once per game-start (or once per real minute is fine)
   refresh() {
     this._lunar  = getLunarPhase();
-    this._planet = getPlanetaryDay();
+    this._planet = getPlanetaryDay(this._utcOffsetHours);
     this._lastRefresh = Date.now();
   }
 

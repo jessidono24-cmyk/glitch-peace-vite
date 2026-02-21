@@ -115,6 +115,9 @@ export const PLAYER_PROFILE = {
   // Audio settings
   sfxVol:         _raw.sfxVol         !== undefined ? _raw.sfxVol  : 0.5,
   sfxMuted:       _raw.sfxMuted       || false,
+  // ARCH4: Local timezone offset (hours from UTC, e.g. -5 for EST, +9 for JST)
+  // null = use system/browser local time (default)
+  utcOffsetHours: _raw.utcOffsetHours !== undefined ? _raw.utcOffsetHours : null,
 };
 export function savePlayerProfile() { _saveProfile(PLAYER_PROFILE); }
 

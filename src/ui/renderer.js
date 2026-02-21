@@ -13,7 +13,7 @@ const MSG_LEN_MEDIUM  = 35;  // chars — uses medium font
 // base = ideal px at 1280×720; scales with canvas, never below base*0.75 or 10px
 function fs(base, canvas) {
   const scale = Math.min(canvas.width / 1280, canvas.height / 720);
-  return Math.max(Math.round(base * scale), Math.max(10, Math.round(base * 0.75)));
+  return Math.max(10, Math.round(base * Math.max(scale, 0.75)));
 }
 
 export function PAL(matrixActive) {

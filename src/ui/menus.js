@@ -5,6 +5,12 @@ import { LANGUAGES, LANGUAGE_PATHS, LANG_LIST } from '../systems/learning/langua
 import { DIFFICULTY_TIERS } from '../systems/difficulty/adaptive-difficulty.js';
 import { PLAY_MODES, PLAY_MODE_LIST, getPlayModeMeta } from '../systems/play-modes.js';
 import { getCosmologyForDreamscape } from '../systems/cosmology/cosmologies.js';
+// ── Canvas-responsive font size helper ───────────────────────────────
+// base = ideal px at 1280×720; scales with canvas, never below base*0.75 or 10px
+function fs(base, canvas) {
+  const scale = Math.min(canvas.width / 1280, canvas.height / 720);
+  return Math.max(Math.round(base * scale), Math.max(10, Math.round(base * 0.75)));
+}
 function stars(ctx, backgroundStars, ts) {
   for (const s of backgroundStars) {
     ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(ts * 0.0008 + s.phase));
@@ -43,10 +49,10 @@ export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
 
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT GAME MODE', w / 2, 52); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#223322'; ctx.font = '10px Courier New';
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('SELECT GAME MODE', w / 2, 52); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('choose your path through the dreamscapes', w / 2, 70);
-  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('STEP 1 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 86);
 
   const rowH = 70, startY = 100;
@@ -68,18 +74,18 @@ export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
       ctx.lineWidth = 1; ctx.strokeRect(w / 2 - 200, ry - 12, 400, 52);
       // Selection arrow
       ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6;
-      ctx.font = 'bold 11px Courier New'; ctx.fillText('▶', w / 2 - 210, ry + 12); ctx.shadowBlur = 0;
+      ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('▶', w / 2 - 210, ry + 12); ctx.shadowBlur = 0;
     }
     ctx.fillStyle = sel ? col : '#2a3a2a';
     ctx.shadowColor = sel ? col : 'transparent'; ctx.shadowBlur = sel ? 10 : 0;
-    ctx.font = sel ? 'bold 14px Courier New' : '12px Courier New';
+    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(14, ctx.canvas) + 'px Courier New';
     ctx.fillText(mode.label, w / 2, ry + 8);
     ctx.shadowBlur = 0;
-    ctx.fillStyle = sel ? '#445566' : '#1a2a1a'; ctx.font = '10px Courier New';
+    ctx.fillStyle = sel ? '#445566' : '#1a2a1a'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(mode.sub, w / 2, ry + 26);
   });
 
-  ctx.fillStyle = '#0d1a0d'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#0d1a0d'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
@@ -113,7 +119,7 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
   ctx.textAlign = 'center';
 
   // Subtitle above title
-  ctx.fillStyle = '#0d1a0d'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#0d1a0d'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('⬦  A BEING NAVIGATES THE DREAMSCAPES  ⬦', w / 2, h / 2 - 162);
 
   // Animated glitch on title occasionally
@@ -121,17 +127,17 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
   if (glitch) {
     ctx.globalAlpha = 0.6;
     ctx.fillStyle = '#ff0055'; ctx.shadowColor = '#ff0055'; ctx.shadowBlur = 20;
-    ctx.font = 'bold 36px Courier New'; ctx.fillText('GLITCH·PEACE', w / 2 + 2, h / 2 - 122);
+    ctx.font = 'bold '+ fs(40, ctx.canvas) + 'px Courier New'; ctx.fillText('GLITCH·PEACE', w / 2 + 2, h / 2 - 122);
     ctx.globalAlpha = 1;
   }
   // Title
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 36;
-  ctx.font = 'bold 36px Courier New'; ctx.fillText('GLITCH·PEACE', w / 2, h / 2 - 120); ctx.shadowBlur = 0;
+  ctx.font = 'bold '+ fs(40, ctx.canvas) + 'px Courier New'; ctx.fillText('GLITCH·PEACE', w / 2, h / 2 - 120); ctx.shadowBlur = 0;
 
   // Tagline with animated glow
   const tlPulse = 0.5 + 0.5 * Math.sin(ts * 0.002);
   ctx.fillStyle = `rgba(0,80,40,${0.6 + 0.4 * tlPulse})`;
-  ctx.font = '10px Courier New'; ctx.fillText('v4  ·  dreamscape consciousness simulation  ·  18 dreamscapes  ·  6 modes', w / 2, h / 2 - 98);
+  ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('v4  ·  dreamscape consciousness simulation  ·  18 dreamscapes  ·  6 modes', w / 2, h / 2 - 98);
 
   // Mode indicator with pulsing background
   const MODE_COLORS = { grid:'#00ff88', shooter:'#ff6622', constellation:'#aaddff', meditation:'#88ffcc', coop:'#ffcc44', challenge:'#cc88ff' };
@@ -140,7 +146,7 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
   const modeLabel = '[ ' + (MODE_LABELS[gameMode] || gameMode.toUpperCase()) + ' MODE ]';
   ctx.fillStyle = modeColor + '18'; ctx.fillRect(w / 2 - 80, h / 2 - 92, 160, 18);
   ctx.fillStyle = modeColor; ctx.shadowColor = modeColor; ctx.shadowBlur = 8;
-  ctx.font = '10px Courier New'; ctx.fillText(modeLabel, w / 2, h / 2 - 79); ctx.shadowBlur = 0;
+  ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(modeLabel, w / 2, h / 2 - 79); ctx.shadowBlur = 0;
 
   // Menu items
   const menuTop = h / 2 - 58;
@@ -155,11 +161,11 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
       ctx.strokeStyle = 'rgba(0,255,136,0.35)'; ctx.strokeRect(w / 2 - 130, y - 18, 260, 26);
     }
     ctx.fillStyle = sel ? '#00ff88' : '#2a3a2a'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 10 : 0;
-    ctx.font = sel ? 'bold 13px Courier New' : '11px Courier New'; ctx.fillText(opt, w / 2, y); ctx.shadowBlur = 0;
+    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(opt, w / 2, y); ctx.shadowBlur = 0;
   });
 
   // Footer
-  ctx.fillStyle = '#0d1a0d'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#0d1a0d'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('↑↓ navigate  ·  ENTER select  ·  gamepad supported', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
@@ -168,9 +174,9 @@ export function drawDreamSelect(ctx, w, h, dreamIdx) {
   ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT DREAMSCAPE', w / 2, 50); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#223322'; ctx.font = '10px Courier New'; ctx.fillText('choose your symbolic environment', w / 2, 68);
-  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('SELECT DREAMSCAPE', w / 2, 50); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('choose your symbolic environment', w / 2, 68);
+  ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('STEP 2 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
   const visible = Math.min(DREAMSCAPES.length, 6);
   const startI = Math.max(0, Math.min(dreamIdx - Math.floor(visible / 2), DREAMSCAPES.length - visible));
@@ -180,9 +186,9 @@ export function drawDreamSelect(ctx, w, h, dreamIdx) {
       ctx.fillStyle = 'rgba(0,255,136,0.06)'; ctx.fillRect(w / 2 - 160, y - 18, 320, 46);
       ctx.strokeStyle = 'rgba(0,255,136,0.25)'; ctx.strokeRect(w / 2 - 160, y - 18, 320, 46);
     }
-    ctx.fillStyle = sel ? '#00ff88' : '#2a3a2a'; ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New';
+    ctx.fillStyle = sel ? '#00ff88' : '#2a3a2a'; ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText((di + 1) + '.  ' + ds.name, w / 2, y);
-    ctx.fillStyle = sel ? '#334455' : '#1a2a1a'; ctx.font = '10px Courier New';
+    ctx.fillStyle = sel ? '#334455' : '#1a2a1a'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(ds.subtitle + '  ·  ' + ds.emotion, w / 2, y + 16);
     if (sel) {
       if (ds.archetype && ARCHETYPES[ds.archetype]) {
@@ -192,12 +198,12 @@ export function drawDreamSelect(ctx, w, h, dreamIdx) {
       // Show cosmological theme for selected dreamscape
       const cosmo = getCosmologyForDreamscape(ds.id);
       if (cosmo) {
-        ctx.fillStyle = '#334466'; ctx.font = '10px Courier New';
+        ctx.fillStyle = '#334466'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
         ctx.fillText((cosmo.emoji || '') + ' ' + cosmo.name + '  ·  ' + cosmo.tradition, w / 2, y + 42);
       }
     }
   }
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New'; ctx.fillText('↑↓ select  ·  ENTER start here  ·  ESC back', w / 2, h - 20);
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('↑↓ select  ·  ENTER start here  ·  ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
 
@@ -211,7 +217,7 @@ export function drawOptions(ctx, w, h, optIdx) {
   ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 16;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('OPTIONS', w / 2, 50); ctx.shadowBlur = 0;
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('OPTIONS', w / 2, 50); ctx.shadowBlur = 0;
   const langMeta  = LANGUAGES[PLAYER_PROFILE.nativeLang] || {};
   const tgtMeta   = LANGUAGES[PLAYER_PROFILE.targetLang]  || {};
   const playMeta  = getPlayModeMeta(CFG.playMode || 'arcade');
@@ -240,8 +246,8 @@ export function drawOptions(ctx, w, h, optIdx) {
   rows.forEach((row, i) => {
     const sel = i === optIdx, baseY = OPT_START_Y + i * OPT_ROW_H;
     if (row.label) {
-      ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.fillText(row.label, w / 2, baseY);
-      if (row.hint) { ctx.fillStyle = '#445566'; ctx.font = '10px Courier New'; ctx.fillText(row.hint.slice(0, 60), w / 2, baseY + 12); }
+      ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(row.label, w / 2, baseY);
+      if (row.hint) { ctx.fillStyle = '#445566'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(row.hint.slice(0, 60), w / 2, baseY + 12); }
     }
     const rowOpts = row.opts;
     rowOpts.forEach((opt, j) => {
@@ -251,9 +257,9 @@ export function drawOptions(ctx, w, h, optIdx) {
       ctx.fillStyle = (sel && active) ? 'rgba(0,255,136,0.12)' : 'rgba(255,255,255,0.02)'; ctx.fillRect(ox - OPT_BTN_HALF, oy - OPT_BTN_H + 8, OPT_BTN_W, OPT_BTN_H);
       ctx.strokeStyle = (sel && active) ? 'rgba(0,255,136,0.5)' : active ? 'rgba(0,255,136,0.18)' : 'rgba(255,255,255,0.04)'; ctx.strokeRect(ox - OPT_BTN_HALF, oy - OPT_BTN_H + 8, OPT_BTN_W, OPT_BTN_H);
       ctx.fillStyle = active ? '#00ff88' : '#334455'; ctx.shadowColor = active ? '#00ff88' : 'transparent'; ctx.shadowBlur = active ? 5 : 0;
-      ctx.font = active ? 'bold 10px Courier New' : '10px Courier New'; ctx.fillText(opt.toUpperCase().slice(0, 22), ox, oy); ctx.shadowBlur = 0;
+      ctx.font = active ? 'bold '+ fs(13, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(opt.toUpperCase().slice(0, 22), ox, oy); ctx.shadowBlur = 0;
     });
-    if (sel) { ctx.fillStyle = '#00ff88'; ctx.font = '12px Courier New'; ctx.fillText('▶', w / 2 - 154, baseY + (row.hint ? 30 : 22)); }
+    if (sel) { ctx.fillStyle = '#00ff88'; ctx.font = fs(14, ctx.canvas) + 'px Courier New'; ctx.fillText('▶', w / 2 - 154, baseY + (row.hint ? 30 : 22)); }
     // SFX row: draw a live volume bar
     if (row.label === 'SFX VOLUME' && sel) {
       const barX = w / 2 - 110, barY = baseY + (row.hint ? 30 : 22) - 6, barW = 220, barH = 6;
@@ -263,7 +269,7 @@ export function drawOptions(ctx, w, h, optIdx) {
       ctx.strokeStyle = 'rgba(0,255,136,0.2)'; ctx.lineWidth = 1; ctx.strokeRect(barX, barY, barW, barH);
     }
   });
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New'; ctx.fillText('↑↓ row  ·  ←→ value  ·  ENTER action  ·  ESC back', w / 2, h - 20);
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('↑↓ row  ·  ←→ value  ·  ENTER action  ·  ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
 
@@ -271,17 +277,17 @@ export function drawHighScores(ctx, w, h, highScores) {
   ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 16;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('HIGH SCORES', w / 2, 50); ctx.shadowBlur = 0;
-  if (!highScores.length) { ctx.fillStyle = '#223322'; ctx.font = '12px Courier New'; ctx.fillText('no scores yet…', w / 2, h / 2); }
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('HIGH SCORES', w / 2, 50); ctx.shadowBlur = 0;
+  if (!highScores.length) { ctx.fillStyle = '#223322'; ctx.font = fs(14, ctx.canvas) + 'px Courier New'; ctx.fillText('no scores yet…', w / 2, h / 2); }
   else {
     highScores.slice(0, 8).forEach((s, i) => {
       const y = 95 + i * 38, med = i === 0 ? '◈' : i === 1 ? '◇' : '·';
       ctx.fillStyle = i === 0 ? '#ffdd00' : i === 1 ? '#aaaaaa' : i === 2 ? '#cc8833' : '#334455';
-      ctx.font = i < 3 ? 'bold 12px Courier New' : '11px Courier New';
+      ctx.font = i < 3 ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText(`${med}  ${String(s.score).padStart(7,'0')}   LVL${String(s.level).padStart(2,'0')}   ${s.dreamscape}   ${s.date}`, w / 2, y);
     });
   }
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New'; ctx.fillText('ENTER / ESC back', w / 2, h - 20);
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('ENTER / ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
 
@@ -289,8 +295,8 @@ export function drawUpgradeShop(ctx, w, h, shopIdx, insightTokens, checkOwned) {
   ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00eeff'; ctx.shadowColor = '#00eeff'; ctx.shadowBlur = 16;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('UPGRADES', w / 2, 50); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.fillText('◆ insight tokens: ' + insightTokens, w / 2, 68);
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('UPGRADES', w / 2, 50); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('◆ insight tokens: ' + insightTokens, w / 2, 68);
   UPGRADE_SHOP.forEach((up, i) => {
     const sel = i === shopIdx, owned = checkOwned(up.id), canBuy = insightTokens >= up.cost && !owned;
     const y = 92 + i * 48;
@@ -300,12 +306,12 @@ export function drawUpgradeShop(ctx, w, h, shopIdx, insightTokens, checkOwned) {
     }
     ctx.fillStyle = owned ? '#00ff88' : canBuy ? '#00ccdd' : '#334455';
     ctx.shadowColor = owned ? '#00ff88' : sel ? '#00ccdd' : 'transparent'; ctx.shadowBlur = (sel && !owned) ? 5 : 0;
-    ctx.font = 'bold 11px Courier New'; ctx.fillText(up.name, w / 2 - 55, y); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#334'; ctx.font = '10px Courier New'; ctx.fillText(up.desc, w / 2 - 55, y + 14);
+    ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(up.name, w / 2 - 55, y); ctx.shadowBlur = 0;
+    ctx.fillStyle = '#334'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(up.desc, w / 2 - 55, y + 14);
     ctx.fillStyle = owned ? '#005533' : canBuy ? '#006677' : '#221122';
-    ctx.font = '10px Courier New'; ctx.fillText(owned ? 'OWNED' : '◆×' + up.cost, w / 2 + 88, y + 4);
+    ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(owned ? 'OWNED' : '◆×' + up.cost, w / 2 + 88, y + 4);
   });
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New'; ctx.fillText('↑↓ select  ·  ENTER buy  ·  ESC back', w / 2, h - 20);
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('↑↓ select  ·  ENTER buy  ·  ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
 
@@ -313,16 +319,16 @@ export function drawPause(ctx, w, h, game, pauseIdx) {
   ctx.fillStyle = 'rgba(0,0,0,0.87)'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 14;
-  ctx.font = 'bold 24px Courier New'; ctx.fillText('PAUSED', w / 2, h / 2 - 82); ctx.shadowBlur = 0;
+  ctx.font = 'bold '+ fs(32, ctx.canvas) + 'px Courier New'; ctx.fillText('PAUSED', w / 2, h / 2 - 82); ctx.shadowBlur = 0;
   if (game) {
-    ctx.fillStyle = '#223322'; ctx.font = '10px Courier New'; ctx.fillText(game.ds.name + '  ·  LEVEL ' + game.level, w / 2, h / 2 - 60);
+    ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(game.ds.name + '  ·  LEVEL ' + game.level, w / 2, h / 2 - 60);
     ctx.fillStyle = '#334455'; ctx.fillText(game.ds.narrative, w / 2, h / 2 - 46);
   } else {
     // Shooter mode pause
     const ss = window._shooterState;
     if (ss) {
       ctx.fillStyle = '#ff6622'; ctx.shadowColor = '#ff6622'; ctx.shadowBlur = 6;
-      ctx.font = '10px Courier New'; ctx.fillText('SHOOTER ARENA  ·  WAVE ' + ss.wave, w / 2, h / 2 - 60);
+      ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('SHOOTER ARENA  ·  WAVE ' + ss.wave, w / 2, h / 2 - 60);
       ctx.shadowBlur = 0; ctx.fillStyle = '#664422';
       ctx.fillText('SCORE: ' + ss.score + '  ·  HP: ' + ss.health, w / 2, h / 2 - 46);
     }
@@ -334,27 +340,27 @@ export function drawPause(ctx, w, h, game, pauseIdx) {
   const learnStats = window._learnStats || { words: 0, patterns: 0 };
   if (wellness) {
     ctx.fillStyle = wellness.color; ctx.shadowColor = wellness.color; ctx.shadowBlur = 4;
-    ctx.font = '10px Courier New';
+    ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('SESSION · ' + duration + ' · ' + wellness.label, w / 2, h / 2 - 30);
     ctx.shadowBlur = 0;
   }
   // Phase 6: Learning stats
-  ctx.fillStyle = '#335533'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#335533'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('WORDS: ' + learnStats.words + '  ·  PATTERNS: ' + learnStats.patterns, w / 2, h / 2 - 18);
 
   // Phase 8: Emergence level
   const em = window._emergence;
   if (em) {
-    ctx.fillStyle = '#445566'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#445566'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('EMERGENCE · ' + em.label, w / 2, h / 2 - 6);
   }
 
   // Phase 9: Strategic coaching tip + EQ insight
   const iqData = window._iqData;
   if (iqData) {
-    ctx.fillStyle = '#223340'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#223340'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('IQ ' + iqData.iqScore + '  EQ ' + iqData.eqScore + '  STRATEGY ' + iqData.strategicScore + '  EMPATHY ' + iqData.empathyScore, w / 2, h / 2 + 6);
-    ctx.fillStyle = '#334455'; ctx.font = 'italic 10px Courier New';
+    ctx.fillStyle = '#334455'; ctx.font = 'italic '+ fs(13, ctx.canvas) + 'px Courier New';
     const tipText = iqData.strategicTip
       ? (iqData.strategicTip.length > 54 ? iqData.strategicTip.slice(0, 54) + '…' : iqData.strategicTip)
       : '';
@@ -374,15 +380,15 @@ export function drawPause(ctx, w, h, game, pauseIdx) {
     // Main circle
     ctx.fillStyle = breath.color; ctx.shadowColor = breath.color; ctx.shadowBlur = 12;
     ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#000'; ctx.font = 'bold 10px Courier New';
+    ctx.fillStyle = '#000'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(breath.label, cx, cy + 4);
     // Phrase below
-    ctx.fillStyle = '#667788'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#667788'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(breath.phrase || '', cx, cy + 50);
-    ctx.fillStyle = '#223344'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#223344'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('CYCLES: ' + (breath.cycles || 0) + '  ·  B=stop breathing', cx, h / 2 + 150);
   } else {
-    ctx.fillStyle = '#223344'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#223344'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('B = start breathing exercise (Box / 4-7-8 / Coherent)', w / 2, h - 34);
   }
 
@@ -393,9 +399,9 @@ export function drawPause(ctx, w, h, game, pauseIdx) {
       ctx.strokeStyle = 'rgba(0,255,136,0.26)'; ctx.strokeRect(w / 2 - 110, y - 16, 220, 24);
     }
     ctx.fillStyle = sel ? '#00ff88' : '#334433'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 6 : 0;
-    ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New'; ctx.fillText(txt, w / 2, y); ctx.shadowBlur = 0;
+    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(txt, w / 2, y); ctx.shadowBlur = 0;
   });
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New'; ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC resume', w / 2, h - 20);
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC resume', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
 
@@ -434,17 +440,17 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
 
   // ── Completion text (immediate) ────────────────────────────────────────
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 20;
-  ctx.font = 'bold 16px Courier New'; ctx.fillText(interludeState.text, w / 2, h / 2 - 76); ctx.shadowBlur = 0;
+  ctx.font = 'bold '+ fs(20, ctx.canvas) + 'px Courier New'; ctx.fillText(interludeState.text, w / 2, h / 2 - 76); ctx.shadowBlur = 0;
 
   // ── Reflection prompt (1.0 s) ──────────────────────────────────────────
   if (interludeState.reflectionPrompt) {
     ctx.globalAlpha = alpha * elemAlpha(1000);
     const depthColor = { surface: '#446644', mid: '#4466aa', deep: '#884488' }[interludeState.reflectionDepth || 'surface'];
-    ctx.font = '10px Courier New';
+    ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillStyle = depthColor;
     ctx.fillText((interludeState.reflectionDepth || 'surface').toUpperCase() + ' REFLECTION', w / 2, h / 2 - 56);
     ctx.fillStyle = '#aaffcc'; ctx.shadowColor = '#00cc88'; ctx.shadowBlur = 8;
-    ctx.font = 'italic 13px Courier New';
+    ctx.font = 'italic '+ fs(14, ctx.canvas) + 'px Courier New';
     ctx.fillText('\u201c' + interludeState.reflectionPrompt + '\u201d', w / 2, h / 2 - 42); ctx.shadowBlur = 0;
     ctx.globalAlpha = alpha;
   }
@@ -452,15 +458,15 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
   // ── Affirmation (1.8 s) ────────────────────────────────────────────────
   if (interludeState.affirmation) {
     ctx.globalAlpha = alpha * elemAlpha(1800);
-    ctx.fillStyle = '#335533'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#335533'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(interludeState.affirmation, w / 2, h / 2 - 18);
     ctx.globalAlpha = alpha;
   }
 
   // ── Next dreamscape info (2.2 s) ──────────────────────────────────────
   ctx.globalAlpha = alpha * elemAlpha(2200);
-  ctx.fillStyle = '#223322'; ctx.font = '12px Courier New'; ctx.fillText('ENTERING: ' + ds.name, w / 2, h / 2 + 6);
-  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.fillText(ds.narrative, w / 2, h / 2 + 24);
+  ctx.fillStyle = '#223322'; ctx.font = fs(14, ctx.canvas) + 'px Courier New'; ctx.fillText('ENTERING: ' + ds.name, w / 2, h / 2 + 6);
+  ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(ds.narrative, w / 2, h / 2 + 24);
   ctx.globalAlpha = alpha;
 
   // ── Vocabulary word (2.8 s) ───────────────────────────────────────────
@@ -468,9 +474,9 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
     const vw = interludeState.vocabWord;
     ctx.globalAlpha = alpha * elemAlpha(2800);
     ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 6;
-    ctx.font = 'bold 12px Courier New';
+    ctx.font = 'bold '+ fs(16, ctx.canvas) + 'px Courier New';
     ctx.fillText(vw.word + '  [' + vw.pos + ']', w / 2, h / 2 + 50); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#554422'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#554422'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(vw.def, w / 2, h / 2 + 66);
     ctx.globalAlpha = alpha;
   }
@@ -480,14 +486,14 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
     const arch = ARCHETYPES[ds.archetype];
     ctx.globalAlpha = alpha * elemAlpha(3100);
     ctx.fillStyle = arch.glow; ctx.shadowColor = arch.glow; ctx.shadowBlur = 10;
-    ctx.font = '10px Courier New'; ctx.fillText('archetype: ' + arch.name, w / 2, h / 2 + 86); ctx.shadowBlur = 0;
+    ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('archetype: ' + arch.name, w / 2, h / 2 + 86); ctx.shadowBlur = 0;
     ctx.globalAlpha = alpha;
   }
 
   // ── Empathy reflection (3.5 s) ────────────────────────────────────────
   if (interludeState.empathyReflection) {
     ctx.globalAlpha = alpha * elemAlpha(3500);
-    ctx.fillStyle = '#887755'; ctx.font = 'italic 10px Courier New';
+    ctx.fillStyle = '#887755'; ctx.font = 'italic '+ fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(interludeState.empathyReflection, w / 2, h / 2 + 104);
     ctx.globalAlpha = alpha;
   }
@@ -496,7 +502,7 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
   const cosmo = getCosmologyForDreamscape(ds.id);
   if (cosmo) {
     ctx.globalAlpha = alpha * elemAlpha(4200);
-    ctx.fillStyle = '#4a4a66'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#4a4a66'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText((cosmo.emoji || '') + '  ' + cosmo.name + '  ·  ' + cosmo.tradition, w / 2, h / 2 + 120);
     ctx.globalAlpha = alpha;
   }
@@ -518,7 +524,7 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
       }
     }
     if (parts.length) {
-      ctx.fillStyle = '#445555'; ctx.font = '10px Courier New';
+      ctx.fillStyle = '#445555'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText(parts.join('  ·  '), w / 2, h / 2 + 136);
     }
     ctx.globalAlpha = alpha;
@@ -528,7 +534,7 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
   if (interludeState.milestone) {
     ctx.globalAlpha = alpha * elemAlpha(5200);
     ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 8;
-    ctx.font = 'bold 10px Courier New';
+    ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('✦  ' + interludeState.milestone, w / 2, h / 2 + 152); ctx.shadowBlur = 0;
     ctx.globalAlpha = alpha;
   }
@@ -539,7 +545,7 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
     const pulse = 0.65 + 0.35 * Math.sin(ts * 0.003);
     ctx.globalAlpha = alpha * contAlpha * pulse;
     ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 5;
-    ctx.font = '10px Courier New';
+    ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('ENTER · SPACE  to continue', w / 2, h - 20); ctx.shadowBlur = 0;
     ctx.globalAlpha = alpha;
   }
@@ -559,13 +565,13 @@ export function drawDead(ctx, w, h, game, highScores, dreamHistory, insightToken
 
   ctx.textAlign = 'center';
   const ds = game?.ds;
-  ctx.fillStyle = '#330000'; ctx.font = '10px Courier New'; ctx.fillText('THE BEING DISSOLVES IN ' + (ds?.name || 'THE VOID').toUpperCase(), w / 2, h / 2 - 140);
+  ctx.fillStyle = '#330000'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('THE BEING DISSOLVES IN ' + (ds?.name || 'THE VOID').toUpperCase(), w / 2, h / 2 - 140);
   // "ERASED" with glitch/shimmer
   ctx.fillStyle = '#ff0000'; ctx.shadowColor = '#ff2222'; ctx.shadowBlur = 40 * pulse;
-  ctx.font = 'bold 44px Courier New'; ctx.fillText('ERASED', w / 2, h / 2 - 88); ctx.shadowBlur = 0;
+  ctx.font = 'bold '+ fs(40, ctx.canvas) + 'px Courier New'; ctx.fillText('ERASED', w / 2, h / 2 - 88); ctx.shadowBlur = 0;
   // Dreamscape emotion
   if (ds?.emotion) {
-    ctx.fillStyle = '#440000'; ctx.font = 'italic 10px Courier New';
+    ctx.fillStyle = '#440000'; ctx.font = 'italic '+ fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('"' + ds.emotion + '"  ·  ' + (ds.narrative || ''), w / 2, h / 2 - 64);
   }
 
@@ -573,31 +579,31 @@ export function drawDead(ctx, w, h, game, highScores, dreamHistory, insightToken
   ctx.strokeStyle = `rgba(0,255,136,${0.3 * pulse})`; ctx.lineWidth = 1;
   ctx.strokeRect(w / 2 - 80, h / 2 - 50, 160, 34);
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 14 * pulse;
-  ctx.font = 'bold 28px Courier New'; ctx.fillText(String(game.score).padStart(7, '0'), w / 2, h / 2 - 22); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.fillText('FINAL SCORE  ·  LEVEL ' + game.level, w / 2, h / 2 - 4);
+  ctx.font = 'bold '+ fs(32, ctx.canvas) + 'px Courier New'; ctx.fillText(String(game.score).padStart(7, '0'), w / 2, h / 2 - 22); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('FINAL SCORE  ·  LEVEL ' + game.level, w / 2, h / 2 - 4);
 
   // Session stats row
-  ctx.fillStyle = '#223322'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('DREAMS  ' + dreamHistory.length + '/' + DREAMSCAPES.length + '  ·  REP ' + (sessionRep >= 0 ? '+' : '') + sessionRep + '  ·  ◆×' + insightTokens, w / 2, h / 2 + 16);
 
   // Run stats from window globals
   const learnStats = window._learnStats || { words: 0, patterns: 0 };
   if (learnStats.words > 0 || learnStats.patterns > 0) {
-    ctx.fillStyle = '#224422'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#224422'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('WORDS LEARNED: ' + learnStats.words + '  ·  PATTERNS: ' + learnStats.patterns, w / 2, h / 2 + 32);
   }
 
   // ── RPG stats snapshot ──────────────────────────────────────────────
   const cs = window._characterStats;
   if (cs && cs.level > 1) {
-    ctx.fillStyle = '#ffdd88'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#ffdd88'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('RPG  LVL ' + cs.level + '  STR ' + (cs.str||1) + '  INT ' + (cs.int||1) + '  WIS ' + (cs.wis||1) + '  VIT ' + (cs.vit||1), w / 2, h / 2 + 48);
   }
   // ── Quest summary ───────────────────────────────────────────────────
   const qd = window._questData;
   if (qd) {
     const qDone = qd.filter(q => q.done).length;
-    ctx.fillStyle = qDone > 0 ? '#ddcc66' : '#223322'; ctx.font = '10px Courier New';
+    ctx.fillStyle = qDone > 0 ? '#ddcc66' : '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('QUESTS  ' + qDone + '/5 complete', w / 2, cs && cs.level > 1 ? h / 2 + 62 : h / 2 + 48);
   }
   // ── Alchemy phase ───────────────────────────────────────────────────
@@ -607,7 +613,7 @@ export function drawDead(ctx, w, h, game, highScores, dreamHistory, insightToken
   if (qd) alY = h / 2 + (cs && cs.level > 1 ? 76 : 62);
   if (al && al.transmutations > 0) {
     const phaseLabel = { nigredo: '🜏 Nigredo', albedo: '🜃 Albedo', rubedo: '🜔 Rubedo', aurora: '✦ Aurora' }[al.phase] || al.phase;
-    ctx.fillStyle = '#cc88ff'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#cc88ff'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('ALCHEMY  ' + phaseLabel + '  ·  ' + al.transmutations + ' transmutation' + (al.transmutations !== 1 ? 's' : ''), w / 2, alY);
   }
 
@@ -617,9 +623,9 @@ export function drawDead(ctx, w, h, game, highScores, dreamHistory, insightToken
     const rank = highScores.findIndex(s => s.score === game.score);
     if (rank === 0) {
       ctx.fillStyle = '#ffdd00'; ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 8;
-      ctx.font = 'bold 11px Courier New'; ctx.fillText('🏆  NEW HIGH SCORE!  RANK #1', w / 2, rankY); ctx.shadowBlur = 0;
+      ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('🏆  NEW HIGH SCORE!  RANK #1', w / 2, rankY); ctx.shadowBlur = 0;
     } else if (rank >= 0) {
-      ctx.fillStyle = '#ffdd00'; ctx.font = 'bold 11px Courier New'; ctx.fillText('RANK #' + (rank + 1) + ' ALL TIME', w / 2, rankY);
+      ctx.fillStyle = '#ffdd00'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('RANK #' + (rank + 1) + ' ALL TIME', w / 2, rankY);
     }
   }
 
@@ -627,8 +633,8 @@ export function drawDead(ctx, w, h, game, highScores, dreamHistory, insightToken
   const btnY = rankY + 22;
   ctx.fillStyle = `rgba(255,34,34,${0.07 * pulse})`; ctx.fillRect(w / 2 - 110, btnY, 220, 34);
   ctx.strokeStyle = `rgba(255,34,34,${0.45 * pulse})`; ctx.strokeRect(w / 2 - 110, btnY, 220, 34);
-  ctx.fillStyle = '#ff2222'; ctx.font = '12px Courier New'; ctx.fillText('↺  ENTER TO TRY AGAIN', w / 2, btnY + 22);
-  ctx.fillStyle = '#221122'; ctx.font = '10px Courier New'; ctx.fillText('ESC → TITLE', w / 2, btnY + 40);
+  ctx.fillStyle = '#ff2222'; ctx.font = fs(14, ctx.canvas) + 'px Courier New'; ctx.fillText('↺  ENTER TO TRY AGAIN', w / 2, btnY + 22);
+  ctx.fillStyle = '#221122'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('ESC → TITLE', w / 2, btnY + 40);
   ctx.textAlign = 'left';
 }
 
@@ -658,8 +664,8 @@ export function drawOnboarding(ctx, w, h, ob) {
 
   // Title
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('WELCOME TO GLITCH·PEACE', w / 2, 44); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#223322'; ctx.font = '10px Courier New';
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('WELCOME TO GLITCH·PEACE', w / 2, 44); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('let\'s set up your personal experience  ·  all settings changeable later', w / 2, 62);
 
   // Step indicator
@@ -670,7 +676,7 @@ export function drawOnboarding(ctx, w, h, ob) {
     const x = w / 2 - 90 + i * 60;
     ctx.fillStyle   = done ? '#00aa44' : active ? '#00ff88' : '#223322';
     ctx.shadowColor = active ? '#00ff88' : 'transparent'; ctx.shadowBlur = active ? 6 : 0;
-    ctx.font = '10px Courier New'; ctx.fillText((done ? '✓' : String(i + 1)) + ' ' + s.toUpperCase(), x, 82);
+    ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText((done ? '✓' : String(i + 1)) + ' ' + s.toUpperCase(), x, 82);
     ctx.shadowBlur = 0;
   });
 
@@ -678,8 +684,8 @@ export function drawOnboarding(ctx, w, h, ob) {
 
   if (ob.step === 0) {
     // ── Step 0: Age group ──────────────────────────────────────────────
-    ctx.fillStyle = '#334455'; ctx.font = '11px Courier New'; ctx.fillText('How old are you?', w / 2, cy);
-    ctx.fillStyle = '#223322'; ctx.font = '10px Courier New'; ctx.fillText('(difficulty adjusts automatically — you can always change it later)', w / 2, cy + 16);
+    ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('How old are you?', w / 2, cy);
+    ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('(difficulty adjusts automatically — you can always change it later)', w / 2, cy + 16);
     AGE_OPTS.forEach((opt, i) => {
       const sel = i === ob.ageIdx;
       const y = cy + 44 + i * 44;
@@ -688,15 +694,15 @@ export function drawOnboarding(ctx, w, h, ob) {
         ctx.strokeStyle = 'rgba(0,255,136,0.3)'; ctx.strokeRect(w / 2 - 150, y - 16, 300, 36);
       }
       ctx.fillStyle = sel ? '#00ff88' : '#334455'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 5 : 0;
-      ctx.font = sel ? 'bold 13px Courier New' : '12px Courier New'; ctx.fillText(opt.label, w / 2, y);
+      ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(14, ctx.canvas) + 'px Courier New'; ctx.fillText(opt.label, w / 2, y);
       ctx.shadowBlur = 0;
-      ctx.fillStyle = sel ? '#446655' : '#1a2a1a'; ctx.font = '10px Courier New'; ctx.fillText(opt.desc, w / 2, y + 14);
+      ctx.fillStyle = sel ? '#446655' : '#1a2a1a'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(opt.desc, w / 2, y + 14);
     });
 
   } else if (ob.step === 1) {
     // ── Step 1: Native language ────────────────────────────────────────
-    ctx.fillStyle = '#334455'; ctx.font = '11px Courier New'; ctx.fillText('What is your native language?', w / 2, cy);
-    ctx.fillStyle = '#223322'; ctx.font = '10px Courier New'; ctx.fillText('Game will teach vocabulary with your language as the anchor', w / 2, cy + 16);
+    ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('What is your native language?', w / 2, cy);
+    ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('Game will teach vocabulary with your language as the anchor', w / 2, cy + 16);
     const perRow = 4, colW = 140, rowH = 48;
     const startX = w / 2 - (perRow / 2) * colW + colW / 2;
     LANG_LIST.forEach((code, i) => {
@@ -710,9 +716,9 @@ export function drawOnboarding(ctx, w, h, ob) {
         ctx.strokeStyle = 'rgba(0,255,136,0.35)'; ctx.strokeRect(lx - 58, ly - 14, 116, 34);
       }
       ctx.fillStyle = sel ? '#00ff88' : '#334455'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 4 : 0;
-      ctx.font = sel ? 'bold 10px Courier New' : '10px Courier New';
+      ctx.font = sel ? 'bold '+ fs(13, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText(lang.emoji + '  ' + lang.name, lx, ly); ctx.shadowBlur = 0;
-      ctx.fillStyle = sel ? '#335544' : '#1a2020'; ctx.font = '10px Courier New';
+      ctx.fillStyle = sel ? '#335544' : '#1a2020'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText(lang.nativeName, lx, ly + 12);
     });
 
@@ -720,8 +726,8 @@ export function drawOnboarding(ctx, w, h, ob) {
     // ── Step 2: Target learning language ──────────────────────────────
     const nativeCode = LANG_LIST[ob.nativeIdx] || 'en';
     const path = LANGUAGE_PATHS[nativeCode] || LANGUAGE_PATHS.en;
-    ctx.fillStyle = '#334455'; ctx.font = '11px Courier New'; ctx.fillText('Which language would you like to start learning?', w / 2, cy);
-    ctx.fillStyle = '#223322'; ctx.font = '10px Courier New'; ctx.fillText('Ordered by ease for ' + (LANGUAGES[nativeCode]?.name || 'English') + ' speakers  ·  more unlock as you play', w / 2, cy + 16);
+    ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('Which language would you like to start learning?', w / 2, cy);
+    ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('Ordered by ease for ' + (LANGUAGES[nativeCode]?.name || 'English') + ' speakers  ·  more unlock as you play', w / 2, cy + 16);
 
     const perRow = 2, colW = 210, rowH = 52;
     const startX = w / 2 - colW / 2;
@@ -736,13 +742,13 @@ export function drawOnboarding(ctx, w, h, ob) {
         ctx.strokeStyle = 'rgba(100,200,255,0.3)'; ctx.strokeRect(lx - 90, ly - 14, 180, 42);
       }
       ctx.fillStyle = sel ? '#aaddff' : '#334455'; ctx.shadowColor = sel ? '#aaddff' : 'transparent'; ctx.shadowBlur = sel ? 4 : 0;
-      ctx.font = sel ? 'bold 10px Courier New' : '10px Courier New';
+      ctx.font = sel ? 'bold '+ fs(13, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText(lang.emoji + '  ' + lang.name + '  ' + lang.nativeName, lx, ly); ctx.shadowBlur = 0;
-      ctx.fillStyle = sel ? '#224455' : '#111a20'; ctx.font = '10px Courier New';
+      ctx.fillStyle = sel ? '#224455' : '#111a20'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
       const dist = Math.round(lang.distance * 100);
       const fsi  = lang.fsiHours ? lang.fsiHours + 'h' : '—';
       ctx.fillText('distance ' + dist + '%  ·  ~' + fsi + ' to fluency', lx, ly + 13);
-      ctx.fillStyle = '#1a2520'; ctx.font = '10px Courier New';
+      ctx.fillStyle = '#1a2520'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText(lang.description.slice(0, 48) + (lang.description.length > 48 ? '…' : ''), lx, ly + 25);
     });
 
@@ -753,7 +759,7 @@ export function drawOnboarding(ctx, w, h, ob) {
     const age   = AGE_OPTS[ob.ageIdx] || AGE_OPTS[4];
     const tier  = DIFFICULTY_TIERS[age.tier] || DIFFICULTY_TIERS.standard;
     ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 14;
-    ctx.font = 'bold 16px Courier New'; ctx.fillText('YOUR PROFILE', w / 2, cy + 10); ctx.shadowBlur = 0;
+    ctx.font = 'bold '+ fs(20, ctx.canvas) + 'px Courier New'; ctx.fillText('YOUR PROFILE', w / 2, cy + 10); ctx.shadowBlur = 0;
 
     const rows = [
       ['AGE GROUP',        age.label],
@@ -767,20 +773,20 @@ export function drawOnboarding(ctx, w, h, ob) {
     rows.forEach(([label, val], i) => {
       if (!label && !val) return;
       const y = cy + 44 + i * 28;
-      ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.textAlign = 'right';
+      ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'right';
       ctx.fillText(label, w / 2 - 10, y);
-      ctx.fillStyle = '#00ff88'; ctx.font = '10px Courier New'; ctx.textAlign = 'left';
+      ctx.fillStyle = '#00ff88'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'left';
       ctx.fillText(val, w / 2 + 10, y);
     });
     ctx.textAlign = 'center';
     const pulse = 0.7 + 0.3 * Math.sin(Date.now() * 0.003);
     ctx.fillStyle = `rgba(0,255,136,${0.08 * pulse})`; ctx.fillRect(w / 2 - 120, h / 2 + 78, 240, 34);
     ctx.strokeStyle = `rgba(0,255,136,${0.5 * pulse})`; ctx.strokeRect(w / 2 - 120, h / 2 + 78, 240, 34);
-    ctx.fillStyle = '#00ff88'; ctx.font = 'bold 13px Courier New';
+    ctx.fillStyle = '#00ff88'; ctx.font = 'bold '+ fs(16, ctx.canvas) + 'px Courier New';
     ctx.fillText('ENTER  ·  BEGIN JOURNEY', w / 2, h / 2 + 100);
   }
 
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'center';
   if (ob.step < 3) ctx.fillText('↑↓ select  ·  ENTER next  ·  BACKSPACE back', w / 2, h - 20);
   else             ctx.fillText('ENTER confirm  ·  BACKSPACE back', w / 2, h - 20);
   ctx.textAlign = 'left';
@@ -791,7 +797,7 @@ export function drawLanguageOptions(ctx, w, h, langOb) {
   ctx.fillStyle = 'rgba(0,0,0,0.92)'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 14;
-  ctx.font = 'bold 18px Courier New'; ctx.fillText('LANGUAGE SETTINGS', w / 2, 50); ctx.shadowBlur = 0;
+  ctx.font = 'bold '+ fs(22, ctx.canvas) + 'px Courier New'; ctx.fillText('LANGUAGE SETTINGS', w / 2, 50); ctx.shadowBlur = 0;
 
   // Display mode human labels
   const DISPLAY_LABELS = {
@@ -810,7 +816,7 @@ export function drawLanguageOptions(ctx, w, h, langOb) {
   sections.forEach((sec, si) => {
     const baseY = 80 + si * 110;
     const sel = langOb.row === si;
-    ctx.fillStyle = sec.col; ctx.font = (sel ? 'bold ' : '') + '10px Courier New';
+    ctx.fillStyle = sec.col; ctx.font = (sel ? 'bold ' : '') + fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText((sel ? '▶ ' : '  ') + sec.label, w / 2, baseY);
     const opts = sec.list.slice(0, 8);
     opts.forEach((code, i) => {
@@ -823,7 +829,7 @@ export function drawLanguageOptions(ctx, w, h, langOb) {
       ctx.strokeStyle = active ? 'rgba(0,255,136,0.5)' : 'rgba(255,255,255,0.06)';
       ctx.strokeRect(ox - 34, baseY + 14, 68, 22);
       ctx.fillStyle = active ? sec.col : '#334455';
-      ctx.font = active ? 'bold 10px Courier New' : '10px Courier New';
+      ctx.font = active ? 'bold '+ fs(13, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText(label.slice(0, 20), ox, baseY + 29);
     });
   });
@@ -836,10 +842,10 @@ export function drawLanguageOptions(ctx, w, h, langOb) {
     target:    'Full immersion — target language only. Sink or swim.',
   };
   const curMode = modeList[langOb.modeIdx] || 'bilingual';
-  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText(modeDescriptions[curMode] || '', w / 2, h - 36);
 
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('↑↓ row  ·  ←→ value  ·  ENTER/ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
@@ -853,13 +859,13 @@ export function drawHowToPlay(ctx, w, h) {
 
   // ── Title ──────────────────────────────────────────────────────────────
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
-  ctx.font = 'bold 22px Courier New'; ctx.fillText('HOW TO PLAY', w / 2, 40); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#1a3a1a'; ctx.font = '10px Courier New';
+  ctx.font = 'bold '+ fs(26, ctx.canvas) + 'px Courier New'; ctx.fillText('HOW TO PLAY', w / 2, 40); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#1a3a1a'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('a consciousness engine disguised as a tile game  ·  18 dreamscapes · 21 play modes · gamepad supported', w / 2, 56);
 
   // ── Objective ─────────────────────────────────────────────────────────
-  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('OBJECTIVE', w / 2, 78);
-  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('OBJECTIVE', w / 2, 78);
+  ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('Use WASD or Arrow Keys to move through the dreamscape grid.', w / 2, 93);
   ctx.fillText('Collect ◈ PEACE tiles to fill your bar and clear the level.', w / 2, 107);
   ctx.fillText('Avoid hazard tiles. Reach the exit to enter the next dreamscape.', w / 2, 121);
@@ -870,7 +876,7 @@ export function drawHowToPlay(ctx, w, h) {
   ctx.beginPath(); ctx.moveTo(w / 2 - 200, 144); ctx.lineTo(w / 2 + 200, 144); ctx.stroke();
 
   // ── Tile Guide ────────────────────────────────────────────────────────
-  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('TILE GUIDE', w / 2, 158);
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('TILE GUIDE', w / 2, 158);
 
   const TILES_HELP = [
     { sym: '◈', name: 'PEACE',      col: '#00ffaa', desc: 'Collect to progress' },
@@ -894,9 +900,9 @@ export function drawHowToPlay(ctx, w, h) {
     const col = i % 2 === 0 ? colL : colR;
     const ty = tStartY + Math.floor(i / 2) * rowH;
     ctx.textAlign = 'left';
-    ctx.fillStyle = t.col; ctx.font = 'bold 10px Courier New';
+    ctx.fillStyle = t.col; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(t.sym + ' ' + t.name, col, ty);
-    ctx.fillStyle = '#445566'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#445566'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText('— ' + t.desc, col + 76, ty);
   });
   ctx.textAlign = 'center';
@@ -908,7 +914,7 @@ export function drawHowToPlay(ctx, w, h) {
 
   // ── Controls ─────────────────────────────────────────────────────────
   const ctrlY = afterTiles + 14;
-  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('CONTROLS', w / 2, ctrlY);
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('CONTROLS', w / 2, ctrlY);
 
   const CONTROLS_HELP = [
     ['WASD / ↑↓←→', 'Move',                 'ESC',   'Pause (always safe)'],
@@ -920,10 +926,10 @@ export function drawHowToPlay(ctx, w, h) {
   CONTROLS_HELP.forEach(([k1, v1, k2, v2], i) => {
     const cy2 = ctrlY + 16 + i * 18;
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#00aa66'; ctx.font = 'bold 10px Courier New'; ctx.fillText(k1, w / 2 - 205, cy2);
-    ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.fillText(v1, w / 2 - 130, cy2);
-    ctx.fillStyle = '#00aa66'; ctx.font = 'bold 10px Courier New'; ctx.fillText(k2, w / 2 + 10, cy2);
-    ctx.fillStyle = '#334455'; ctx.font = '10px Courier New'; ctx.fillText(v2, w / 2 + 46, cy2);
+    ctx.fillStyle = '#00aa66'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(k1, w / 2 - 205, cy2);
+    ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(v1, w / 2 - 130, cy2);
+    ctx.fillStyle = '#00aa66'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(k2, w / 2 + 10, cy2);
+    ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(v2, w / 2 + 46, cy2);
   });
   ctx.textAlign = 'center';
 
@@ -932,12 +938,12 @@ export function drawHowToPlay(ctx, w, h) {
   ctx.strokeStyle = 'rgba(0,255,136,0.12)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(w / 2 - 200, matY - 6); ctx.lineTo(w / 2 + 200, matY - 6); ctx.stroke();
 
-  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('MATRIX SYSTEM  (SHIFT to toggle)', w / 2, matY + 6);
-  ctx.fillStyle = '#ff3366'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('MATRIX SYSTEM  (SHIFT to toggle)', w / 2, matY + 6);
+  ctx.fillStyle = '#ff3366'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('MATRIX A  ⟨ERASURE⟩   — red glow · reveals hidden tiles · more dangerous', w / 2, matY + 22);
   ctx.fillStyle = '#00ff88';
   ctx.fillText('MATRIX B  ⟨COHERENCE⟩ — green glow · restores health · safer recovery', w / 2, matY + 38);
-  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('Holding Matrix B heals slowly. Holding Matrix A drains slowly. Choose wisely.', w / 2, matY + 54);
 
   // ── First Steps ───────────────────────────────────────────────────────
@@ -945,7 +951,7 @@ export function drawHowToPlay(ctx, w, h) {
   ctx.strokeStyle = 'rgba(0,255,136,0.12)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(w / 2 - 200, fsY - 6); ctx.lineTo(w / 2 + 200, fsY - 6); ctx.stroke();
 
-  ctx.fillStyle = '#00cc77'; ctx.font = 'bold 11px Courier New'; ctx.fillText('YOUR FIRST STEPS', w / 2, fsY + 6);
+  ctx.fillStyle = '#00cc77'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('YOUR FIRST STEPS', w / 2, fsY + 6);
   const STEPS = [
     '1.  Choose START JOURNEY from the title — the first dreamscape is VOID STATE.',
     '2.  Move with WASD or Arrow Keys. Collect every ◈ you see.',
@@ -954,7 +960,7 @@ export function drawHowToPlay(ctx, w, h) {
     '5.  Reach the far edge of the grid to enter the next dreamscape.',
   ];
   STEPS.forEach((s, i) => {
-    ctx.fillStyle = '#335544'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#335544'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(s, w / 2, fsY + 22 + i * 16);
   });
 
@@ -963,26 +969,26 @@ export function drawHowToPlay(ctx, w, h) {
   ctx.strokeStyle = 'rgba(255,204,68,0.15)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(w / 2 - 200, coopY - 6); ctx.lineTo(w / 2 + 200, coopY - 6); ctx.stroke();
   ctx.fillStyle = '#ffcc44'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 8;
-  ctx.font = 'bold 11px Courier New'; ctx.fillText('🤝  CO-OP SETUP  (two players on one keyboard)', w / 2, coopY + 6);
+  ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('🤝  CO-OP SETUP  (two players on one keyboard)', w / 2, coopY + 6);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#998844'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#998844'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('From the title, choose SELECT MODE → CO-OP MODE and press ENTER.', w / 2, coopY + 22);
-  ctx.fillStyle = '#00ff88'; ctx.font = 'bold 10px Courier New';
+  ctx.fillStyle = '#00ff88'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('PLAYER 1:', w / 2 - 100, coopY + 38);
   ctx.fillStyle = '#ff8844';
   ctx.fillText('PLAYER 2:', w / 2 + 60, coopY + 38);
-  ctx.fillStyle = '#aaccaa'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#aaccaa'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('Arrow Keys ↑↓←→', w / 2 - 100, coopY + 52);
   ctx.fillStyle = '#cc9977';
   ctx.fillText('W A S D', w / 2 + 60, coopY + 52);
-  ctx.fillStyle = '#445566'; ctx.font = '10px Courier New'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#445566'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'center';
   ctx.fillText('Both share the same dreamscape. Collect ◈ tiles to clear the level together.', w / 2, coopY + 68);
   ctx.fillText('Somatic tiles (◯ ≋ ✦ ⊕) heal both players simultaneously.', w / 2, coopY + 82);
 
   // ── Footer ────────────────────────────────────────────────────────────
-  ctx.fillStyle = '#1a2a1a'; ctx.font = 'italic 10px Courier New';
+  ctx.fillStyle = '#1a2a1a'; ctx.font = 'italic '+ fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('All data stays local · No shame spirals · Pause any time · Your identity is always safe.', w / 2, h - 30);
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('ENTER / ESC  ·  return to title', w / 2, h - 16);
   ctx.textAlign = 'left';
 }
@@ -1010,17 +1016,17 @@ export function drawAchievementPopup(ctx, w, h, popup, ts) {
   ctx.beginPath(); ctx.roundRect(px + 1, py + 1, panelW - 2, 22, [7, 7, 0, 0]); ctx.fill();
 
   // Icon
-  ctx.font = '20px Courier New'; ctx.textAlign = 'left';
+  ctx.font = fs(22, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'left';
   ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 10;
   ctx.fillText(popup.icon || '🏆', px + 10, py + 44);
   ctx.shadowBlur = 0;
 
   // Labels
-  ctx.fillStyle = '#ffdd44'; ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'left';
+  ctx.fillStyle = '#ffdd44'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'left';
   ctx.fillText('✦  ACHIEVEMENT UNLOCKED  ✦', px + 42, py + 15);
-  ctx.fillStyle = '#ffffff'; ctx.font = 'bold 11px Courier New';
+  ctx.fillStyle = '#ffffff'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText(popup.name, px + 42, py + 33);
-  ctx.fillStyle = '#556677'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#556677'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   const descStr = popup.desc || '';
   ctx.fillText(descStr.length > 36 ? descStr.slice(0, 34) + '…' : descStr, px + 42, py + 50);
 
@@ -1033,10 +1039,10 @@ export function drawAchievements(ctx, w, h, achievementSystem, scrollOffset) {
   ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffdd44'; ctx.shadowBlur = 16;
-  ctx.font = 'bold 20px Courier New';
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New';
   ctx.fillText('ACHIEVEMENTS', w / 2, 46);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#445566'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#445566'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText(achievementSystem.unlockedCount + ' / ' + achievementSystem.totalCount + ' unlocked', w / 2, 64);
 
   const all = (window._achieveDefs && window._achieveDefs.ACHIEVEMENT_DEFS) || [];
@@ -1050,21 +1056,21 @@ export function drawAchievements(ctx, w, h, achievementSystem, scrollOffset) {
     ctx.fillRect(w / 2 - 200, y - 12, 400, 42);
     ctx.strokeStyle = unlocked ? 'rgba(0,255,136,0.25)' : 'rgba(255,255,255,0.06)';
     ctx.strokeRect(w / 2 - 200, y - 12, 400, 42);
-    ctx.fillStyle = unlocked ? '#ffdd44' : '#334455'; ctx.font = '16px Courier New'; ctx.textAlign = 'left';
+    ctx.fillStyle = unlocked ? '#ffdd44' : '#334455'; ctx.font = fs(18, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'left';
     ctx.fillText(def.icon || '?', w / 2 - 188, y + 14);
-    ctx.fillStyle = unlocked ? '#00ff88' : '#334455'; ctx.font = 'bold 11px Courier New';
+    ctx.fillStyle = unlocked ? '#00ff88' : '#334455'; ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(unlocked ? def.name : (def.hidden ? '???' : def.name), w / 2 - 162, y + 6);
-    ctx.fillStyle = unlocked ? '#445566' : '#223322'; ctx.font = '10px Courier New';
+    ctx.fillStyle = unlocked ? '#445566' : '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     const rawDesc = unlocked ? def.desc : (def.hidden ? 'Hidden achievement' : def.desc);
     const descText = rawDesc.length > 36 ? rawDesc.slice(0, 34) + '…' : rawDesc;
     ctx.fillText(descText, w / 2 - 162, y + 20);
     if (unlocked) {
-      ctx.fillStyle = '#ffdd44'; ctx.textAlign = 'right'; ctx.font = '10px Courier New';
+      ctx.fillStyle = '#ffdd44'; ctx.textAlign = 'right'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText('✓', w / 2 + 188, y + 14);
     }
   }
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#131328'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('↑↓ scroll  ·  ENTER / ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
@@ -1084,8 +1090,8 @@ export function drawArchetypeSelect(ctx, w, h, selIdx, backgroundStars, ts) {
 
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffdd44'; ctx.shadowBlur = 18;
-  ctx.font = 'bold 18px Courier New'; ctx.fillText('CHOOSE YOUR ARCHETYPE', w / 2, 44); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#334422'; ctx.font = '10px Courier New';
+  ctx.font = 'bold '+ fs(22, ctx.canvas) + 'px Courier New'; ctx.fillText('CHOOSE YOUR ARCHETYPE', w / 2, 44); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334422'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('your power shapes the dreamscape', w / 2, 60);
 
   const archKeys = Object.keys(ARCHETYPES);
@@ -1118,18 +1124,18 @@ export function drawArchetypeSelect(ctx, w, h, selIdx, backgroundStars, ts) {
     // Archetype name
     ctx.fillStyle = sel ? arch.color : '#2a3a2a';
     ctx.shadowColor = sel ? arch.color : 'transparent'; ctx.shadowBlur = sel ? 8 : 0;
-    ctx.font = sel ? 'bold 10px Courier New' : '10px Courier New';
+    ctx.font = sel ? 'bold '+ fs(13, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
     ctx.textAlign = 'left';
     ctx.fillText(arch.name, rx + 8, ry + 18); ctx.shadowBlur = 0;
 
     // Power description (truncated)
-    ctx.fillStyle = sel ? '#88aacc' : '#1a2a1a'; ctx.font = '10px Courier New';
+    ctx.fillStyle = sel ? '#88aacc' : '#1a2a1a'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     const pd = (arch.powerDesc || '').length > 32 ? arch.powerDesc.slice(0,30)+'…' : (arch.powerDesc||'');
     ctx.fillText(pd, rx + 8, ry + 32);
 
     // Activation message preview
     if (sel) {
-      ctx.fillStyle = '#445533'; ctx.font = '10px Courier New';
+      ctx.fillStyle = '#445533'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
       const am = (arch.activationMsg || '').length > 34 ? arch.activationMsg.slice(0,32)+'…' : (arch.activationMsg||'');
       ctx.fillText(am, rx + 8, ry + 46);
     }
@@ -1137,7 +1143,7 @@ export function drawArchetypeSelect(ctx, w, h, selIdx, backgroundStars, ts) {
     // Selection marker
     if (sel) {
       ctx.fillStyle = arch.color; ctx.shadowColor = arch.color; ctx.shadowBlur = 4;
-      ctx.font = 'bold 10px Courier New';
+      ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText('▶', rx + 2, ry + 18); ctx.shadowBlur = 0;
     }
     ctx.textAlign = 'left';
@@ -1153,16 +1159,16 @@ export function drawArchetypeSelect(ctx, w, h, selIdx, backgroundStars, ts) {
     ctx.strokeStyle = selArch.color + '44'; ctx.lineWidth = 1;
     ctx.strokeRect(20, panY, w - 40, 60);
     ctx.textAlign = 'left';
-    ctx.fillStyle = selArch.color; ctx.font = 'bold 12px Courier New';
+    ctx.fillStyle = selArch.color; ctx.font = 'bold '+ fs(16, ctx.canvas) + 'px Courier New';
     ctx.fillText(selArch.name, 32, panY + 18);
-    ctx.fillStyle = '#aabbcc'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#aabbcc'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(selArch.powerDesc || '', 32, panY + 32);
-    ctx.fillStyle = '#334455'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(selArch.completionBonus || '', 32, panY + 44);
   }
 
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#0d1a0d'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#0d1a0d'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('↑↓←→ navigate  ·  ENTER select  ·  ESC skip (no archetype)', w / 2, h - 10);
   ctx.textAlign = 'left';
 }
@@ -1173,10 +1179,10 @@ export function drawPlayModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
   if (backgroundStars) { for (const s of backgroundStars) { ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(ts * 0.0008 + s.phase)); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT PLAY STYLE', w / 2, 52); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('SELECT PLAY STYLE', w / 2, 52); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('how do you want to experience this dreamscape?', w / 2, 70);
-  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('STEP 4 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
   const rowH = 32, startY = 90;
   PLAY_MODE_LIST.forEach((id, i) => {
@@ -1185,10 +1191,10 @@ export function drawPlayModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
     ctx.fillStyle = sel ? 'rgba(0,255,136,0.08)' : 'transparent'; ctx.fillRect(w / 2 - 160, y - 16, 320, 28);
     if (sel) { ctx.strokeStyle = 'rgba(0,255,136,0.4)'; ctx.strokeRect(w / 2 - 160, y - 16, 320, 28); }
     ctx.fillStyle = sel ? meta.color || '#00ff88' : '#2a3a2a';
-    ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New';
+    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(`${meta.emoji || ''}  ${meta.name}`, w / 2, y);
   });
-  ctx.fillStyle = '#0d1a0d'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#0d1a0d'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 15);
   ctx.textAlign = 'left';
 }
@@ -1199,10 +1205,10 @@ export function drawCosmologySelect(ctx, w, h, cosmoIdx, cosmologyList, backgrou
   if (backgroundStars) { for (const s of backgroundStars) { ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(ts * 0.0008 + s.phase)); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
   ctx.textAlign = 'center';
   ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 18;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('SELECT COSMOLOGY', w / 2, 52); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#334455'; ctx.font = '10px Courier New';
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('SELECT COSMOLOGY', w / 2, 52); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('choose a world tradition (optional — affects tile lore)', w / 2, 70);
-  ctx.fillStyle = '#334433'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('STEP 3 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
   const entries = [{ id: null, name: '  NONE  ', emoji: '○', color: '#aaaaaa', subtitle: 'No cosmological overlay' }, ...cosmologyList];
   const rowH = 32, startY = 90;
@@ -1212,10 +1218,10 @@ export function drawCosmologySelect(ctx, w, h, cosmoIdx, cosmologyList, backgrou
     ctx.fillStyle = sel ? 'rgba(170,221,255,0.08)' : 'transparent'; ctx.fillRect(w / 2 - 160, y - 16, 320, 28);
     if (sel) { ctx.strokeStyle = 'rgba(170,221,255,0.4)'; ctx.strokeRect(w / 2 - 160, y - 16, 320, 28); }
     ctx.fillStyle = sel ? (c.color || '#aaddff') : '#334455';
-    ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New';
+    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(`${c.emoji || ''}  ${c.name}`, w / 2, y);
   });
-  ctx.fillStyle = '#0d1a0d'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#0d1a0d'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 15);
   ctx.textAlign = 'left';
 }
@@ -1232,11 +1238,11 @@ export function drawCampaignSelect(ctx, w, h, chapterIdx, chapters, progress, ba
   }
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffcc44'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 18;
-  ctx.font = 'bold 20px Courier New'; ctx.fillText('CAMPAIGN', w / 2, 46); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#554422'; ctx.font = '10px Courier New';
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('CAMPAIGN', w / 2, 46); ctx.shadowBlur = 0;
+  ctx.fillStyle = '#554422'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('10-chapter life progression · mirrors consciousness development', w / 2, 64);
   if (progress) {
-    ctx.fillStyle = '#665533'; ctx.font = '10px Courier New';
+    ctx.fillStyle = '#665533'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(`${progress.completedCount}/${progress.totalChapters} chapters complete  ·  ${progress.percentComplete}%`, w / 2, 80);
   }
   const rowH = 54, startY = 96, visN = Math.min(chapters.length, 8);
@@ -1252,16 +1258,16 @@ export function drawCampaignSelect(ctx, w, h, chapterIdx, chapters, progress, ba
       ctx.strokeStyle = 'rgba(255,204,68,0.35)'; ctx.strokeRect(w / 2 - 195, y - 18, 390, 48);
     }
     ctx.fillStyle = done ? '#446644' : sel ? '#ffcc44' : '#443322';
-    ctx.font = sel ? 'bold 12px Courier New' : '11px Courier New';
+    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText((done ? '✓ ' : `${ch.chapter}. `) + ch.title.toUpperCase(), w / 2, y);
-    ctx.fillStyle = sel ? '#667755' : '#332211'; ctx.font = '10px Courier New';
+    ctx.fillStyle = sel ? '#667755' : '#332211'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
     ctx.fillText(ch.subtitle + '  ·  ' + ch.theme, w / 2, y + 16);
     if (sel) {
-      ctx.fillStyle = '#554433'; ctx.font = '10px Courier New';
+      ctx.fillStyle = '#554433'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
       ctx.fillText(ch.narrative[0], w / 2, y + 30);
     }
   }
-  ctx.fillStyle = '#221100'; ctx.font = '10px Courier New';
+  ctx.fillStyle = '#221100'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('↑↓ navigate  ·  ENTER begin chapter  ·  ESC back', w / 2, h - 18);
   ctx.textAlign = 'left';
 }

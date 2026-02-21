@@ -429,6 +429,38 @@ function triggerEnvironmentEvent(g) {
 }
 
 // ─── Game lifecycle ──────────────────────────────────────────────────────
+
+// ARCH5: Apply research-based modifiers per playstyle (SOVEREIGN_CODEX: opt-in only, never forced)
+// Playstyles come from campaign chapter definitions (lucid/sage/warrior/healer/explorer/balanced).
+function applyPlaystyleModifiers(playstyle) {
+  switch (playstyle) {
+    case 'lucid':
+      // Dream yoga research: lucid dreamers have higher metacognitive awareness
+      dreamYoga.lucidityDecayRate = (dreamYoga.lucidityDecayRate || 1) * 0.5; // slower lucidity loss
+      break;
+    case 'sage':
+      // Implicit learning: slower pace = deeper encoding
+      if (game) { game.enemySpeedMul = (game.enemySpeedMul || 1) * 0.8; }
+      if (game) { game.insightMulMode = (game.insightMulMode || 1) * 1.5; }
+      break;
+    case 'warrior':
+      // Stress inoculation: higher challenge = faster EQ growth
+      if (game) { game.enemySpeedMul = (game.enemySpeedMul || 1) * 1.3; }
+      UPG.emotionGrowthRate = (UPG.emotionGrowthRate || 1) * 1.2;
+      break;
+    case 'healer':
+      // Recovery research: self-compassion practices
+      if (game) { game.autoHealRate = Math.max(game.autoHealRate || 0, 0.05); }
+      break;
+    case 'explorer':
+      // Curiosity research: novelty-seeking enhances dopamine
+      if (game) { game.insightMulMode = (game.insightMulMode || 1) * 1.2; }
+      if (game) { game.hiddenTileMul = (game.hiddenTileMul || 1) * 1.5; }
+      break;
+    // 'balanced' and unknown playstyles: no modification
+  }
+}
+
 function initGame(dreamIdx, prevScore, prevLevel, prevHp) {
   const level = (prevLevel || 0) + 1;
   resizeCanvas();
@@ -500,6 +532,8 @@ function startGame(dreamIdx) {
       game.msgTimer = 80;
     }
   }
+  // ARCH5: Apply research-based playstyle modifiers (only for named campaign playstyles)
+  applyPlaystyleModifiers(CFG.playMode);
   // Reset movement speed tracking + nature facts state
   _recentMoveTimes = [];
   _lastNatureDsId = null;
@@ -806,7 +840,8 @@ function loop(ts) {
   // Apply temporal modifiers to enemy speed
   const tmods = window._tmods || temporalSystem.getModifiers();
   game.temporalEnemyMul = tmods.enemyMul;
-  game.insightMul = tmods.insightMul;
+  // ARCH5: combine temporal insight modifier with play-mode insight multiplier (and playstyle modifier)
+  game.insightMul = tmods.insightMul * (game.insightMulMode || 1.0);
 
   // Propagate dominant emotion and synergy to UPG/window for HUD
   // (emotionalField.decay and biomeSystem already ran in the global consciousness tick above)

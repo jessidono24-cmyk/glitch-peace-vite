@@ -115,11 +115,15 @@ class EmotionalField {
   // decay faster (they burn themselves out). High-coherence positive emotions
   // decay more slowly (they reinforce neural patterns that sustain themselves).
   // Baumeister (1998) ego depletion: shame/anger decay fastest (highest metabolic cost).
+  // ARCH5 EMBODIMENT.md: flow state slows decay 40% — coherence > 0.7 = sustained encoding.
   decay(dt = null) {
     let now = Date.now();
     let elapsed = dt || (now - this.lastUpdate) / 1000;
     this.lastUpdate = now;
-    const baseRate = 0.05 * this.weekdayCoherenceMul; // per second
+    // Detect flow state: high coherence = slower emotional burn-through
+    const inFlow = this.coherence > 0.7;
+    const flowMul = inFlow ? 0.6 : 1.0; // Decay 40% slower in flow
+    const baseRate = 0.05 * this.weekdayCoherenceMul * flowMul; // per second
     // Per-emotion decay rate multipliers (research-tuned):
     // Low coherence + high arousal = fast decay; high coherence = slow decay
     const EMOTION_DECAY_MUL = {

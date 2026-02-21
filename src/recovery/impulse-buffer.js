@@ -16,7 +16,7 @@ export class ImpulseBuffer {
   constructor() {
     this.activeDirection = null;  // [dy, dx] or null
     this.holdStartTime = 0;
-    this.holdDuration = 400;      // 0.4 second in ms — brief pause for awareness without blocking
+    this.holdDuration = 1200;     // 1.2 seconds — ARCH5 EMBODIMENT.md: 1.2s for motor inhibition (was 400ms)
     this.isHazard = false;
     this.cancelled = false;
   }

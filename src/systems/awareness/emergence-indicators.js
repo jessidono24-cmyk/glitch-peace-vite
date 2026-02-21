@@ -6,46 +6,48 @@
 // ═══════════════════════════════════════════════════════════════════════
 
 // ─── Emergence indicators (awakening signs) ───────────────────────────
+// ARCH5 EFFORTLESS_LEARNING.md: thresholds tuned to realistic awakening timescales
+// — indicators should not trigger hair-trigger; require sustained engagement.
 const INDICATOR_DEFS = {
   pause_frequency: {
     label:    'Willful Pause',
     desc:     'You pause during intense moments rather than reacting automatically.',
-    threshold: 3,   // 3+ pauses per session = indicator present
+    threshold: 8,   // 8 intentional pauses — ARCH5: sustained inhibition control
   },
   reflection_depth: {
     label:    'Deepening Inquiry',
     desc:     'You are receiving deeper reflection prompts with each visit.',
-    threshold: 3,   // 3+ dreamscapes at mid/deep depth
+    threshold: 5,   // 5 deep reflections — ARCH5: spaced repetition minimum
   },
   pattern_noticing: {
     label:    'Pattern Awareness',
     desc:     'You are noticing mathematical patterns in the game structures.',
-    threshold: 3,   // 3+ patterns found in session
+    threshold: 15,  // 15 pattern moments — ARCH5: implicit learning requires repetition
   },
   matrix_mastery: {
     label:    'Dual Awareness',
     desc:     'You fluidly switch between matrix states (A/B) with clear intention.',
-    threshold: 5,   // 5+ matrix switches per session
+    threshold: 10,  // 10 matrix switches — ARCH5: habituation threshold
   },
   insight_accumulation: {
     label:    'Insight Magnetism',
     desc:     'Insight tiles appear and you are drawn to them.',
-    threshold: 3,   // 3+ insights collected per session
+    threshold: 20,  // 20 insight tiles — ARCH5: dopaminergic pattern formation
   },
   peace_chain: {
     label:    'Flow State',
     desc:     'You are collecting peace tiles in rapid succession.',
-    threshold: 4,   // combo of 4+ peace tiles
+    threshold: 13,  // Fibonacci 13 — ARCH5: flow state requires extended chain
   },
   dream_completion: {
     label:    'Dreamscape Integration',
     desc:     'You have completed multiple dreamscapes in a single session.',
-    threshold: 3,   // 3+ dreamscapes completed
+    threshold: 3,   // 3 dreamscapes completed — unchanged
   },
   vocabulary_growth: {
     label:    'Word Wisdom',
     desc:     'You are absorbing vocabulary across many contexts.',
-    threshold: 8,   // 8+ words learned in session
+    threshold: 10,  // 10 words — ARCH5: vocabulary consolidation minimum
   },
 };
 

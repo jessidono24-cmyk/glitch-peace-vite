@@ -477,8 +477,15 @@ export class ShooterMode extends GameMode {
   handleInput(key, action, event) {
     if (event && event.type === 'mousemove') {
       const rect = event.target.getBoundingClientRect();
-      this.mouseX = event.clientX - rect.left + this.camera.x;
-      this.mouseY = event.clientY - rect.top  + this.camera.y;
+      // Convert from screen CSS pixels → logical game coordinates,
+      // accounting for the centred fullscreen canvas offset + scale
+      const offsetX   = window._canvasOffsetX   || 0;
+      const offsetY   = window._canvasOffsetY   || 0;
+      const gameScale = window._canvasGameScale || 1;
+      const logX = (event.clientX - rect.left - offsetX) / gameScale;
+      const logY = (event.clientY - rect.top  - offsetY) / gameScale;
+      this.mouseX = logX + this.camera.x;
+      this.mouseY = logY + this.camera.y;
       const dx = this.mouseX - this.player.x, dy = this.mouseY - this.player.y;
       this.player.angle = Math.atan2(dy, dx);
       return true;

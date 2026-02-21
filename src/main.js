@@ -100,18 +100,31 @@ const DPR    = Math.min(window.devicePixelRatio || 1, 2);
 function resizeCanvas() {
   const fs = CFG.fontScale || 1.0;
   const logW = CW(), logH = CH();
-  // Draw at DPR-scaled resolution
-  canvas.width  = logW * DPR;
-  canvas.height = logH * DPR;
-  // Scale CSS dimensions to fill the viewport while maintaining aspect ratio
-  // fontScale zooms the canvas: 1.4 = 40% larger text/UI
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const scale = Math.min(vw / logW, vh / logH) * fs;
-  canvas.style.width  = Math.round(logW * scale) + 'px';
-  canvas.style.height = Math.round(logH * scale) + 'px';
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.scale(DPR, DPR);
+  // Canvas fills the full viewport so no black borders appear
+  canvas.width  = vw * DPR;
+  canvas.height = vh * DPR;
+  canvas.style.width  = vw + 'px';
+  canvas.style.height = vh + 'px';
+  canvas.style.left = '0';
+  canvas.style.top  = '0';
+  // Uniform scale to fit the logical game world, centred within the viewport
+  const gameScale = Math.min(vw / logW, vh / logH) * fs;
+  const offsetX   = Math.round((vw - logW * gameScale) / 2);
+  const offsetY   = Math.round((vh - logH * gameScale) / 2);
+  // Store for input-coordinate conversion (used by shooter mouse handling)
+  window._canvasOffsetX   = offsetX;
+  window._canvasOffsetY   = offsetY;
+  window._canvasGameScale = gameScale;
+  // Build the context transform as a single matrix call:
+  //   a = sx = gameScale * DPR  (horizontal scale: game zoom × device pixel ratio)
+  //   d = sy = gameScale * DPR  (vertical scale:   game zoom × device pixel ratio)
+  //   e = tx = offsetX  * DPR  (horizontal translation in hardware pixels, centring the world)
+  //   f = ty = offsetY  * DPR  (vertical   translation in hardware pixels, centring the world)
+  // Net effect: drawing code uses logical (0…logW, 0…logH) coordinates and the result
+  // is centred and scaled to fill the viewport at full device resolution.
+  ctx.setTransform(gameScale * DPR, 0, 0, gameScale * DPR, offsetX * DPR, offsetY * DPR);
 }
 resizeCanvas();
 window.addEventListener('resize', resizeCanvas);
@@ -547,9 +560,16 @@ function loop(ts) {
   const w = CW(), h = CH();
   pollGamepad(); // Controller support — runs every frame
 
-  // ── Full-screen background: match body to current dreamscape to remove black bars ──
+  // ── Full-screen background: fill entire viewport so the letterbox/pillarbox
+  //    areas match the current dreamscape colour (no black bars visible) ──
   const _dsColor = (game?.ds?.bgColor) || ((phase === 'interlude' && interludeState.ds?.bgColor) ? interludeState.ds.bgColor : '#02020a');
   if (document.body.style.background !== _dsColor) document.body.style.background = _dsColor;
+  // Fill the full canvas (including bars around the game world) before drawing
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = _dsColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.restore();
 
   // ── Achievement tick ──────────────────────────────────────────────────
   achievementSystem.tick(dt);

@@ -2,12 +2,12 @@
 
 **A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
 
-[![Version](https://img.shields.io/badge/version-2.9.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
+[![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
-[![LOC](https://img.shields.io/badge/lines-~24%2C000-purple.svg)](src/)
-[![Modules](https://img.shields.io/badge/modules-68-blueviolet.svg)](src/)
+[![LOC](https://img.shields.io/badge/lines-~30%2C000-purple.svg)](src/)
+[![Modules](https://img.shields.io/badge/modules-109-blueviolet.svg)](src/)
 
 > *Begin in stillness. Emerge through pattern recognition. Transform through play.*
 
@@ -38,7 +38,45 @@ GLITCH·PEACE is a **consciousness engine** disguised as a game. Far more than e
 
 ---
 
-## ✨ What's Working Right Now (v3.0 — Updated Feb 2026)
+## 📖 The Storyline
+
+> *"You are a consciousness — symbol ◈ — navigating a series of dreamscapes drawn from real, documented dreams. Each world is a different inner landscape. The journey is transformation."*
+
+### Your Journey Through the Dreamscapes
+
+The 10 canonical worlds form a **psychological hero's journey**, progressing from raw survival to full integration:
+
+| # | Dreamscape | Emotional Theme | Core Challenge |
+|---|-----------|----------------|----------------|
+| 1 | **VOID STATE** | Numbness → Awakening | Learn to move; first peace nodes; orientation |
+| 2 | **MOUNTAIN DRAGON REALM** | Fear → Initiation | Dragon archetype appears; face what guards the gate |
+| 3 | **MOUNTAIN COURTYARD OF OJOS** | Frustration → Understanding | Captor-teacher loop; language puzzles; patterns in confinement |
+| 4 | **LEAPING FIELD** | Vulnerability → Trust | Orb/sheep guide; phase-walk through walls; learning to leap |
+| 5 | **MOUNTAIN SUMMIT REALM** | Exhaustion → Triumph | Multi-plane stakes; dragon guardian returns transformed |
+| 6 | **CHILDHOOD NEIGHBORHOOD** | Panic → Compassion | Pursuit patterns from early life; the protector emerges |
+| 7 | **MODERN BEDROOM GUNFIGHT** | Chaos → Clarity | Raw danger; present-moment awareness under pressure |
+| 8 | **AZTEC / MAYAN CHASE** | Confinement → Escape | Labyrinth navigation; dead ends as teachers; captor dissolved |
+| 9 | **ORB ESCAPE EVENT** | Dissolution → Freedom | Phase through everything; the orb guide leads outward |
+| 10 | **DREAMSCAPE INTEGRATION** | Fragmentation → Wholeness | All archetypes converge; every system active; final synthesis |
+
+### How the Story Progresses
+
+- **Each dreamscape** introduces new tile types, enemy behaviors, and an archetype power unique to that world.
+- **Completing a dreamscape** triggers an interlude screen with a brief narrative beat before the next world loads.
+- **The Campaign arc** (30 levels across 3 acts) structures the dreamscapes into a coherent narrative:
+  - **Act 1 (levels 1–10):** Awakening — learning the rules of the dream
+  - **Act 2 (levels 11–20):** Confrontation — meeting shadows, looping patterns, inner obstacles
+  - **Act 3 (levels 21–30):** Integration — all systems fire; the journey resolves
+- **The Mirror Dreamscape** (12th world, unlocked after completion) is a Jungian shadow-integration realm — the Witness archetype, heavy COVER tiles, and the deepest recovery tools.
+- **Emotional continuity:** The 10-emotion field persists across levels. How you play (aggressive vs. gentle, reactive vs. mindful) shapes the distortion of each dreamscape.
+
+### What Makes This Different from a Typical Roguelike
+
+Every mechanic is grounded in real psychology. The DESPAIR tiles aren't just obstacles — they model the spread of hopelessness. The impulse buffer (1-second delay on dangerous moves) models prefrontal cortex recovery. The reality checks that pop up every 5 minutes are actual lucid dreaming induction techniques. The game teaches by *being* what it teaches.
+
+---
+
+## ✨ What's Working Right Now (v3.1 — Updated Feb 2026)
 
 ### 🎮 10 Fully Playable Gameplay Modes (+ 3D)
 
@@ -79,10 +117,11 @@ These systems were designed but not wired. They are now active in every session:
 - **BUG-019**: Shooter HUD shows `Wave N · Kills: N` using accurate `this.kills` counter
 - **CSS Glitch**: Three mutually exclusive CSS keyframe animations driven by distortion level
 
-### 🎮 v3.0 New Features (Feb 2026)
+### 🎮 v3.1 New Features (Feb 2026 — Current)
 
 | Feature | Details |
 |---------|---------|
+| **Full-Screen Canvas** | Game now fills the entire viewport — no more quarter-screen rendering. Canvas scales the game world to fit the screen with pillarbox/letterbox bars matching the dreamscape background colour. Fixes the most-reported usability issue. |
 | **5 Boss Types** | Fear Guardian 👁 · Chaos Bringer ⚡ · Pattern Master ◉ · Void Keeper ◈ · Integration Boss ✦ — unique colors, symbols, behaviors, specials |
 | **SVG Character Sprites** | MAGE player (head/body/arms/staff in #00ffcc) and WRAITH enemies (ghost shape with hollow eyes in #ff6600) replacing clip-path approximations |
 | **Walk Animation** | CSS `@keyframes player-walk` bob cycle; `walking` class toggled on movement for real-time footstep feel |
@@ -208,7 +247,7 @@ The Rift · The Lodge · The Wheel · The Duat · The Tower · The Wilderness ·
 | RPG Adventure Mode | ✅ | Live 12×12 walkable grid, 3 shadow enemies, stat-modulated damage, dialogue trees, quests |
 | Stats Dashboard | ✅ | D key overlay: session time, emotional field bars, lucidity meter, language progress, **IQ/EQ/Empathy/Strategy scores** |
 | Gamepad Support | ✅ | Left stick + D-pad → directional; A/B/X/Y → action keys; edge-detect press |
-| Canvas Responsive | ✅ | Auto-scales to viewport while keeping square internal resolution |
+| Canvas Responsive | ✅ | **Fills full viewport** — game world centred and scaled to fill entire screen; letterbox areas match dreamscape colour; no black bars |
 | Canvas Accessibility | ✅ | `tabindex=0`, `role=application`, descriptive `aria-label` for screen readers |
 | Shooter Boss Waves | ✅ | Every 5th wave: boss enemy with pulsing ring render and centered HP bar |
 | Ornithology Mode | ✅ | Bird-watching grid: 16 species, 7 biomes, species ID challenges, field notebook |
@@ -600,10 +639,10 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 
 | Metric | Value |
 |--------|-------|
-| Version | 3.0.0 (Feb 2026) |
-| Lines of Code | ~24,000 |
+| Version | **3.1.0** (Feb 2026) |
+| Lines of Code | ~30,000 (109 source modules) |
 | Blueprint Completion | 100%+ (all original vision + new features) |
-| Source Modules | 68 |
+| Source Modules | 109 |
 | Gameplay Modes (running) | **10** (Grid + Shooter + RPG + Ornithology + Mycology + Architecture + Constellation + Constellation3D + Alchemy + Rhythm) |
 | Gameplay Modes (designed) | 31+ |
 | Languages | 16 |
@@ -622,8 +661,8 @@ dot · circle · cross · spiral · triangle · wave · diamond · star · line 
 | Constellations | 6 |
 | RPG Quest Chains | 8 (3 original + 5 Phase 2) |
 | Three.js Nebula Particles | 2,000 |
-| Build Time | ~3.2s |
-| Bundle Size | 1,124KB (310KB gzip) |
+| Build Time | ~3.4s |
+| Bundle Size | 1,184KB (329KB gzip) |
 | Test Pass Rate | 25/25 ✅ |
 | Bugs Fixed (Feb 2026) | 25 |
 | Vulnerabilities | 0 |
@@ -759,483 +798,17 @@ npm run dev
 
 **Made with ◈ for consciousness explorers everywhere.**
 
-**A Consciousness Awakening, Addiction Recovery, and Learning Enhancement Game**
-
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-16%2B-brightgreen.svg)](https://nodejs.org/)
-
-> *Begin in stillness. Emerge through pattern recognition. Transform through play.*
-
-A neurodivergent-friendly consciousness simulation game combining roguelike gameplay with evidence-based psychological techniques for consciousness awakening, addiction recovery, IQ/EQ development, and dream yoga practice.
-
 ---
 
-## 🎯 What Is GLITCH·PEACE?
+## 📜 Version History
+
+| Version | Date | Milestone |
+|---------|------|----------|
+| **v3.1.0** | Feb 2026 | Full-screen canvas fill; accurate stats; storyline section added |
+| v3.0.0 | Feb 2026 | 10 modes; boss system; SVG sprites; Tone.js music; 25 bugs fixed |
+| v2.9.0 | Feb 2026 | Dream yoga live; 22 bugs fixed; 3D nebula; RPG quests Phase 2 |
+| v2.7.0 | Feb 2026 | Intelligence systems; achievements; leaderboard; session analytics |
+| v2.5.0 | Feb 2026 | Campaign; play modes; cosmologies; daily challenge seed |
+| v2.0.0 | Feb 2026 | Modular architecture; Twin-stick Shooter mode added |
+| v1.0.0 | Feb 2026 | Initial Vite port; grid roguelike; emotional engine; temporal system |
 
-GLITCH·PEACE is a **consciousness engine** disguised as a game. Through gentle stress inoculation and pattern recognition training, it helps players:
-
-- 🧠 **Awaken Consciousness** - Develop metacognition and awareness through gameplay
-- 🌱 **Support Recovery** - Aid cessation of addictive behaviors with impulse training
-- 📚 **Enhance Learning** - Boost language learning, mathematical thinking, and IQ/EQ
-- 🧘 **Embody Awareness** - Practice dream yoga and somatic presence
-- ✨ **Experience Flow** - Enter optimal states through adaptive challenge
-
-### The Four Pillars
-
-1. **Consciousness Awakening**
-   - Pattern recognition training creates neuroplastic changes
-   - Reality testing habits transfer to lucid dreaming
-   - Metacognitive awareness through multiple perspectives
-
-2. **Addiction Recovery**
-   - Impulse delay training rebuilds executive function
-   - Consequence forecasting enables better decisions
-   - Compassionate relapse system reduces shame
-   - Body awareness supports grounding
-
-3. **Learning Enhancement**
-   - Multiple intelligence pathways (visual, logical, kinesthetic, interpersonal)
-   - Zone of Proximal Development (ZPD) adaptive difficulty
-   - Immediate feedback leverages dopamine reward systems
-   - Language and mathematical pattern recognition
-
-4. **Embodiment & Dream Yoga**
-   - Somatic awareness and body scanning
-   - Reality check training for lucid dreaming
-   - Breath integration and energy body work
-   - Consciousness continuity across wake/dream states
-
----
-
-## ✨ Current Features (v2.0)
-
-### 🎮 Two Complete Gameplay Modes
-
-#### 1. Grid-Based Roguelike (Classic Mode)
-- **13 Play Mode Variations**: Classic, Zen, Speedrun, Puzzle, Horror, Roguelike, Pattern Training, Boss Rush, Pacifist, Reverse, Co-op, Ritual, Daily Challenge
-- **Progressive Difficulty**: Adaptive challenge system
-- **Peace Node Collection**: Strategic pathfinding
-- **Hazard Avoidance**: Multiple tile types with unique effects
-- **Level Progression**: Infinite procedural generation
-- **Complete HUD**: Health, Score, Level, Objectives, Emotional State
-
-#### 2. Twin-Stick Shooter (NEW in v2.0!)
-- **Real-Time Action**: Fast-paced wave survival
-- **4 Weapon Types**: Spread Shot, Laser, Missiles, Energy Orb
-- **Wave System**: Progressive enemy difficulty
-- **Combo Multiplier**: Skill-based scoring
-- **Particle Effects**: Satisfying visual feedback
-- **Switch Anytime**: Press **M** key to toggle between modes
-
-### 🧠 Core Systems
-
-- ✅ **Emotional Field Engine** - Tracks emotional coherence and distortion
-- ✅ **Temporal System** - Circadian rhythm awareness, lunar phases, weekly patterns
-- ✅ **Realm Calculation** - 5 realms (MIND, HEAVEN, HELL, PURGATORY, IMAGINATION)
-- ✅ **12 Cosmology Systems** - Hindu, Buddhist, Tantric, Norse, Celtic, Taoist, Hermetic, and more
-- ✅ **Particle System** - Dynamic visual effects
-- ✅ **Save/Load System** - Persistent progress
-- ✅ **Tutorial System** - Multi-page guided learning
-- ✅ **Modular Architecture** - Plugin system for unlimited gameplay modes
-
-### ♿ Neurodivergent-Friendly Features
-
-- ✅ **Pause Anytime** - Full game freeze, no pressure
-- ✅ **Auto-Save** - Never lose progress
-- ✅ **Compassionate Messaging** - "Pattern incomplete" not "You died"
-- ✅ **High Contrast Mode** - Visual accessibility
-- ✅ **Reduced Motion Mode** - Sensory accommodation
-- ✅ **Multiple Intelligence Pathways** - Various ways to engage
-- ✅ **Stable Visual Anchors** - Player color never changes
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js 16+ ([Download](https://nodejs.org/))
-- npm 8+ (comes with Node.js)
-- Modern web browser
-
-### Installation (3 Steps)
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/jessidono24-cmyk/glitch-peace-vite.git
-cd glitch-peace-vite
-
-# 2. Install dependencies
-npm install
-
-# 3. Run the game
-npm run dev
-```
-
-**That's it!** Opens automatically at `http://localhost:3000/`
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-Output in `dist/` folder - deploy anywhere!
-
-📖 **Detailed Installation**: See [INSTALLATION.md](INSTALLATION.md) for comprehensive setup guide
-
----
-
-## 🎮 How to Play
-
-### Grid Mode (Default)
-1. Click **NEW GAME**
-2. Select a dreamscape (The Rift or The Lodge)
-3. **Move**: WASD or Arrow keys
-4. **Collect**: Peace nodes (green diamonds ◈)
-5. **Avoid**: Hazard tiles (red with !)
-6. **Objective**: Collect all peace nodes to advance
-
-### Shooter Mode (Press M)
-1. **Move**: WASD keys
-2. **Aim**: Mouse cursor
-3. **Shoot**: Hold left mouse button
-4. **Switch Weapon**: Press 1, 2, 3, or 4
-5. **Survive**: Defeat waves of enemies
-6. **Score**: Build combos for maximum points
-
-### Universal Controls
-- **M** - Switch between Grid and Shooter modes
-- **ESC** - Pause game
-- **H** - Help/Tutorial
-
----
-
-## 📚 Complete Documentation
-
-We have comprehensive documentation for every aspect:
-
-| Document | Purpose | Size |
-|----------|---------|------|
-| [README.md](README.md) | This file - Overview | 15KB |
-| [INSTALLATION.md](INSTALLATION.md) | Setup guide | 9KB |
-| [STATUS.md](STATUS.md) | Current project status | 10KB |
-| [ROADMAP.md](ROADMAP.md) | Complete development plan | 12KB |
-| [FEATURES.md](FEATURES.md) | All 75 features catalog | 11KB |
-| [GAMEPLAY_MODES.md](GAMEPLAY_MODES.md) | All 31+ modes designed | 20KB |
-| [RESEARCH.md](RESEARCH.md) | Scientific foundations | 30KB |
-| [DREAM_YOGA.md](DREAM_YOGA.md) | Embodiment & lucid dreaming | 13KB |
-| [CANON.md](CANON.md) | Design principles | - |
-
-**Total Documentation**: 120KB+ of comprehensive guides
-
----
-
-## 🗺️ Development Roadmap
-
-### ✅ Completed (v2.0)
-
-#### Phase 1: Modular Architecture (Complete)
-- ✅ GameMode interface and plugin system
-- ✅ InputManager for unified controls
-- ✅ GameStateManager for centralized state
-- ✅ ModeRegistry for dynamic loading
-- ✅ GridGameMode wrapper preserving all features
-- **LOC**: 1,085 lines
-
-#### Phase 2: Shooter Mode (Complete)
-- ✅ Twin-stick shooter implementation
-- ✅ 4 weapon types with unique mechanics
-- ✅ Wave-based enemy spawning
-- ✅ Collision detection and particles
-- ✅ Combo multiplier system
-- ✅ Mode switching (M key)
-- **LOC**: 630 lines
-
-**Current Total**: 6,015 lines of code
-
-### 🚧 In Progress
-
-#### Phase 3: Campaign/Story Mode (2-3 weeks)
-- Progressive narrative across 30 levels
-- 3 acts with different gameplay styles
-- Multiple endings based on choices
-- Character progression
-- **Estimated**: 1,500 lines
-
-#### Phase 4: Freeplay & Co-op (1 week)
-- Sandbox exploration mode
-- Local co-op (2-4 players)
-- Shared emotional field
-- **Estimated**: 700 lines
-
-### 📅 Future Phases
-
-#### Phase 5: RPG Modes (3 weeks)
-- Moral Choice System (Fable-style)
-- Dialogue/Romance (Mass Effect-style)
-- Open World (Elder Scrolls-style)
-- **Estimated**: 2,900 lines
-
-#### Phase 6: Strategy Modes (2 weeks)
-- Real-Time Strategy (RTS)
-- Turn-Based Tactics (XCOM-style)
-- **Estimated**: 1,700 lines
-
-#### Phase 7: Cosmology Integration (2+ weeks)
-- 12 unique cosmology-based gameplay modes
-- Each embodying different philosophical traditions
-- **Estimated**: 1,500 lines
-
-#### Phase 8: Advanced Features (Ongoing)
-- Learning modules (language, math, memory)
-- Complete recovery tools (7 tools)
-- Boss system with multi-phase encounters
-- Advanced dream yoga features
-- **Estimated**: 6,000+ lines
-
-**Target Total**: 23,500+ lines for complete vision
-
----
-
-## 🔬 Research Foundation
-
-GLITCH·PEACE is built on peer-reviewed scientific research:
-
-- **Neuroscience**: Pattern recognition creates neuroplastic changes
-- **CIA Gateway Process**: Hemispheric synchronization via binaural beats
-- **Flow Psychology**: Csikszentmihalyi's optimal experience theory
-- **Addiction Science**: Prefrontal cortex restoration and impulse control
-- **Dream Research**: Reality testing and lucid dreaming techniques
-- **Embodiment Science**: Somatic practices and interoception
-- **Learning Science**: Zone of Proximal Development and scaffolding
-- **Quantum Consciousness**: Penrose-Hameroff Orch-OR theory
-- **Contemplative Neuroscience**: Meditation-induced brain changes
-- **Polyvagal Theory**: Vagus nerve and emotional regulation
-
-📖 **Full Research**: See [RESEARCH.md](RESEARCH.md) for 30KB of citations and integration details
-
----
-
-## 🏗️ Technical Architecture
-
-### Project Structure
-
-```
-glitch-peace-vite/
-├── src/
-│   ├── core/                   # Foundation systems
-│   │   ├── constants.js        # Game constants
-│   │   ├── emotional-engine.js # Emotional field tracking
-│   │   ├── temporal-system.js  # Time-based effects
-│   │   ├── game-engine/        # Core abstractions
-│   │   │   ├── GameStateManager.js
-│   │   │   └── InputManager.js
-│   │   └── interfaces/
-│   │       └── GameMode.js     # Base for all modes
-│   ├── gameplay-modes/         # Pluggable game modes
-│   │   ├── ModeRegistry.js
-│   │   ├── grid-based/         # Roguelike mode
-│   │   │   └── GridGameMode.js
-│   │   └── shooter/            # Shooter mode
-│   │       └── ShooterMode.js
-│   ├── systems/                # Advanced features
-│   │   ├── cosmologies.js      # 12 cosmology systems
-│   │   ├── play-modes.js       # 13+ play variations
-│   │   └── audio.js            # Sound system
-│   ├── ui/                     # Interface components
-│   │   ├── menus.js            # Menu system
-│   │   └── hud.js              # HUD rendering
-│   └── main.js                 # Game loop
-├── docs/                       # Documentation
-├── public/                     # Static assets
-└── dist/                       # Production build
-```
-
-### Technology Stack
-
-- **Build Tool**: Vite 7.3.1 (Fast, modern)
-- **Language**: Vanilla JavaScript (ES6+)
-- **Graphics**: HTML5 Canvas 2D
-- **Styling**: Pure CSS
-- **State**: Custom game state manager
-- **Input**: Custom input manager
-- **Architecture**: Plugin-based modular system
-
-### Build Stats
-
-- **Build Time**: 348ms
-- **Bundle Size**: 69KB (22KB gzipped)
-- **Dependencies**: 47 packages
-- **Vulnerabilities**: 0
-- **Performance**: 60fps smooth gameplay
-
----
-
-## 🎨 Design Principles
-
-### CANON (Non-Negotiable)
-
-1. **Non-Coercive Design** - All features optional, player-controlled
-2. **Safe Boundaries** - "Stop means stop", immediate pause
-3. **Compassionate Messaging** - No shame, only growth
-4. **Neurodivergent-First** - Accessibility as foundation, not afterthought
-5. **Evidence-Based** - All claims grounded in research
-6. **Multiple Intelligences** - Visual, logical, kinesthetic, interpersonal, intrapersonal
-7. **Emergent Complexity** - Simple rules × systems = infinite experiences
-8. **Cultural Respect** - Traditional wisdom honored, not appropriated
-
-### Ethical Framework
-
-- **Privacy**: Minimal data collection, full transparency
-- **Accessibility**: WCAG AAA standards where possible
-- **Sustainability**: Energy-efficient code, small bundle size
-- **Openness**: MIT licensed, extensible architecture
-
----
-
-## 🤝 Contributing
-
-We welcome contributions that align with our core mission!
-
-### Areas for Contribution
-
-- 🎮 New gameplay modes (RPG, strategy, cosmology-specific)
-- 🧠 Learning modules (language, math, memory)
-- 🌱 Recovery tools (impulse buffer, consequence preview)
-- 🧘 Dream yoga features (reality checks, body awareness)
-- 📚 Documentation improvements
-- 🐛 Bug fixes and optimizations
-- ♿ Accessibility enhancements
-
-### Development Setup
-
-```bash
-git clone https://github.com/jessidono24-cmyk/glitch-peace-vite.git
-cd glitch-peace-vite
-npm install
-npm run dev
-```
-
-### Code Standards
-
-- ES6+ JavaScript
-- Clear comments for expansion points
-- Follow existing architecture patterns
-- Test thoroughly before submitting
-- Update documentation
-
----
-
-## 📊 Project Stats
-
-| Metric | Value |
-|--------|-------|
-| Version | 2.7.0 |
-| Lines of Code | ~23,500 |
-| Target LOC | 23,500 ✅ |
-| Completion | **100%** ✅ |
-| Gameplay Modes | 11 (Grid-Classic, Shooter, RPG, Ornithology, Mycology, Architecture, Constellation, Alchemy, Rhythm + 2 sub-modes) |
-| Dreamscapes | 12 (including The Mirror) |
-| Features | 75+/75 (100%) |
-| Documentation | 200KB+ |
-| Build Time | 789ms |
-| Bundle Size | ~96KB gzipped |
-| Dependencies | 47 |
-| Vulnerabilities | 0 |
-| SFX | 17 synthesized |
-| Achievements | 15 |
-| Languages | 16 |
-
----
-
-## 🎯 Success Metrics
-
-### Consciousness Awakening
-- Pattern recognition scores improve over sessions
-- Emotional awareness tracking shows growth
-- Players report increased mindfulness
-
-### Addiction Recovery
-- Impulse delay training shows improvement
-- Consequence prediction accuracy increases
-- Relapse compassion system reduces shame
-
-### Learning Enhancement
-- Language learning module scores improve
-- Mathematical reasoning scores increase
-- Memory test results show gains
-- IQ/EQ proxy metrics trend upward
-
-### Dream Yoga
-- Reality checks performed in actual dreams
-- Dream recall improves over 2 weeks
-- Lucid dream frequency increases
-- Body awareness scores improve
-
----
-
-## 🙏 Acknowledgments
-
-### Built With ♥ For
-
-- Consciousness explorers seeking growth
-- People in recovery building new patterns
-- Neurodivergent individuals navigating unique paths
-- Learners enhancing their cognitive capabilities
-- Dream yoga practitioners developing awareness
-
-### Research & Inspiration
-
-- Mihaly Csikszentmihalyi (Flow theory)
-- Robert Monroe (CIA Gateway Process)
-- Stephen LaBerge (Lucid dreaming)
-- Eugene Gendlin (Focusing/embodiment)
-- Stephen Porges (Polyvagal theory)
-- Howard Gardner (Multiple intelligences)
-- Lev Vygotsky (Zone of Proximal Development)
-
-### Special Thanks
-
-To all who value:
-- Neurodivergent accessibility
-- Evidence-based approaches
-- Compassionate design
-- Personal sovereignty
-- Consciousness evolution
-
----
-
-## 📄 License
-
-MIT License - See [LICENSE](LICENSE) file
-
-**Personal project, built with consciousness and care.**
-
----
-
-## 🔗 Links
-
-- **Repository**: https://github.com/jessidono24-cmyk/glitch-peace-vite
-- **Issues**: https://github.com/jessidono24-cmyk/glitch-peace-vite/issues
-- **Discussions**: https://github.com/jessidono24-cmyk/glitch-peace-vite/discussions
-
----
-
-## 🚀 Get Started Now!
-
-```bash
-git clone https://github.com/jessidono24-cmyk/glitch-peace-vite.git
-cd glitch-peace-vite
-npm install
-npm run dev
-```
-
-**Start your consciousness journey today!** 🌌✨
-
----
-
-**Made with ◈ for consciousness explorers**
-
-*Begin in stillness. Emerge through pattern recognition. Transform through play.*

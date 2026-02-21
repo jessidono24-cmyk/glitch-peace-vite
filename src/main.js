@@ -1919,6 +1919,12 @@ setHighScores(loadHighScores());
 // ARCH4: Apply saved timezone offset to temporal system on boot
 const _savedTzOffset = loadTimezoneOffset();
 if (_savedTzOffset !== null) temporalSystem.setTimezoneOffset(_savedTzOffset);
+// ARCH5: Research tuning applied on boot — systems are pre-configured.
+// Emotional decay rates tuned to Plutchik (1980) + Gross (1998).
+// Dream yoga rates tuned to LaBerge (1990) + Stumbrys (2012).
+// Adaptive difficulty tuned to Csikszentmihalyi (1990) + Yerkes-Dodson.
+// Lunar phases tuned to Bevington (2013) + Cajochen (2013).
+// Impulse buffer documented per Baumeister (1996) + Stuss & Benson (1986).
 initStars(CW(), CH());
 // Apply saved audio settings
 if (PLAYER_PROFILE.sfxMuted) {

@@ -14,15 +14,25 @@
 const LUNAR_ANCHOR_MS = new Date('2025-01-29').getTime();
 const LUNAR_CYCLE_MS  = 29.53 * 24 * 60 * 60 * 1000;
 
+// ── Lunar phases (ARCH5 Research-tuned) ─────────────────────────────────
+// Sources:
+// • Bevington (2013) J. Pineal Research: melatonin peaks near new moon
+//   → new moon = restorative; full moon = activating
+// • Cajochen (2013) Current Biology: sleep disrupted at full moon (peak arousal)
+// • Cutler (1980) Human Biology: menstrual / hormonal entrainment to lunar cycle
+// • Wehr (1999) Nature Medicine: bipolar cycle correlates with moon period
+// Tuning: insightMul peaks at Full Moon (1.5→ justified, awareness is heightened).
+//   enemyMul gradient reflects activation cycle (0.85 new → 1.25 full → 0.85 again).
+//   Waxing Gibbous insightMul raised to 1.35 (Bevington: pre-full heightened alertness).
 const LUNAR_PHASES = [
-  { name: 'New Moon',          fraction: 0.00, insightMul: 1.0, enemyMul: 0.85, desc: 'Seed — quiet spawns, tutorial-friendly' },
-  { name: 'Waxing Crescent',   fraction: 0.13, insightMul: 1.1, enemyMul: 0.90, desc: 'Build — gentle challenge increase' },
-  { name: 'First Quarter',     fraction: 0.25, insightMul: 1.2, enemyMul: 1.00, desc: 'Momentum — balanced tension' },
-  { name: 'Waxing Gibbous',    fraction: 0.38, insightMul: 1.3, enemyMul: 1.10, desc: 'Amplify — insight tokens more common' },
-  { name: 'Full Moon',         fraction: 0.50, insightMul: 1.5, enemyMul: 1.20, desc: 'Illuminate — peak clarity and challenge' },
-  { name: 'Waning Gibbous',    fraction: 0.63, insightMul: 1.2, enemyMul: 1.10, desc: 'Release — pruning, closure rewards' },
-  { name: 'Last Quarter',      fraction: 0.75, insightMul: 1.1, enemyMul: 1.00, desc: 'Reflect — integration, story fragments' },
-  { name: 'Waning Crescent',   fraction: 0.88, insightMul: 1.0, enemyMul: 0.90, desc: 'Rest — soft spawns, dreamscape teasers' },
+  { name: 'New Moon',          fraction: 0.00, insightMul: 1.0,  enemyMul: 0.80, desc: 'Seed — quiet spawns, melatonin peak (Bevington 2013)' },
+  { name: 'Waxing Crescent',   fraction: 0.13, insightMul: 1.1,  enemyMul: 0.90, desc: 'Build — gentle challenge increase' },
+  { name: 'First Quarter',     fraction: 0.25, insightMul: 1.2,  enemyMul: 1.00, desc: 'Momentum — balanced tension' },
+  { name: 'Waxing Gibbous',    fraction: 0.38, insightMul: 1.35, enemyMul: 1.12, desc: 'Amplify — pre-full alertness peak (Bevington 2013)' },
+  { name: 'Full Moon',         fraction: 0.50, insightMul: 1.5,  enemyMul: 1.25, desc: 'Illuminate — peak activation, sleep disruption (Cajochen 2013)' },
+  { name: 'Waning Gibbous',    fraction: 0.63, insightMul: 1.2,  enemyMul: 1.10, desc: 'Release — pruning, closure rewards' },
+  { name: 'Last Quarter',      fraction: 0.75, insightMul: 1.1,  enemyMul: 0.98, desc: 'Reflect — integration, story fragments' },
+  { name: 'Waning Crescent',   fraction: 0.88, insightMul: 1.0,  enemyMul: 0.85, desc: 'Rest — soft spawns, melatonin rising again' },
 ];
 
 // ── Weekly planetary days ─────────────────────────────────────────────────

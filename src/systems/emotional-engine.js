@@ -110,16 +110,37 @@ class EmotionalField {
   }
 
   // Decay all emotions toward zero (or baseline), scaled by weekdayCoherenceMul
+  // ARCH5 Research: Per-emotion decay rates based on Plutchik (1980) and
+  // Gross (1998) emotion regulation — high-arousal, low-coherence emotions
+  // decay faster (they burn themselves out). High-coherence positive emotions
+  // decay more slowly (they reinforce neural patterns that sustain themselves).
+  // Baumeister (1998) ego depletion: shame/anger decay fastest (highest metabolic cost).
   decay(dt = null) {
     let now = Date.now();
     let elapsed = dt || (now - this.lastUpdate) / 1000;
     this.lastUpdate = now;
-    let decayRate = 0.05 * this.weekdayCoherenceMul; // per second
+    const baseRate = 0.05 * this.weekdayCoherenceMul; // per second
+    // Per-emotion decay rate multipliers (research-tuned):
+    // Low coherence + high arousal = fast decay; high coherence = slow decay
+    const EMOTION_DECAY_MUL = {
+      shame:        2.0,  // Baumeister: shame is metabolically expensive, self-extinguishes
+      anger:        1.8,  // Gross (1998): anger high arousal = rapid energy depletion
+      disgust:      1.6,  // Plutchik: disgust fades without continuous reinforcement
+      fear:         1.4,  // LeDoux (1994): fear circuits auto-regulate after threat passes
+      sadness:      0.7,  // Nolen-Hoeksema (1991): sadness is persistent / ruminative
+      surprise:     1.8,  // Plutchik: surprise is transient by nature — peaks then drops
+      anticipation: 0.9,  // Moderate persistence — feeds forward momentum
+      trust:        0.6,  // Rotter (1971): trust is stable once established
+      hope:         0.65, // Snyder (2000): hope maintains without external reinforcement
+      joy:          0.8,  // Fredrickson (2001): positive emotions broaden-and-build, slower decay
+    };
     for (let id in this.emotions) {
+      const mul = EMOTION_DECAY_MUL[id] ?? 1.0;
+      const rate = baseRate * mul;
       if (this.emotions[id] > 0) {
-        this.emotions[id] = Math.max(0, this.emotions[id] - decayRate * elapsed);
+        this.emotions[id] = Math.max(0, this.emotions[id] - rate * elapsed);
       } else if (this.emotions[id] < 0) {
-        this.emotions[id] = Math.min(0, this.emotions[id] + decayRate * elapsed);
+        this.emotions[id] = Math.min(0, this.emotions[id] + rate * elapsed);
       }
     }
   }

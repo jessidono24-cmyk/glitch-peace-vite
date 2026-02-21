@@ -8,9 +8,22 @@ import { getVoidNexus3D } from '../rendering/void-nexus-3d.js';
 // ── Message rendering thresholds ──────────────────────────────────────
 const MSG_LEN_LONG    = 55;  // chars — triggers word-wrap + small font
 const MSG_LEN_MEDIUM  = 35;  // chars — uses medium font
-const MSG_FONT_SMALL  = '9';
-const MSG_FONT_MEDIUM = '12';
-const MSG_FONT_LARGE  = '16';
+const MSG_FONT_SMALL  = '14';
+const MSG_FONT_MEDIUM = '17';
+const MSG_FONT_LARGE  = '23';
+
+// ── Responsive font sizes — scale relative to the medium-grid logical world (644 px wide)
+const _RB = 644; // medium-grid logical baseline width
+const F6  = `${Math.round(_RB * 0.016)}px Courier New`; // ≈10px
+const F7  = `${Math.round(_RB * 0.019)}px Courier New`; // ≈12px
+const F8  = `${Math.round(_RB * 0.020)}px Courier New`; // ≈13px
+const F9  = `${Math.round(_RB * 0.022)}px Courier New`; // ≈14px
+const F10 = `${Math.round(_RB * 0.024)}px Courier New`; // ≈15px
+const F12 = `${Math.round(_RB * 0.027)}px Courier New`; // ≈17px
+const F14 = `${Math.round(_RB * 0.033)}px Courier New`; // ≈21px
+const F16 = `${Math.round(_RB * 0.037)}px Courier New`; // ≈24px
+const F18 = `${Math.round(_RB * 0.042)}px Courier New`; // ≈27px
+const F19 = `${Math.round(_RB * 0.044)}px Courier New`; // ≈28px
 
 export function PAL(matrixActive) {
   if (CFG.highContrast) return PAL_HC;
@@ -90,7 +103,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
     if (v.life <= 0) { v.life = 200 + Math.floor(Math.random() * 400); v.maxLife = 600; }
     ctx.globalAlpha = v.alpha * (matrixActive === 'A' ? 0.7 : 1);
     ctx.fillStyle = matrixActive === 'A' ? '#ff4488' : '#00aa55';
-    ctx.font = '9px Courier New'; ctx.textAlign = 'center'; ctx.fillText(v.text, v.x, v.y);
+    ctx.font = F9; ctx.textAlign = 'center'; ctx.fillText(v.text, v.x, v.y);
   }
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
 
@@ -176,7 +189,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
 
     // Tile symbol (icon) centered on top face
     if (td.sym && val !== T.VOID && val !== T.WALL && val !== T.HIDDEN) {
-      ctx.fillStyle = tp.bd; ctx.font = '9px Courier New'; ctx.textAlign = 'center';
+      ctx.fillStyle = tp.bd; ctx.font = F9; ctx.textAlign = 'center';
       ctx.globalAlpha = 0.7;
       ctx.fillText(td.sym, ipx, ipy + 4);
       ctx.globalAlpha = 1; ctx.textAlign = 'left';
@@ -243,7 +256,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
         const pulse = 0.5 + 0.5 * Math.sin(ts * 0.01 + x + y);
         ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 16 * pulse;
         ctx.fillStyle = `rgba(255,220,0,${0.15 * pulse})`; ctx.fillRect(px, py, CELL, CELL);
-        ctx.font = '18px Courier New'; ctx.textAlign = 'center';
+        ctx.font = F18; ctx.textAlign = 'center';
         ctx.fillStyle = '#ffee44'; ctx.fillText('☆', px + CELL / 2, py + CELL / 2 + 6);
         ctx.shadowBlur = 0; ctx.textAlign = 'left';
       }
@@ -251,7 +264,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
         const pulse = 0.5 + 0.5 * Math.sin(ts * 0.012 + x * 2 + y);
         ctx.shadowColor = '#00aaff'; ctx.shadowBlur = 12 * pulse;
         ctx.fillStyle = `rgba(0,170,255,${0.2 * pulse})`; ctx.fillRect(px, py, CELL, CELL);
-        ctx.font = '14px Courier New'; ctx.textAlign = 'center';
+        ctx.font = F14; ctx.textAlign = 'center';
         ctx.fillStyle = '#00ccff'; ctx.fillText('⇒', px + CELL / 2, py + CELL / 2 + 5);
         ctx.shadowBlur = 0; ctx.textAlign = 'left';
       }
@@ -311,7 +324,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
       if (td.sym && val !== T.VOID && val !== T.WALL && val !== T.PEACE && val !== T.INSIGHT &&
           val !== T.ARCHETYPE && val !== T.TELEPORT && val !== T.HIDDEN && val !== T.MEMORY &&
           val !== T.BODY_SCAN && val !== T.BREATH_SYNC && val !== T.ENERGY_NODE && val !== T.GROUNDING) {
-        ctx.fillStyle = tp.bd; ctx.font = '12px Courier New'; ctx.textAlign = 'center';
+        ctx.fillStyle = tp.bd; ctx.font = F12; ctx.textAlign = 'center';
         ctx.globalAlpha = 0.55; ctx.fillText(td.sym, px + CELL / 2, py + CELL / 2 + 5);
         ctx.globalAlpha = 1; ctx.textAlign = 'left';
       }
@@ -455,7 +468,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
       ctx.strokeStyle = col; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.roundRect(gpx + 2, gpy + 2, CELL - 4, CELL - 4, 3); ctx.stroke();
       if (step.hpDelta !== 0) {
-        ctx.fillStyle = col; ctx.font = '9px Courier New'; ctx.textAlign = 'center'; ctx.globalAlpha = Math.max(0.1, alpha + 0.1);
+        ctx.fillStyle = col; ctx.font = F9; ctx.textAlign = 'center'; ctx.globalAlpha = Math.max(0.1, alpha + 0.1);
         ctx.fillText((step.hpDelta > 0 ? '+' : '') + Math.round(step.hpDelta), gpx + CELL / 2, gpy + CELL / 2 + 4);
         ctx.textAlign = 'left';
       }
@@ -485,7 +498,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
       ctx.fillStyle = `rgba(0,255,200,${czAlpha * 0.07})`; ctx.beginPath(); ctx.arc(czX, czY, czR, 0, Math.PI * 2); ctx.fill();
       ctx.shadowBlur = 0;
       // Label
-      ctx.fillStyle = `rgba(0,200,160,${czAlpha})`; ctx.font = '7px Courier New'; ctx.textAlign = 'center';
+      ctx.fillStyle = `rgba(0,200,160,${czAlpha})`; ctx.font = F7; ctx.textAlign = 'center';
       ctx.fillText('CONTAIN', czX, czY - czR - 4);
       ctx.textAlign = 'left';
     }
@@ -517,7 +530,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
     const fade = 0.3 + 0.25 * Math.sin(Date.now() * 0.006 + h.x);
     ctx.globalAlpha = fade; ctx.fillStyle = '#220044'; ctx.shadowColor = '#8800ff'; ctx.shadowBlur = 10;
     ctx.beginPath(); ctx.roundRect(px + 8, py + 8, CELL - 16, CELL - 16, 4); ctx.fill();
-    ctx.fillStyle = 'rgba(170,0,255,0.6)'; ctx.font = '16px Courier New'; ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(170,0,255,0.6)'; ctx.font = F16; ctx.textAlign = 'center';
     ctx.fillText('?', px + CELL / 2, py + CELL / 2 + 5);
     ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.textAlign = 'left';
   }
@@ -571,7 +584,7 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
     // HP + phase label text
     const hpPct = b.hp / (b.maxHp || b.hp);
     ctx.fillStyle = '#ffccee'; ctx.shadowBlur = 0;
-    ctx.font = 'bold 7px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F7; ctx.textAlign = 'center';
     ctx.fillText((b.phaseLabel || 'BOSS'), bx + CELL / 2, by + CELL / 2 - 3);
     ctx.fillText(Math.round(hpPct * 100) + '%', bx + CELL / 2, by + CELL / 2 + 8);
     ctx.textAlign = 'left'; ctx.shadowBlur = 0;
@@ -667,7 +680,7 @@ function drawTutorialHint(ctx, w) {
   ctx.roundRect ? ctx.roundRect(x, 22, bw, 28, 5) : ctx.rect(x, 22, bw, 28);
   ctx.stroke();
 
-  ctx.font = '8px Courier New'; ctx.fillStyle = '#00cc55';
+  ctx.font = F8; ctx.fillStyle = '#00cc55';
   ctx.textAlign = 'center';
   ctx.fillText(hint.text || hint, w / 2, 40);
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
@@ -683,13 +696,13 @@ function drawEmergenceFlash(ctx, w, h) {
 
   ctx.globalAlpha = alpha * 0.9;
   ctx.textAlign = 'center';
-  ctx.font = '7px Courier New'; ctx.fillStyle = '#ffaa44';
+  ctx.font = F7; ctx.fillStyle = '#ffaa44';
   ctx.fillText('EMERGENCE INDICATOR', w / 2, h / 2 + 80);
-  ctx.font = 'bold 10px Courier New';
+  ctx.font = 'bold '+F10;
   ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffdd88'; ctx.shadowBlur = 8;
   ctx.fillText(flash.label || '', w / 2, h / 2 + 96);
   ctx.shadowBlur = 0;
-  ctx.font = '7px Courier New'; ctx.fillStyle = '#886633';
+  ctx.font = F7; ctx.fillStyle = '#886633';
   ctx.fillText(flash.desc || '', w / 2, h / 2 + 110);
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
@@ -704,7 +717,7 @@ function drawEmpathyFlash(ctx, w, h) {
 
   ctx.globalAlpha = alpha * 0.85;
   ctx.textAlign = 'center';
-  ctx.font = '8px Courier New';
+  ctx.font = F8;
   ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 6;
   ctx.fillText(flash.text || flash.phrase || flash.label || '', w / 2, h - 50);
   ctx.shadowBlur = 0;
@@ -721,13 +734,13 @@ function drawEmotionFlash(ctx, w, h) {
 
   ctx.globalAlpha = alpha;
   ctx.textAlign = 'center';
-  ctx.font = 'bold 18px Courier New';
+  ctx.font = 'bold '+F18;
   ctx.fillStyle = flash.color || '#ffffff';
   ctx.shadowColor = flash.color || '#ffffff'; ctx.shadowBlur = 14;
   ctx.fillText(flash.label || flash.name || '', w / 2, h / 2 - 30);
   ctx.shadowBlur = 0;
   if (flash.tip || flash.desc) {
-    ctx.font = '8px Courier New'; ctx.fillStyle = '#aaaaaa';
+    ctx.font = F8; ctx.fillStyle = '#aaaaaa';
     ctx.fillText(flash.tip || flash.desc, w / 2, h / 2 - 14);
   }
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
@@ -751,13 +764,13 @@ function drawRealityCheck(ctx, w, h) {
   ctx.stroke();
 
   ctx.textAlign = 'center';
-  ctx.font = 'bold 9px Courier New'; ctx.fillStyle = '#cc88ff';
+  ctx.font = 'bold '+F9; ctx.fillStyle = '#cc88ff';
   ctx.fillText('REALITY CHECK', w / 2, y + 14);
-  ctx.font = '8px Courier New'; ctx.fillStyle = '#aaaacc';
+  ctx.font = F8; ctx.fillStyle = '#aaaacc';
   ctx.fillText(dy.rcPrompt.q, w / 2, y + 28);
-  ctx.font = '7px Courier New'; ctx.fillStyle = '#556655';
+  ctx.font = F7; ctx.fillStyle = '#556655';
   ctx.fillText(dy.rcPrompt.hint, w / 2, y + 41);
-  ctx.font = '7px Courier New'; ctx.fillStyle = '#8844ff';
+  ctx.font = F7; ctx.fillStyle = '#8844ff';
   ctx.fillText('[Y] I am aware', w / 2, y + 54);
 
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
@@ -793,10 +806,10 @@ function drawEmotionRow(ctx, w, efData) {
   const barW    = 88;
 
   // Dominant emotion label
-  ctx.font = '8px Courier New'; ctx.textAlign = 'left';
+  ctx.font = F8; ctx.textAlign = 'left';
   ctx.fillStyle = '#223322'; ctx.fillText('EM', 14, rowY + 9);
   ctx.fillStyle = emColor; ctx.shadowColor = emColor; ctx.shadowBlur = 4;
-  ctx.font = 'bold 9px Courier New';
+  ctx.font = 'bold '+F9;
   ctx.fillText(dominant.toUpperCase(), 32, rowY + 9);
   ctx.shadowBlur = 0;
 
@@ -820,14 +833,14 @@ function drawEmotionRow(ctx, w, efData) {
   ctx.strokeStyle = 'rgba(200,80,0,0.18)'; ctx.strokeRect(cohX, distY, barW, 5);
 
   // Bar labels
-  ctx.font = '6px Courier New'; ctx.fillStyle = '#223344';
+  ctx.font = F6; ctx.fillStyle = '#223344';
   ctx.fillText('COH', cohX + barW + 3, cohY + 5);
   ctx.fillStyle = '#332211';
   ctx.fillText('DIS', cohX + barW + 3, distY + 5);
 
   // Synergy label (gold, only when active)
   if (synergy) {
-    ctx.font = 'bold 7px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F7; ctx.textAlign = 'center';
     ctx.fillStyle = '#ffdd00'; ctx.shadowColor = '#ffdd00'; ctx.shadowBlur = 6;
     ctx.fillText(synergy.label ? synergy.label.replace(/_/g, ' ').toUpperCase() : '', w / 2, rowY + 10);
     ctx.shadowBlur = 0;
@@ -867,7 +880,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
   const dominantEmotion = efData ? efData.dominant : '';
   const realmColor = realmName === 'Heaven' ? '#aaffcc' : realmName === 'Hell' ? '#ff5533' :
                      realmName === 'Purgatory' ? '#ff8844' : realmName === 'Imagination' ? '#cc88ff' : '#334455';
-  ctx.fillStyle = realmColor; ctx.font = '8px Courier New'; ctx.textAlign = 'center';
+  ctx.fillStyle = realmColor; ctx.font = F8; ctx.textAlign = 'center';
   const tm = window._tmods;
   const temporalSuffix = tm ? ('  |  ' + tm.lunarName + '  ' + tm.planetName) : '';
   const headerText = realmName ? (g.ds.name + '  ·  ' + (dominantEmotion || g.ds.emotion) + '  ·  ' + realmName + temporalSuffix)
@@ -876,17 +889,17 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
 
   // HP
   const hpBarW = 138;
-  ctx.fillStyle = '#333'; ctx.font = '9px Courier New'; ctx.fillText('HP', 14, 30);
+  ctx.fillStyle = '#333'; ctx.font = F9; ctx.fillText('HP', 14, 30);
   ctx.fillStyle = '#0e0e1e'; ctx.fillRect(32, 20, hpBarW, 13);
   const hpPct = g.hp / UPG_ref.maxHp;
   const hpC = hpPct > 0.6 ? '#00ff88' : hpPct > 0.3 ? '#ffaa00' : '#ff3333';
   ctx.fillStyle = hpC; ctx.shadowColor = hpC; ctx.shadowBlur = 5; ctx.fillRect(32, 20, hpBarW * hpPct, 13);
   ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.strokeRect(32, 20, hpBarW, 13);
-  ctx.fillStyle = '#444'; ctx.font = '8px Courier New'; ctx.fillText(g.hp + '/' + UPG_ref.maxHp, 32 + hpBarW + 4, 30);
+  ctx.fillStyle = '#444'; ctx.font = F8; ctx.fillText(g.hp + '/' + UPG_ref.maxHp, 32 + hpBarW + 4, 30);
 
   // Energy
   const eBarW = 138;
-  ctx.fillStyle = '#222'; ctx.font = '8px Courier New'; ctx.fillText('EN', 14, 50);
+  ctx.fillStyle = '#222'; ctx.font = F8; ctx.fillText('EN', 14, 50);
   ctx.fillStyle = '#0a0a1a'; ctx.fillRect(32, 41, eBarW, 9);
   const eC = matrixActive === 'A' ? '#ff0055' : '#0088ff';
   ctx.fillStyle = eC; ctx.shadowColor = eC; ctx.shadowBlur = 4; ctx.fillRect(32, 41, eBarW * (UPG_ref.energy / UPG_ref.energyMax), 9);
@@ -900,7 +913,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.fillStyle = pdC; ctx.fillRect(32, 52, eBarW * pd, 5);
     ctx.strokeStyle = 'rgba(200,0,0,0.2)'; ctx.strokeRect(32, 52, eBarW, 5);
     if (pd > 0.05) {
-      ctx.fillStyle = pd > 0.7 ? '#ff2222' : '#660000'; ctx.font = '6px Courier New';
+      ctx.fillStyle = pd > 0.7 ? '#ff2222' : '#660000'; ctx.font = F6;
       ctx.fillText('PURG ' + (pd * 100).toFixed(0) + '%', 32 + eBarW + 4, 58);
     }
   }
@@ -910,7 +923,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     const pChr = UPG_ref.glitchPulseCharge / 100;
     ctx.fillStyle = pChr >= 1 ? '#ff00ff' : '#660088'; ctx.fillRect(32, 59, eBarW * pChr, 5);
     ctx.strokeStyle = 'rgba(150,0,200,0.2)'; ctx.strokeRect(32, 59, eBarW, 5);
-    ctx.fillStyle = pChr >= 1 ? '#ff00ff' : '#553355'; ctx.font = '7px Courier New'; ctx.fillText('PULSE' + (pChr >= 1 ? ' READY' : ''), 32 + eBarW + 4, 65);
+    ctx.fillStyle = pChr >= 1 ? '#ff00ff' : '#553355'; ctx.font = F7; ctx.fillText('PULSE' + (pChr >= 1 ? ' READY' : ''), 32 + eBarW + 4, 65);
   }
 
   // Freeze cooldown strip (shows Q-key freeze charge/cooldown)
@@ -921,10 +934,10 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.fillStyle = '#001a22'; ctx.fillRect(32, 59 + (UPG_ref.glitchPulse ? 7 : 0), eBarW, 4);
       ctx.fillStyle = '#0088ff'; ctx.fillRect(32, 59 + (UPG_ref.glitchPulse ? 7 : 0), eBarW * fPct, 4);
       ctx.strokeStyle = 'rgba(0,136,255,0.2)'; ctx.strokeRect(32, 59 + (UPG_ref.glitchPulse ? 7 : 0), eBarW, 4);
-      ctx.fillStyle = '#0088ff'; ctx.font = '6px Courier New';
+      ctx.fillStyle = '#0088ff'; ctx.font = F6;
       ctx.fillText('FREEZE ' + Math.ceil(fTimer / 1000) + 's', 32 + eBarW + 4, 63 + (UPG_ref.glitchPulse ? 7 : 0));
     } else {
-      ctx.fillStyle = '#334455'; ctx.font = '6px Courier New';
+      ctx.fillStyle = '#334455'; ctx.font = F6;
       ctx.fillText('Q=FREEZE', 32 + eBarW + 4, 63 + (UPG_ref.glitchPulse ? 7 : 0));
     }
   }
@@ -938,7 +951,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.fillRect(32, 66, eBarW * prog, 6);
       ctx.shadowBlur = 0;
       ctx.strokeStyle = 'rgba(255,170,0,0.35)'; ctx.strokeRect(32, 66, eBarW, 6);
-      ctx.fillStyle = '#ffaa00'; ctx.font = '7px Courier New';
+      ctx.fillStyle = '#ffaa00'; ctx.font = F7;
       ctx.fillText('HOLD to enter hazard…', 32 + eBarW + 4, 73);
     }
   }
@@ -949,26 +962,26 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
   if (g.archetypeActive && g.archetypeType) {
     const arch = ARCHETYPES[g.archetypeType];
     ctx.fillStyle = arch ? arch.color : '#ffdd00'; ctx.shadowColor = arch ? arch.glow : '#ffdd00'; ctx.shadowBlur = 4;
-    ctx.font = '8px Courier New'; ctx.fillText(arch ? arch.name + ' ACTIVE' : '[ARCH ACTIVE]', 14, 90); ctx.shadowBlur = 0;
+    ctx.font = F8; ctx.fillText(arch ? arch.name + ' ACTIVE' : '[ARCH ACTIVE]', 14, 90); ctx.shadowBlur = 0;
   } else if (UPG_ref.shield && UPG_ref.shieldTimer > 0) {
-    ctx.fillStyle = '#00ffff'; ctx.font = '8px Courier New'; ctx.fillText('SHIELD×' + UPG_ref.shieldTimer, 14, 90);
+    ctx.fillStyle = '#00ffff'; ctx.font = F8; ctx.fillText('SHIELD×' + UPG_ref.shieldTimer, 14, 90);
   } else if (UPG_ref.shieldCount > 0) {
-    ctx.fillStyle = '#334455'; ctx.font = '8px Courier New'; ctx.fillText('streak ' + UPG_ref.shieldCount + '/3', 14, 90);
+    ctx.fillStyle = '#334455'; ctx.font = F8; ctx.fillText('streak ' + UPG_ref.shieldCount + '/3', 14, 90);
   }
 
   if (UPG_ref.comboCount > 1) {
     ctx.fillStyle = '#ffcc00'; ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 6;
-    ctx.font = '8px Courier New'; ctx.fillText('COMBO ×' + UPG_ref.resonanceMultiplier.toFixed(1), 14, 105);
+    ctx.font = F8; ctx.fillText('COMBO ×' + UPG_ref.resonanceMultiplier.toFixed(1), 14, 105);
     ctx.shadowBlur = 0;
   }
 
   ctx.fillStyle = '#00eeff'; ctx.shadowColor = '#00eeff'; ctx.shadowBlur = 5;
-  ctx.font = '9px Courier New'; ctx.fillText('◆×' + (window._insightTokens || 0), 14, 113); ctx.shadowBlur = 0;
+  ctx.font = F9; ctx.fillText('◆×' + (window._insightTokens || 0), 14, 113); ctx.shadowBlur = 0;
 
   // Alchemy seeds
   const seedsDisplay = window._alchemySystem?.seedsDisplay;
   if (seedsDisplay) {
-    ctx.font = '7px Courier New'; ctx.fillStyle = '#cc88ff';
+    ctx.font = F7; ctx.fillStyle = '#cc88ff';
     ctx.fillText(seedsDisplay, 14, 120); // below insight tokens
     ctx.textAlign = 'left';
   }
@@ -979,33 +992,33 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     const lx = 14, ly = 130, lw = 60;
     ctx.fillStyle = '#1a0a2a'; ctx.fillRect(lx, ly, lw, 4);
     ctx.fillStyle = '#8844ff'; ctx.fillRect(lx, ly, lw * luc, 4);
-    ctx.font = '6px Courier New'; ctx.fillStyle = '#8844ff';
+    ctx.font = F6; ctx.fillStyle = '#8844ff';
     ctx.fillText('LUC', lx + lw + 3, ly + 4);
   }
 
   // Score
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 10;
-  ctx.font = 'bold 19px Courier New'; ctx.textAlign = 'center';
+  ctx.font = 'bold '+F19; ctx.textAlign = 'center';
   ctx.fillText(String(g.score).padStart(7, '0'), w / 2, 38); ctx.shadowBlur = 0;
-  ctx.fillStyle = '#222838'; ctx.font = '8px Courier New'; ctx.fillText('SCORE', w / 2, 52);
+  ctx.fillStyle = '#222838'; ctx.font = F8; ctx.fillText('SCORE', w / 2, 52);
 
   const mC = matrixActive === 'A' ? '#ff0055' : '#00aa55';
   ctx.fillStyle = mC; ctx.shadowColor = mC; ctx.shadowBlur = 7;
-  ctx.font = 'bold 10px Courier New'; ctx.fillText('MTX·' + matrixActive, w / 2 - 16, 68); ctx.shadowBlur = 0;
+  ctx.font = 'bold '+F10; ctx.fillText('MTX·' + matrixActive, w / 2 - 16, 68); ctx.shadowBlur = 0;
 
   ctx.textAlign = 'right';
-  ctx.fillStyle = '#445566'; ctx.font = '10px Courier New'; ctx.fillText('LVL ' + g.level, w - 12, 30);
+  ctx.fillStyle = '#445566'; ctx.font = F10; ctx.fillText('LVL ' + g.level, w - 12, 30);
   ctx.fillStyle = '#005533'; ctx.fillText('◈×' + g.peaceLeft, w - 12, 44);
-  ctx.fillStyle = '#223344'; ctx.font = '8px Courier New';
+  ctx.fillStyle = '#223344'; ctx.font = F8;
   ctx.fillText((window._dreamIdx + 1 || 1) + '/18 DREAMS', w - 12, 58);
   // Phase M5: Character level display
   const cs = window._characterStats;
   if (cs) {
-    ctx.fillStyle = '#334455'; ctx.font = '7px Courier New';
+    ctx.fillStyle = '#334455'; ctx.font = F7;
     ctx.fillText('LVL·' + cs.level + '  XP ' + Math.round(cs.xpPercent * 100) + '%', w - 12, 104);
     if (cs.levelUpMsg) {
       ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 4;
-      ctx.font = '7px Courier New'; ctx.fillText(cs.levelUpMsg, w - 12, 114);
+      ctx.font = F7; ctx.fillText(cs.levelUpMsg, w - 12, 114);
       ctx.shadowBlur = 0;
     }
   }
@@ -1061,15 +1074,15 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       // Target language word (primary in immersion, secondary in bilingual)
       const tl = vocabWord.targetLang;
       ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#88bbff'; ctx.shadowBlur = 5;
-      ctx.font = 'bold 12px Courier New'; ctx.textAlign = 'center';
+      ctx.font = 'bold '+F12; ctx.textAlign = 'center';
       ctx.fillText(vocabWord.targetWord + '  [' + vocabWord.targetPos + ']', w/2, sy - 44); ctx.shadowBlur = 0;
       if (tl) {
-        ctx.fillStyle = '#446688'; ctx.font = '8px Courier New';
+        ctx.fillStyle = '#446688'; ctx.font = F8;
         ctx.fillText((tl.emoji || '') + ' ' + tl.name + (tl.nativeName !== tl.name ? ' · ' + tl.nativeName : ''), w/2, sy - 30);
       }
       if (showNative) {
         // Bilingual: also show native definition below
-        ctx.fillStyle = '#ffdd88'; ctx.font = '9px Courier New';
+        ctx.fillStyle = '#ffdd88'; ctx.font = F9;
         ctx.fillText(vocabWord.nativeDef || vocabWord.targetDef, w/2, sy - 14);
       }
     }
@@ -1079,9 +1092,9 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       const pos  = vocabWord.pos  || vocabWord.nativePos  || '';
       const def  = vocabWord.def  || vocabWord.nativeDef  || '';
       ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 5;
-      ctx.font = 'bold 12px Courier New'; ctx.textAlign = 'center';
+      ctx.font = 'bold '+F12; ctx.textAlign = 'center';
       ctx.fillText(word + '  [' + pos + ']', w/2, sy - 44); ctx.shadowBlur = 0;
-      ctx.fillStyle = '#886644'; ctx.font = '9px Courier New';
+      ctx.fillStyle = '#886644'; ctx.font = F9;
       ctx.fillText(def, w/2, sy - 30);
     }
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
@@ -1097,16 +1110,16 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.strokeStyle = 'rgba(255,220,100,0.3)'; ctx.lineWidth = 1;
     ctx.strokeRect(sgX, sgY, 152, 62);
     ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 6;
-    ctx.font = 'bold 18px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F18; ctx.textAlign = 'center';
     ctx.fillText(sigil.symbol, sgX + 20, sgY + 24); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#ffcc66'; ctx.font = 'bold 9px Courier New';
+    ctx.fillStyle = '#ffcc66'; ctx.font = 'bold '+F9;
     ctx.fillText(sigil.tradition.split('(')[0].trim().slice(0, 22), sgX + 80, sgY + 15);
-    ctx.fillStyle = '#aa9966'; ctx.font = '8px Courier New';
+    ctx.fillStyle = '#aa9966'; ctx.font = F8;
     const meanParts = sigil.meaning.split('·');
     ctx.fillText((meanParts[0] || '').trim(), sgX + 80, sgY + 28);
-    ctx.fillStyle = '#664422'; ctx.font = '7px Courier New';
+    ctx.fillStyle = '#664422'; ctx.font = F7;
     ctx.fillText((meanParts[1] || meanParts[0] || '').trim(), sgX + 80, sgY + 40);
-    ctx.fillStyle = '#443322'; ctx.font = '7px Courier New';
+    ctx.fillStyle = '#443322'; ctx.font = F7;
     ctx.fillText('✦ sigil · ' + (sigil.patterns || []).join(' + '), sgX + 76, sgY + 54);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1121,10 +1134,10 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.fillStyle = 'rgba(2,2,12,0.93)'; ctx.fillRect(adX, adY, adW, 68);
     ctx.strokeStyle = adColor + '55'; ctx.lineWidth = 1; ctx.strokeRect(adX, adY, adW, 68);
     ctx.fillStyle = adColor; ctx.shadowColor = adColor; ctx.shadowBlur = 6;
-    ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F8; ctx.textAlign = 'center';
     ctx.fillText('◈ ARCHETYPE SPEAKS', w / 2, adY + 14); ctx.shadowBlur = 0;
     // Word-wrap dialogue text
-    ctx.fillStyle = '#ddeedd'; ctx.font = 'italic 10px Courier New';
+    ctx.fillStyle = '#ddeedd'; ctx.font = 'italic '+F10;
     const words = ad.text.split(' ');
     let line = '', ly = adY + 32;
     for (const word of words) {
@@ -1147,11 +1160,11 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.strokeStyle = banner.color + '66'; ctx.lineWidth = 1;
     ctx.strokeRect(w/2 - 148, h/2 - 38, 296, 72);
     ctx.fillStyle = banner.color; ctx.shadowColor = banner.color; ctx.shadowBlur = 12;
-    ctx.font = 'bold 16px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F16; ctx.textAlign = 'center';
     ctx.fillText(banner.symbol + ' ' + banner.name.toUpperCase() + ' DISCOVERED', w/2, h/2 - 14); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#ccbbaa'; ctx.font = '9px Courier New';
+    ctx.fillStyle = '#ccbbaa'; ctx.font = F9;
     ctx.fillText(banner.description, w/2, h/2 + 4);
-    ctx.fillStyle = '#665544'; ctx.font = '8px Courier New';
+    ctx.fillStyle = '#665544'; ctx.font = F8;
     ctx.fillText(banner.fact, w/2, h/2 + 20);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1164,11 +1177,11 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.strokeStyle = bpb.color + '88'; ctx.lineWidth = 2;
     ctx.strokeRect(w/2 - 170, h * 0.14, 340, 60);
     ctx.fillStyle = bpb.color; ctx.shadowColor = bpb.color; ctx.shadowBlur = 14;
-    ctx.font = 'bold 13px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F12; ctx.textAlign = 'center';
     ctx.fillText(bpb.text, w/2, h * 0.14 + 20); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#aa8888'; ctx.font = 'italic 9px Courier New';
+    ctx.fillStyle = '#aa8888'; ctx.font = 'italic '+F9;
     ctx.fillText('"' + (bpb.quote || '') + '"', w/2, h * 0.14 + 38);
-    ctx.fillStyle = '#553333'; ctx.font = '7px Courier New';
+    ctx.fillStyle = '#553333'; ctx.font = F7;
     ctx.fillText('hold your ground', w/2, h * 0.14 + 52);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1181,11 +1194,11 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.strokeStyle = '#ffdd88aa'; ctx.lineWidth = 1;
     ctx.strokeRect(w/2 - 170, h * 0.82, 340, 54);
     ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 10;
-    ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F10; ctx.textAlign = 'center';
     ctx.fillText(qf.emoji + '  QUEST COMPLETE  ' + qf.emoji, w/2, h * 0.82 + 16); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#ddeedd'; ctx.font = '9px Courier New';
+    ctx.fillStyle = '#ddeedd'; ctx.font = F9;
     ctx.fillText(qf.text, w/2, h * 0.82 + 32);
-    ctx.fillStyle = '#556644'; ctx.font = '7px Courier New';
+    ctx.fillStyle = '#556644'; ctx.font = F7;
     ctx.fillText(qf.name, w/2, h * 0.82 + 46);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1198,9 +1211,9 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.strokeStyle = 'rgba(0,238,255,0.55)'; ctx.lineWidth = 1;
     ctx.strokeRect(w/2 - 190, h * 0.35, 380, 54);
     ctx.fillStyle = '#00eeff'; ctx.shadowColor = '#00ccff'; ctx.shadowBlur = 14;
-    ctx.font = 'bold 14px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F14; ctx.textAlign = 'center';
     ctx.fillText('✦ ' + cfl.name + ' ✦', w/2, h * 0.35 + 22); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#446688'; ctx.font = '8px Courier New';
+    ctx.fillStyle = '#446688'; ctx.font = F8;
     ctx.fillText('CONSTELLATION DISCOVERED  ·  +score', w/2, h * 0.35 + 40);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1214,9 +1227,9 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.strokeStyle = afColor + '88'; ctx.lineWidth = af.stone ? 2 : 1;
     ctx.strokeRect(w/2 - 175, h * 0.55, 350, 52);
     ctx.fillStyle = afColor; ctx.shadowColor = afColor; ctx.shadowBlur = af.stone ? 20 : 10;
-    ctx.font = 'bold ' + (af.stone ? '12' : '10') + 'px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold ' + (af.stone ? F12 : F10); ctx.textAlign = 'center';
     ctx.fillText(af.text, w/2, h * 0.55 + 18); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#998877'; ctx.font = '7px Courier New';
+    ctx.fillStyle = '#998877'; ctx.font = F7;
     ctx.fillText('⚗️  ' + af.name + '  ·  the Great Work continues', w/2, h * 0.55 + 34);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1228,7 +1241,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.fillStyle = '#0a0008'; ctx.fillRect(w/2 - 170, h - 34, 340, 20);
     ctx.strokeStyle = 'rgba(200,100,255,0.2)'; ctx.lineWidth = 1;
     ctx.strokeRect(w/2 - 170, h - 34, 340, 20);
-    ctx.fillStyle = '#cc88ff'; ctx.font = '8px Courier New'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#cc88ff'; ctx.font = F8; ctx.textAlign = 'center';
     const phaseLabel = { nigredo: '🜏 Nigredo', albedo: '🜃 Albedo', rubedo: '🜔 Rubedo', aurora: '✦ Aurora' }[alch.phase] || alch.phase;
     const seedStr = alch.seedsDisplay ? '  ·  ' + alch.seedsDisplay : '';
     ctx.fillText('⚗️  ' + phaseLabel + seedStr + '  ·  X to transmute', w/2, h - 21);
@@ -1242,7 +1255,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.fillStyle = '#001408'; ctx.fillRect(w/2 - 140, sy + gp + 8, 280, 18);
     ctx.strokeStyle = 'rgba(0,255,136,0.15)'; ctx.lineWidth = 1;
     ctx.strokeRect(w/2 - 140, sy + gp + 8, 280, 18);
-    ctx.fillStyle = '#00aa55'; ctx.font = '8px Courier New'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#00aa55'; ctx.font = F8; ctx.textAlign = 'center';
     ctx.fillText(pml, w/2, sy + gp + 21);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1255,11 +1268,11 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.strokeStyle = 'rgba(170,200,255,0.4)'; ctx.lineWidth = 1;
     ctx.strokeRect(w/2 - 150, h*0.72, 300, 56);
     ctx.fillStyle = '#aaccff'; ctx.shadowColor = '#88aaff'; ctx.shadowBlur = 8;
-    ctx.font = 'bold 11px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F10; ctx.textAlign = 'center';
     ctx.fillText('✦ EMERGENCE · ' + em.flash.label.toUpperCase(), w/2, h*0.72 + 18); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#667799'; ctx.font = '8px Courier New';
+    ctx.fillStyle = '#667799'; ctx.font = F8;
     ctx.fillText(em.flash.desc, w/2, h*0.72 + 36);
-    ctx.fillStyle = '#334455'; ctx.font = '7px Courier New';
+    ctx.fillStyle = '#334455'; ctx.font = F7;
     ctx.fillText('AWAKENING LEVEL: ' + em.label, w/2, h*0.72 + 50);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1273,11 +1286,11 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.strokeStyle = fc.color + '88'; ctx.lineWidth = 1;
     ctx.strokeRect(w/2 - 140, h*0.28, 280, 54);
     ctx.fillStyle = fc.glow; ctx.shadowColor = fc.glow; ctx.shadowBlur = 10;
-    ctx.font = 'bold 12px Courier New'; ctx.textAlign = 'center';
+    ctx.font = 'bold '+F12; ctx.textAlign = 'center';
     ctx.fillText('◉ ' + fc.name.toUpperCase() + ' CHAKRA AWAKENED', w/2, h*0.28 + 18); ctx.shadowBlur = 0;
-    ctx.fillStyle = '#aa8866'; ctx.font = '9px Courier New';
+    ctx.fillStyle = '#aa8866'; ctx.font = F9;
     ctx.fillText(fc.sanskrit + '  ·  ' + fc.desc, w/2, h*0.28 + 34);
-    ctx.fillStyle = '#665544'; ctx.font = '8px Courier New';
+    ctx.fillStyle = '#665544'; ctx.font = F8;
     ctx.fillText(fc.powerup, w/2, h*0.28 + 48);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
   }
@@ -1286,11 +1299,11 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
   ctx.strokeStyle = 'rgba(255,255,255,0.03)';
   ctx.beginPath(); ctx.moveTo(0, h - 28); ctx.lineTo(w, h - 28); ctx.stroke();
   const rl = realmLabel(window._purgDepth);
-  ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'left';
+  ctx.font = 'bold '+F8; ctx.textAlign = 'left';
   ctx.fillStyle = rl.color; ctx.shadowColor = rl.color; ctx.shadowBlur = 5;
   ctx.fillText(rl.name, 14, h - 11);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#1a1a2a'; ctx.font = '7px Courier New'; ctx.textAlign = 'right';
+  ctx.fillStyle = '#1a1a2a'; ctx.font = F7; ctx.textAlign = 'right';
   ctx.fillText('WASD SHIFT=MTX J R Q C ESC=pause H=dash', w - 10, h - 11);
   ctx.textAlign = 'left';
 
@@ -1313,9 +1326,9 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.strokeStyle = fe.color + '55'; ctx.lineWidth = 1;
       ctx.strokeRect(sx, sy + gp + 8, gp, 34);
       ctx.fillStyle = fe.color; ctx.shadowColor = fe.color; ctx.shadowBlur = 6;
-      ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center';
+      ctx.font = 'bold '+F10; ctx.textAlign = 'center';
       ctx.fillText(fe.label, sx + gp / 2, sy + gp + 22); ctx.shadowBlur = 0;
-      ctx.fillStyle = '#665544'; ctx.font = '7px Courier New';
+      ctx.fillStyle = '#665544'; ctx.font = F7;
       ctx.fillText(fe.insight, sx + gp / 2, sy + gp + 34);
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
     }
@@ -1327,9 +1340,9 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(eqX, eqY, 136, 28);
       ctx.strokeStyle = eqfl.color + '44'; ctx.lineWidth = 1;
       ctx.strokeRect(eqX, eqY, 136, 28);
-      ctx.fillStyle = eqfl.color; ctx.font = 'bold 9px Courier New';
+      ctx.fillStyle = eqfl.color; ctx.font = 'bold '+F9;
       ctx.fillText('⟦ ' + eqfl.label.toUpperCase() + ' ⟧', eqX + 4, eqY + 12);
-      ctx.fillStyle = '#554433'; ctx.font = '7px Courier New';
+      ctx.fillStyle = '#554433'; ctx.font = F7;
       ctx.fillText(eqfl.tip.slice(0, 22), eqX + 4, eqY + 24);
       ctx.globalAlpha = 1;
     }
@@ -1341,13 +1354,13 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.strokeStyle = 'rgba(136,221,255,0.4)'; ctx.lineWidth = 1;
       ctx.strokeRect(w/2 - 160, h*0.42, 320, 80);
       ctx.fillStyle = '#88ddff'; ctx.shadowColor = '#66aaff'; ctx.shadowBlur = 8;
-      ctx.font = 'bold 11px Courier New'; ctx.textAlign = 'center';
+      ctx.font = 'bold '+F10; ctx.textAlign = 'center';
       ctx.fillText('◆ PATTERN RECOGNITION: ' + challenge.name.toUpperCase(), w/2, h*0.42 + 16); ctx.shadowBlur = 0;
-      ctx.fillStyle = '#aaccee'; ctx.font = '14px Courier New';
+      ctx.fillStyle = '#aaccee'; ctx.font = F14;
       ctx.fillText(challenge.seq.join('  ·  ') + '  ·  ?', w/2, h*0.42 + 38);
-      ctx.fillStyle = '#44aa66'; ctx.font = 'bold 12px Courier New';
+      ctx.fillStyle = '#44aa66'; ctx.font = 'bold '+F12;
       ctx.fillText('next: ' + challenge.next, w/2, h*0.42 + 58);
-      ctx.fillStyle = '#445566'; ctx.font = '7px Courier New';
+      ctx.fillStyle = '#445566'; ctx.font = F7;
       ctx.fillText(challenge.fact, w/2, h*0.42 + 74);
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
     }
@@ -1360,12 +1373,12 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.strokeStyle = 'rgba(0,255,136,0.3)'; ctx.lineWidth = 1;
       ctx.strokeRect(sx, sy - 50, gp, 44);
       ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 4;
-      ctx.font = 'bold 8px Courier New'; ctx.textAlign = 'center';
+      ctx.font = 'bold '+F8; ctx.textAlign = 'center';
       ctx.fillText('✦ HOW TO PLAY  ' + (tut.index + 1) + ' / ' + tut.total, sx + gp / 2, sy - 36);
       ctx.shadowBlur = 0;
-      ctx.fillStyle = '#ccffcc'; ctx.font = '9px Courier New';
+      ctx.fillStyle = '#ccffcc'; ctx.font = F9;
       ctx.fillText(tut.text, sx + gp / 2, sy - 20);
-      ctx.fillStyle = '#334433'; ctx.font = '7px Courier New';
+      ctx.fillStyle = '#334433'; ctx.font = F7;
       ctx.fillText('ESC to open menu · auto-advances…', sx + gp / 2, sy - 8);
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
     }
@@ -1379,7 +1392,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(w - 80, sy - 2, 74, 20);
       ctx.strokeStyle = timerColor + '55'; ctx.lineWidth = 1;
       ctx.strokeRect(w - 80, sy - 2, 74, 20);
-      ctx.fillStyle = timerColor; ctx.font = 'bold 10px Courier New'; ctx.textAlign = 'center';
+      ctx.fillStyle = timerColor; ctx.font = 'bold '+F10; ctx.textAlign = 'center';
       const mm = Math.floor(secLeft / 60), ss = secLeft % 60;
       ctx.fillText('⏱ ' + mm + ':' + String(ss).padStart(2, '0'), w - 43, sy + 12);
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
@@ -1393,7 +1406,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.fillStyle = 'rgba(0,0,0,0.7)'; ctx.fillRect(w - 80, sy + 22, 74, 18);
       ctx.strokeStyle = mrColor + '44'; ctx.lineWidth = 1;
       ctx.strokeRect(w - 80, sy + 22, 74, 18);
-      ctx.fillStyle = mrColor; ctx.font = 'bold 9px Courier New'; ctx.textAlign = 'center';
+      ctx.fillStyle = mrColor; ctx.font = 'bold '+F9; ctx.textAlign = 'center';
       ctx.fillText('MOVES: ' + mr, w - 43, sy + 34);
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
     }
@@ -1415,15 +1428,15 @@ function drawDashboard(ctx, w, h) {
   ctx.strokeRect(12, 12, w - 24, h - 24);
 
   // Title
-  ctx.font = 'bold 13px Courier New'; ctx.fillStyle = '#00ff88';
+  ctx.font = 'bold '+F12; ctx.fillStyle = '#00ff88';
   ctx.textAlign = 'center';
   ctx.fillText('INTEGRATION DASHBOARD', w / 2, 34);
-  ctx.font = '7px Courier New'; ctx.fillStyle = '#336633';
+  ctx.font = F7; ctx.fillStyle = '#336633';
   ctx.fillText('[H] close', w / 2, 46);
 
   // Helper
   const row = (label, value, color, y) => {
-    ctx.font = '8px Courier New'; ctx.textAlign = 'left';
+    ctx.font = F8; ctx.textAlign = 'left';
     ctx.fillStyle = '#446644'; ctx.fillText(label, 24, y);
     ctx.fillStyle = color || '#00ff88'; ctx.textAlign = 'right';
     ctx.fillText(String(value ?? '--'), w - 24, y);
@@ -1434,7 +1447,7 @@ function drawDashboard(ctx, w, h) {
   const gap = 14;
 
   // Intelligence scores
-  ctx.font = '7px Courier New'; ctx.fillStyle = '#225522';
+  ctx.font = F7; ctx.fillStyle = '#225522';
   ctx.fillText('-- INTELLIGENCE --', 24, y); y += gap;
   row('IQ SCORE',       window._logicPuzzles?.iqScore ?? '--',            '#aaddff', y); y += gap;
   row('STRATEGIC',      window._strategicThinking?.strategicScore ?? '--','#ffcc44', y); y += gap;
@@ -1466,7 +1479,7 @@ function drawDashboard(ctx, w, h) {
   row('UNLOCKED',       ach ? (ach.unlockedCount + ' / ' + ach.totalCount) : '--', '#ffdd00', y); y += gap;
 
   // Footer hint
-  ctx.font = '7px Courier New'; ctx.fillStyle = '#1a2a1a'; ctx.textAlign = 'center';
+  ctx.font = F7; ctx.fillStyle = '#1a2a1a'; ctx.textAlign = 'center';
   ctx.fillText('scores update live during play', w / 2, h - 20);
   ctx.textAlign = 'left';
 }

@@ -1,146 +1,193 @@
-# 🌌 GLITCH·PEACE
+# GLITCH·PEACE
 
-**A consciousness simulation / roguelike built with Vite — v4 Vite Edition**
+**A consciousness-awakening game disguised as a puzzle-action experience.**
 
-[![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)](https://github.com/jessidono24-cmyk/glitch-peace-vite)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-18%2B-brightgreen.svg)](https://nodejs.org/)
+Begin in stillness. Emerge through pattern recognition.
 
-> *Begin in stillness. Emerge through pattern recognition. Transform through play.*
+> v2.0-alpha | February 2026 | JavaScript + Vite
 
 ---
 
-## 🚀 Quick Start
+## What This Is
+
+GLITCH·PEACE is a multi-modal browser game built around four interlocking
+purposes:
+
+1. **Consciousness emergence** — meta-awareness through interactive play
+2. **Addiction cessation support** — gentle stress inoculation, no shame spirals
+3. **Learning acceleration** — embodied language and pattern recognition
+4. **Intelligence enhancement** — IQ and EQ development through gameplay
+
+It is not a simple game. It is a consciousness engine that looks like a game.
+
+---
+
+## Quick Start
 
 ```bash
 git clone https://github.com/jessidono24-cmyk/glitch-peace-vite.git
 cd glitch-peace-vite
 npm install
-npm run dev        # opens http://localhost:3000
+npm run dev
 ```
 
----
-
-## 🎮 What Is GLITCH·PEACE?
-
-GLITCH·PEACE is a **consciousness engine** disguised as a game — a Vite + vanilla-JS browser game combining roguelike gameplay with psychological techniques for awareness, recovery, and learning. One persistent consciousness engine drives every mode.
-
-### Architecture (ARCH1-5)
-
-```
-CAMPAIGN (10-chapter life progression)
-  └── GAME MODES  (symbolic universes, each with own rules + aesthetics)
-        ├── Grid Roguelike · Shooter · RPG/Narrative
-        ├── Constellation · Rhythm · Meditation
-        ├── Alchemy · Ornithology · Mycology · Architecture
-              └── DREAMSCAPES (symbolic environments per mode)
-                    └── COSMOLOGIES (Hindu/Norse/Hermetic/Tarot/Buddhist)
-                          └── PLAYSTYLES (Balanced/Lucid/Warrior/Sage/Healer/Explorer)
-                                └── ONE CONSCIOUSNESS ENGINE
-                                      (emotional field + temporal + emergence +
-                                       dream yoga + alchemy — always running,
-                                       never resets on mode switch)
-```
+Opens at `http://localhost:3000`
 
 ---
 
-## 🕹️ Gameplay Modes
-
-| Mode | Description |
-|------|-------------|
-| 🗂️ Grid Classic | Tactical tile navigation — original roguelike |
-| 🔫 Shooter | Fast-paced arena combat, wave survival |
-| ⚔ RPG Adventure | Dialogue trees, character stats, named zones, quest log |
-| 🦅 Ornithology | Observe birds, answer challenges |
-| 🍄 Mycology | Forage mushrooms, identify species |
-| 🏛 Architecture | Place tiles, design structures (SPACE/Q/E) |
-| ✦ Constellation | Connect star nodes, meditative puzzle |
-| ⚗ Alchemy | Collect elements, transmute at Athanor |
-| 🎵 Rhythm | Move to beat tiles, build streak |
-| 🌌 Constellation 3D | Three.js WebGL 3D starfield + nebula |
-
----
-
-## 🧠 Core Systems
-
-| System | What it does |
-|--------|-------------|
-| **Emotional Field** | 10 emotions; distortion, realm tints, synergy multipliers |
-| **Temporal System** | Real-world lunar phase + planetary day → enemy/insight modifiers |
-| **Dream Yoga** | Lucidity meter, body scan tiles, dream sign tracking, reality checks |
-| **Adaptive Difficulty** | SPROUT through NIGHTMARE; auto-adjusts to player performance |
-| **Campaign Manager** | 10-chapter life progression, tutorial hints, dreamscape unlocks |
-| **Cosmologies** | Hindu/Norse/Hermetic/Tarot/Buddhist flavour layers |
-| **Play Modes** | Balanced/Lucid/Warrior/Sage/Healer/Explorer playstyle modifiers |
-| **Achievement System** | Persistent achievements across sessions |
-| **Music Engine** | Tone.js procedural ambient score tied to emotional state |
-| **Language Learning** | 16-language progressive vocabulary on INSIGHT tiles |
-| **RPG Stats** | Strength/Wisdom/Empathy/Resilience/Clarity grow with play |
-
----
-
-## ⌨️ Controls
+## Controls
 
 | Key | Action |
 |-----|--------|
-| WASD / Arrows | Move |
-| J | Activate Archetype Power |
-| R | Fire Glitch Pulse |
-| SHIFT | Toggle Matrix A (erasure) ↔ B (coherence) |
-| U | Upgrade Shop |
-| I | Toggle isometric 3D tilt |
-| M | Switch to Shooter mode |
+| WASD / Arrow Keys | Move |
+| SHIFT | Toggle Matrix A/B |
+| J | Archetype power |
+| X | Alchemy transmutation |
+| Y | Acknowledge reality check |
+| H | Integration dashboard |
 | ESC | Pause |
 
 ---
 
-## 🔧 Development
+## What's Currently Implemented ✅
 
-```bash
-npm run dev          # Vite dev server (localhost:3000)
-npm run build        # Production build → dist/
-npm run preview      # Preview production build
-```
+### Core Gameplay
+- ✅ 17 tile types with full rendering
+- ✅ 10 dreamscapes with unique behaviors and emotional themes
+- ✅ 5 archetypes with power system (Dragon, Child Guide, Orb, Captor-Teacher, Protector)
+- ✅ Matrix A/B toggle (Coherence vs Erasure)
+- ✅ Enemy AI (wander, patrol, orbit, chase, adaptive, predictive, rush, scatter)
+- ✅ Boss system with 3-phase transitions and special attacks
+- ✅ Fibonacci peace scaling
+- ✅ Upgrade shop (insight token economy)
+- ✅ Full HUD (HP, energy, matrix, score, level, combo, emotion, coherence)
+- ✅ Particle system (burst, resonance wave, trail, echo)
+- ✅ Mobile controls (d-pad)
+- ✅ Save/load + high scores
+- ✅ Full-screen responsive canvas
 
-**Stack:** Vite 7, vanilla JS ES modules, Canvas 2D, Three.js (3D mode), Tone.js (music), Matter.js (physics in shooter)
+### Game Modes
+- ✅ Grid Roguelike (consciousness navigation)
+- ✅ Twin-stick Shooter
+- ✅ Constellation (2D + Three.js 3D)
+- ✅ Rhythm mode
+- ✅ Meditation mode
+- ✅ Local Co-op
+- 🔧 RPG Mode (NPC dialogue, 18×18 map) — wiring in progress
+
+### Consciousness Systems (Wired)
+- ✅ Emotional Field (10 emotions, synergies, distortion)
+- ✅ Temporal System (8 lunar phases, 7 planetary days)
+- ✅ Biome System (emotion-driven visual overlays)
+- ✅ Dream Yoga (lucidity tracking, reality checks)
+- ✅ Alchemy System (5 elements, transmutation, Philosopher's Stone)
+- ✅ Achievement System (26 achievements, popup notifications)
+- ✅ Emergence Indicators (8 awakening signs)
+- ✅ Self-Reflection (dreamscape-specific prompts on interlude)
+- ✅ Integration Dashboard (H key — live IQ/EQ/lucidity/emergence view)
+- ✅ Impulse Buffer (hazard prevention)
+- ✅ Consequence Preview (3-move ghost path)
+- ✅ Session Tracker + Urge Management
+- ✅ Chakra System
+- ✅ Tone.js ambient music
+
+### Intelligence Systems (Wired)
+- ✅ Emotion Recognition (EQ tracking, flash labels)
+- ✅ Empathy Training (enemy stun → compassion phrases)
+- ✅ Logic Puzzles (IQ tracking)
+- ✅ Strategic Thinking (decision quality scoring)
+
+### Rendering
+- ✅ Animated SpritePlayer (breathing, directional lean, hit flash)
+- ✅ Campaign Manager (first-visit tutorial hints)
+- ✅ 3D VoidNexus dreamscape (Three.js)
+- ✅ Procedural SFX (Web Audio API, no files needed)
 
 ---
 
-## 📁 Repository Structure
+## In Progress 🔧
+
+- 🔧 RPGMode full wiring (generateGrid export)
+- 🔧 Research integration (psychology/neuroscience applied to systems)
+- 🔧 Leaderboard (Supabase — needs credentials)
+- 🔧 AI procedural content (needs server + API keys)
+
+---
+
+## Planned 📋
+
+- 📋 Ornithology game mode (independent, non-grid)
+- 📋 Mycology game mode (independent, non-grid)
+- 📋 Narrative/RPG standalone mode
+- 📋 First-person shooter mode
+- 📋 Godot rebuild for 3D graphics fidelity
+- 📋 Online co-op
+- 📋 Steam integration
+
+---
+
+## Design Laws (CANON)
+
+1. No shame spirals — relapse ≠ failure
+2. Sterilized wisdom — no dogma, simulation framing only
+3. Player identity is stable — cyan/white never changes
+4. Accessibility first — reduced motion, high contrast always available
+5. Hearth is always reachable — pause anytime, no data loss
+6. Embodiment maximized — learning through body, action, experience
+7. Effortless by design — align with natural cognition
+8. Sovereign codex compliance — individual sovereignty always respected
+
+See `CANON.md`, `SOVEREIGN_CODEX.md`, `EMBODIMENT.md` in docs/ for full principles.
+
+---
+
+## Project Structure
 
 ```
 src/
-├── core/          constants, state, storage, event-bus, utils
-├── game/          grid, player, enemies, particles
-├── ui/            renderer, menus, HUD
-├── rendering/     sprite-player, 3D layers
-├── systems/       temporal, emotional, dream-yoga, cosmologies, difficulty, campaign...
-├── modes/         mode-manager, grid-mode, shooter, constellation, meditation, rhythm
-├── gameplay-modes/ alchemy, architecture, mycology, ornithology, rpg, grid-based
-├── intelligence/  cognitive + emotional training modules
-├── audio/         music-engine, sfx-manager
-└── recovery/      impulse-buffer, consequence-preview
+├── main.js                    # Game loop, state machine
+├── core/                      # Constants, state, utils, storage
+├── game/                      # Grid, player, enemy, particles
+├── modes/                     # ModeManager + all game modes
+├── gameplay-modes/            # Extended mode implementations
+├── systems/                   # Emotional engine, temporal, biome,
+│                              # alchemy, dream-yoga, achievements,
+│                              # boss, emergence, self-reflection
+├── intelligence/              # Emotion recognition, empathy,
+│   ├── cognitive/             # logic puzzles, strategic thinking
+│   └── emotional/
+├── recovery/                  # Impulse buffer, consequence preview,
+│                              # session tracker, urge management
+├── audio/                     # SFX manager (procedural Web Audio)
+└── ui/                        # Renderer, menus
+docs/                          # CANON, ARCHITECTURE, SOVEREIGN_CODEX,
+                               # EMBODIMENT, research foundations
 ```
 
 ---
 
-## 📜 Changelog
+## Changelog
 
 ### 2026-02-20
-- [FIX4] 10px minimum font floor in renderer.js (F constants) and menus.js
-- [FIX5] Export `generateGrid` from grid.js; register RPGMode in ModeManager
-- [FIX6] `_archive/` properly excluded from Vite and added to .gitignore
-- [FIX7] README rewritten to reflect actual v4 Vite Edition state
-- [ARCH1] Navigation hierarchy: Mode → Dreamscape → Cosmology → Playstyle
-- [ARCH2] One consciousness engine persists across all mode switches
-- [ARCH3] Campaign mode: 10-chapter life progression (campaign-story.js)
-- [ARCH4] Local timezone offset setting for temporal systems
-- [ARCH5] Research tuning applied to emotional, temporal, and difficulty systems
+- Full-screen responsive canvas (FIX1)
+- Gameplay-modes directory wired into ModeManager (FIX2)
+- Duplicate src/ui/ tree removed (FIX3)
+- Minimum font size 10px enforced everywhere (FIX4)
+- RPGMode generateGrid export (FIX5)
+- _archive excluded from Vite scan (FIX6)
+
+### Earlier (2026-02-19 to 2026-02-20)
+- All W/S/I/R/D tasks completed (EventBus, all consciousness systems wired,
+  intelligence systems wired, SpritePlayer, CampaignManager, Dashboard)
+- Emotional engine, temporal system, impulse buffer, consequence preview,
+  SFX manager all wired (E1-E4, T1-T2, Phase 4-5)
 
 ---
 
-## 📄 License
+## License
 
-MIT — free forever.
+MIT — Personal project, all rights reserved.
 
-*Made with ◈ for consciousness explorers everywhere.*
+---
+
+**Made with ◈ for consciousness explorers**

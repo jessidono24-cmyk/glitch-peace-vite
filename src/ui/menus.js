@@ -6,6 +6,38 @@ import { DIFFICULTY_TIERS } from '../systems/difficulty/adaptive-difficulty.js';
 import { PLAY_MODES, PLAY_MODE_LIST, getPlayModeMeta } from '../systems/play-modes.js';
 import { getCosmologyForDreamscape } from '../systems/cosmology/cosmologies.js';
 import { isChapterUnlocked } from '../systems/campaign-story.js';
+// ── ARCH4: Timezone options (UTC offset in hours; null = auto-detect) ─────
+export const TZ_OPTIONS = [
+  { label: 'Auto-detect',          value: null },
+  { label: 'UTC-12 (Baker Island)', value: -12  },
+  { label: 'UTC-11 (Samoa)',        value: -11  },
+  { label: 'UTC-10 (Hawaii)',       value: -10  },
+  { label: 'UTC-9 (Alaska)',        value:  -9  },
+  { label: 'UTC-8 (Pacific US)',    value:  -8  },
+  { label: 'UTC-7 (Mountain US)',   value:  -7  },
+  { label: 'UTC-6 (Central US)',    value:  -6  },
+  { label: 'UTC-5 (Eastern US)',    value:  -5  },
+  { label: 'UTC-4 (Atlantic)',      value:  -4  },
+  { label: 'UTC-3 (Brazil)',        value:  -3  },
+  { label: 'UTC-2',                 value:  -2  },
+  { label: 'UTC-1 (Azores)',        value:  -1  },
+  { label: 'UTC+0 (London)',        value:   0  },
+  { label: 'UTC+1 (Paris)',         value:   1  },
+  { label: 'UTC+2 (Cairo)',         value:   2  },
+  { label: 'UTC+3 (Moscow)',        value:   3  },
+  { label: 'UTC+4 (Dubai)',         value:   4  },
+  { label: 'UTC+5 (Karachi)',       value:   5  },
+  { label: 'UTC+5:30 (India)',      value: 5.5  },
+  { label: 'UTC+6 (Dhaka)',         value:   6  },
+  { label: 'UTC+7 (Bangkok)',       value:   7  },
+  { label: 'UTC+8 (Beijing)',       value:   8  },
+  { label: 'UTC+9 (Tokyo)',         value:   9  },
+  { label: 'UTC+10 (Sydney)',       value:  10  },
+  { label: 'UTC+11 (Vladivostok)',  value:  11  },
+  { label: 'UTC+12 (Auckland)',     value:  12  },
+  { label: 'UTC+13 (Tonga)',        value:  13  },
+  { label: 'UTC+14 (Kiribati)',     value:  14  },
+];
 // ── Canvas-responsive font size helper ───────────────────────────────
 // base = ideal px at 1280×720; scales with canvas, never below base*0.75 or 10px
 function fs(base, canvas) {
@@ -263,7 +295,8 @@ export function drawOptions(ctx, w, h, optIdx) {
   const FONT_SCALE_LABELS = { 0.8: 'S', 1.0: 'M', 1.2: 'L', 1.4: 'XL' };
   const fontScaleLabel = FONT_SCALE_LABELS[CFG.fontScale] || 'M';
   const tzOffset = PLAYER_PROFILE.utcOffsetHours;
-  const tzLabel = tzOffset === null || tzOffset === undefined ? 'AUTO' : (tzOffset >= 0 ? '+' : '') + tzOffset;
+  const curTzOpt = TZ_OPTIONS.find(o => o.value === tzOffset) || TZ_OPTIONS[0];
+  const tzCycleLabel = '‹ ' + curTzOpt.label + ' ›';
   const rows = [
     { label:'GRID SIZE',      opts:OPT_GRID, cur:CFG.gridSize },
     { label:'DIFFICULTY',     opts:OPT_DIFF, cur:CFG.difficulty },
@@ -275,7 +308,7 @@ export function drawOptions(ctx, w, h, optIdx) {
     { label:'HIGH CONTRAST',  opts:['off','on'], cur: CFG.highContrast ? 'on' : 'off', hint: 'colorblind-friendly palette' },
     { label:'REDUCED MOTION', opts:['off','on'], cur: CFG.reducedMotion ? 'on' : 'off', hint: 'no screen shake or flash' },
     { label:'FONT SCALE',     opts:['S','M','L','XL'], cur: fontScaleLabel, hint: 'text size: S=80%  M=100%  L=120%  XL=140%' },
-    { label:'TIMEZONE (UTC)', opts:['AUTO','-12','-6','-5','-4','+0','+1','+2','+5.5','+8','+9','+12'], cur: tzLabel, hint: 'ARCH4: sets planetary day for temporal engine' },
+    { label:'LOCAL TIME ZONE', opts:[tzCycleLabel], cur:tzCycleLabel, hint: '←→ cycle offset · sets planetary day for local time' },
     { label:'LANGUAGES',      opts:['OPEN →'], cur:'OPEN →', hint: (langMeta.emoji||'') + ' → ' + (tgtMeta.emoji||'') + ' ' + (tgtMeta.name||'') },
     { label:'',               opts:['← BACK'], cur:'← BACK' },
   ];

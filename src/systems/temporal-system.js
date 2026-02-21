@@ -48,15 +48,26 @@ const PLANETARY_DAYS = [
 ];
 
 // ── Core calculations ─────────────────────────────────────────────────────
-function getLunarFraction() {
-  const elapsed = Date.now() - LUNAR_ANCHOR_MS;
+// ARCH4: Returns a Date whose UTC timestamp corresponds to "now" shifted by
+// utcOffsetHours.  Callers must use UTC accessors (getUTCDay, getUTCDate …)
+// on the returned object — local accessors will reflect the browser timezone.
+// utcOffsetHours=0 → UTC time.
+function getLocalDate(utcOffsetHours = 0) {
+  const now = new Date();
+  const localMs = now.getTime() + (utcOffsetHours * 60 * 60 * 1000);
+  return new Date(localMs);
+}
+
+function getLunarFraction(utcOffsetHours = 0) {
+  const localNowMs = getLocalDate(utcOffsetHours).getTime();
+  const elapsed = localNowMs - LUNAR_ANCHOR_MS;
   // Handle dates before the anchor
   const cycleMs = ((elapsed % LUNAR_CYCLE_MS) + LUNAR_CYCLE_MS) % LUNAR_CYCLE_MS;
   return cycleMs / LUNAR_CYCLE_MS; // 0.0 – 1.0
 }
 
-function getLunarPhase() {
-  const fraction = getLunarFraction();
+function getLunarPhase(utcOffsetHours = 0) {
+  const fraction = getLunarFraction(utcOffsetHours);
   // Find the phase whose fraction is closest without exceeding
   let phase = LUNAR_PHASES[0];
   for (const p of LUNAR_PHASES) {
@@ -81,9 +92,8 @@ function getPlanetaryDay(utcOffsetHours) {
 export class TemporalSystem {
   constructor() {
     this._utcOffsetHours = null; // ARCH4: null = use browser local time
-    this._lunar  = getLunarPhase();
-    this._planet = getPlanetaryDay(this._utcOffsetHours);
     this._lastRefresh = 0;
+    this.refresh(); // initialises _lunar and _planet
   }
 
   // ARCH4: Set UTC offset (hours from UTC, e.g. -5 for EST, +9 for JST).
@@ -99,9 +109,22 @@ export class TemporalSystem {
     return this._utcOffsetHours;
   }
 
+  // ARCH4: Returns a Date adjusted by the given (or instance's) UTC offset.
+  // Use getUTCDay/getUTCDate on the result for correct timezone-aware values.
+  getLocalDate(utcOffsetHours) {
+    const offset = utcOffsetHours !== undefined
+      ? utcOffsetHours
+      : (this._utcOffsetHours !== null ? this._utcOffsetHours : -(new Date().getTimezoneOffset() / 60));
+    return getLocalDate(offset);
+  }
+
   // Call once per game-start (or once per real minute is fine)
   refresh() {
-    this._lunar  = getLunarPhase();
+    // When null (auto), use browser's local timezone offset for lunar phase too
+    const offset = this._utcOffsetHours !== null
+      ? this._utcOffsetHours
+      : -(new Date().getTimezoneOffset() / 60);
+    this._lunar  = getLunarPhase(offset);
     this._planet = getPlanetaryDay(this._utcOffsetHours);
     this._lastRefresh = Date.now();
   }

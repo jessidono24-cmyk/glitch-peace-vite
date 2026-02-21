@@ -33,6 +33,32 @@ export const GAME_MODES = [
   { id: 'constellation-3d',label: '🌌  CONSTELLATION 3D',    sub: 'Three.js WebGL 3D starfield · nebula',        color: '#ccaaff' },
 ];
 
+// ─── ARCH1: Dreamscapes available per game mode ───────────────────────
+export const MODE_DREAMSCAPES = {
+  'grid-classic':    ['void', 'mountain_dragon', 'courtyard', 'leaping_field', 'summit', 'neighborhood', 'bedroom', 'aztec', 'orb_escape', 'integration'],
+  'shooter':         ['void', 'aztec', 'orb_escape', 'bedroom', 'summit', 'void_nexus'],
+  'rpg':             ['neighborhood', 'courtyard', 'summit', 'integration', 'crystal_cave', 'cloud_city'],
+  'constellation':   ['void', 'orb_escape', 'integration', 'void_nexus', 'cloud_city'],
+  'meditation':      ['leaping_field', 'neighborhood', 'integration', 'deep_ocean', 'forest_sanctuary'],
+  'rhythm':          ['leaping_field', 'mountain_dragon', 'orb_escape', 'solar_temple', 'cloud_city'],
+  'alchemy':         ['courtyard', 'summit', 'integration', 'solar_temple', 'ancient_structure'],
+  'ornithology':     ['leaping_field', 'mountain_dragon', 'summit', 'forest_sanctuary'],
+  'mycology':        ['void', 'neighborhood', 'leaping_field', 'mycelium_depths', 'forest_sanctuary'],
+  'architecture':    ['courtyard', 'summit', 'integration', 'ancient_structure', 'crystal_cave'],
+  'constellation-3d':['void', 'orb_escape', 'integration', 'void_nexus', 'cloud_city'],
+};
+
+// ─── ARCH1: Title screen menu (FREEPLAY and CAMPAIGN as primary entry points) ─
+const TITLE_MENU = [
+  '▶  FREEPLAY',
+  '📖 CAMPAIGN',
+  'HOW TO PLAY',
+  'OPTIONS',
+  'HIGH SCORES',
+  'UPGRADES',
+  'ACHIEVEMENTS',
+];
+
 export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
   // Deep dark background
   ctx.fillStyle = '#01010a'; ctx.fillRect(0, 0, w, h);
@@ -148,20 +174,25 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
   ctx.fillStyle = modeColor; ctx.shadowColor = modeColor; ctx.shadowBlur = 8;
   ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(modeLabel, w / 2, h / 2 - 79); ctx.shadowBlur = 0;
 
-  // Menu items
+  // Menu items — FREEPLAY (0) and CAMPAIGN (1) are primary entry points
   const menuTop = h / 2 - 58;
-  MAIN_MENU.forEach((opt, i) => {
+  TITLE_MENU.forEach((opt, i) => {
     const sel = i === menuIdx, y = menuTop + i * 32;
+    // Primary entry points (FREEPLAY=0, CAMPAIGN=1) get accent color treatment
+    const isPrimary = i < 2;
+    const itemColor = isPrimary ? (i === 0 ? '#00ff88' : '#ffcc44') : '#00ff88';
     if (sel) {
       const selGrd = ctx.createLinearGradient(w / 2 - 130, y - 18, w / 2 + 130, y - 18);
       selGrd.addColorStop(0, 'rgba(0,255,136,0.01)');
-      selGrd.addColorStop(0.5, 'rgba(0,255,136,0.09)');
+      selGrd.addColorStop(0.5, isPrimary ? 'rgba(0,255,136,0.14)' : 'rgba(0,255,136,0.09)');
       selGrd.addColorStop(1, 'rgba(0,255,136,0.01)');
       ctx.fillStyle = selGrd; ctx.fillRect(w / 2 - 130, y - 18, 260, 26);
-      ctx.strokeStyle = 'rgba(0,255,136,0.35)'; ctx.strokeRect(w / 2 - 130, y - 18, 260, 26);
+      ctx.strokeStyle = isPrimary ? 'rgba(0,255,136,0.55)' : 'rgba(0,255,136,0.35)'; ctx.strokeRect(w / 2 - 130, y - 18, 260, 26);
     }
-    ctx.fillStyle = sel ? '#00ff88' : '#2a3a2a'; ctx.shadowColor = sel ? '#00ff88' : 'transparent'; ctx.shadowBlur = sel ? 10 : 0;
-    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText(opt, w / 2, y); ctx.shadowBlur = 0;
+    const baseColor = sel ? itemColor : (isPrimary ? '#1e3a1e' : '#2a3a2a');
+    ctx.fillStyle = baseColor; ctx.shadowColor = sel ? itemColor : 'transparent'; ctx.shadowBlur = sel ? 10 : 0;
+    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : (isPrimary ? 'bold '+ fs(14, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New');
+    ctx.fillText(opt, w / 2, y); ctx.shadowBlur = 0;
   });
 
   // Footer
@@ -170,7 +201,10 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
   ctx.textAlign = 'left';
 }
 
-export function drawDreamSelect(ctx, w, h, dreamIdx) {
+export function drawDreamSelect(ctx, w, h, dreamscapes, dreamIdx) {
+  // dreamscapes: filtered array of dreamscape objects for the chosen mode
+  // dreamIdx: index into the dreamscapes array (not global DREAMSCAPES)
+  const dsList = (dreamscapes && dreamscapes.length > 0) ? dreamscapes : DREAMSCAPES;
   ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
@@ -178,10 +212,11 @@ export function drawDreamSelect(ctx, w, h, dreamIdx) {
   ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.fillText('choose your symbolic environment', w / 2, 68);
   ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('STEP 2 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
-  const visible = Math.min(DREAMSCAPES.length, 6);
-  const startI = Math.max(0, Math.min(dreamIdx - Math.floor(visible / 2), DREAMSCAPES.length - visible));
+  const visible = Math.min(dsList.length, 6);
+  const startI = Math.max(0, Math.min(dreamIdx - Math.floor(visible / 2), dsList.length - visible));
   for (let i = 0; i < visible; i++) {
-    const di = startI + i, ds = DREAMSCAPES[di], sel = di === dreamIdx, y = 95 + i * 55;
+    const di = startI + i, ds = dsList[di], sel = di === dreamIdx, y = 95 + i * 55;
+    if (!ds) continue;
     if (sel) {
       ctx.fillStyle = 'rgba(0,255,136,0.06)'; ctx.fillRect(w / 2 - 160, y - 18, 320, 46);
       ctx.strokeStyle = 'rgba(0,255,136,0.25)'; ctx.strokeRect(w / 2 - 160, y - 18, 320, 46);

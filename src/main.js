@@ -27,7 +27,7 @@ import { drawTitle, drawDreamSelect, drawOptions, drawHighScores,
          drawModeSelect, drawPlayModeSelect, drawCosmologySelect,
          drawAchievementPopup, drawAchievements,
          drawCampaignSelect,
-         GAME_MODES } from './ui/menus.js';
+         GAME_MODES, MODE_DREAMSCAPES } from './ui/menus.js';
 // ─── Phase 2-5 systems ───────────────────────────────────────────────────
 import { sfxManager } from './audio/sfx-manager.js';
 import { temporalSystem } from './systems/temporal-system.js';
@@ -196,6 +196,8 @@ let gameMode   = 'grid'; // 'grid' | 'shooter' | 'constellation' | 'meditation' 
 let CURSOR_playmode   = 0;  // index into PLAY_MODE_LIST for playmodesel screen
 let CURSOR_cosmology  = 0;  // index into cosmologyList for cosmologysel screen (0 = no cosmology)
 let CURSOR_campaign   = 0;  // index into CAMPAIGN_CHAPTERS for campaign select screen
+let CURSOR_dream      = 0;  // index into dreamselFiltered for dreamselect screen
+let dreamselFiltered  = []; // filtered dreamscape objects for chosen game mode
 const EMOTION_THRESHOLD      = 0.15;   // emotion must exceed this to affect gameplay
 const ARCHETYPE_PERM_DURATION = 999999; // arbitrarily large — effectively permanent for a run
 const INTERLUDE_DURATION_MS  = 10000;  // auto-advance after 10 s
@@ -619,7 +621,7 @@ function loop(ts) {
   if (phase === 'howtoplay')   { drawHowToPlay(ctx, w, h); animId=requestAnimationFrame(loop); return; }
   if (phase === 'title')       { drawTitle(ctx, w, h, backgroundStars, ts, CURSOR.menu, gameMode); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'modeselect')  { drawModeSelect(ctx, w, h, CURSOR.modesel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, CFG.dreamIdx); animId=requestAnimationFrame(loop); return; }
+  if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, dreamselFiltered, CURSOR_dream); animId=requestAnimationFrame(loop); return; }
   if (phase === 'playmodesel') { drawPlayModeSelect(ctx, w, h, CURSOR_playmode, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'cosmologysel'){ drawCosmologySelect(ctx, w, h, CURSOR_cosmology, cosmologyList, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'campaignsel') { drawCampaignSelect(ctx, w, h, CURSOR_campaign, CAMPAIGN_CHAPTERS, campaignStory.getProgress(), backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
@@ -1435,7 +1437,7 @@ window.addEventListener('keydown', e => {
     if (e.key === 'Enter' || e.key === 'Escape') {
       sfxManager.resume();
       setPhase('title');
-      CURSOR.menu = 3;
+      CURSOR.menu = 2; // ARCH1: HOW TO PLAY is now index 2
     }
     e.preventDefault(); return;
   }
@@ -1453,18 +1455,18 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowDown') { CURSOR.menu=(CURSOR.menu+1)%7; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
+      // ARCH1: 0=FREEPLAY→modeselect, 1=CAMPAIGN→campaignsel, 2=HOW TO PLAY, 3=OPTIONS, 4=HIGH SCORES, 5=UPGRADES, 6=ACHIEVEMENTS
       if (CURSOR.menu===0)      { CURSOR.modesel=0; CURSOR_cosmology=0; CURSOR_playmode=0; setPhase('modeselect'); }
       else if (CURSOR.menu===1) { CURSOR_campaign = campaignStory.getCurrentChapter().chapter - 1; setPhase('campaignsel'); }
-      else if (CURSOR.menu===2) { CURSOR.modesel=0; setPhase('modeselect'); }
-      else if (CURSOR.menu===3) setPhase('howtoplay');
-      else if (CURSOR.menu===4) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
-      else if (CURSOR.menu===5) setPhase('highscores');
-      else if (CURSOR.menu===6) { CURSOR.shop=0; CURSOR.upgradeFrom='title'; setPhase('upgrade'); }
+      else if (CURSOR.menu===2) setPhase('howtoplay');
+      else if (CURSOR.menu===3) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
+      else if (CURSOR.menu===4) setPhase('highscores');
+      else if (CURSOR.menu===5) { CURSOR.shop=0; CURSOR.upgradeFrom='title'; setPhase('upgrade'); }
+      else if (CURSOR.menu===6) { CURSOR.achieveScroll=0; setPhase('achievements'); }
     }
     e.preventDefault(); return;
   }
-  // ── Mode select screen ─────────────────────────────────────────────
-    // ── Mode select screen (ARCH1: step 1 — Mode → Dreamscape → Cosmology → Playstyle) ─
+  // ── Mode select screen (ARCH1: step 1 — Mode → Dreamscape → Cosmology → Playstyle) ─
   if (phase === 'modeselect') {
     const N = GAME_MODES.length;
     if (e.key==='ArrowUp')   { CURSOR.modesel=(CURSOR.modesel-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
@@ -1472,18 +1474,30 @@ window.addEventListener('keydown', e => {
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
       gameMode = GAME_MODES[CURSOR.modesel].id;
-      // ARCH1: navigate forward to dreamselect (step 2)
-      CFG.dreamIdx = 0;
+      // ARCH1: build filtered dreamscape list for chosen mode, then go to dreamselect (step 2)
+      const dsIds = MODE_DREAMSCAPES[gameMode] || [];
+      const dsById = new Map(DREAMSCAPES.map(d => [d.id, d]));
+      dreamselFiltered = dsIds.length > 0
+        ? dsIds.map(id => dsById.get(id)).filter(Boolean)
+        : [...DREAMSCAPES];
+      if (dreamselFiltered.length === 0) dreamselFiltered = [...DREAMSCAPES];
+      CURSOR_dream = 0;
+      CFG.dreamIdx = Math.max(0, DREAMSCAPES.indexOf(dreamselFiltered[0]));
       setPhase('dreamselect');
     }
     if (e.key==='Escape') setPhase('title');
     e.preventDefault(); return;
   }
-    // ── Dreamscape selector (ARCH1: step 2) ─────────────────────────────────
+  // ── Dreamscape selector (ARCH1: step 2) ─────────────────────────────────
   if (phase === 'dreamselect') {
-    if (e.key==='ArrowUp')   { CFG.dreamIdx=(CFG.dreamIdx-1+DREAMSCAPES.length)%DREAMSCAPES.length; sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='ArrowDown') { CFG.dreamIdx=(CFG.dreamIdx+1)%DREAMSCAPES.length; sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='Enter')     { sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_cosmology=0; setPhase('cosmologysel'); }
+    const N = dreamselFiltered.length || DREAMSCAPES.length;
+    const _syncDreamIdx = () => {
+      const ds = dreamselFiltered[CURSOR_dream];
+      if (ds) CFG.dreamIdx = Math.max(0, DREAMSCAPES.indexOf(ds));
+    };
+    if (e.key==='ArrowUp')   { CURSOR_dream=(CURSOR_dream-1+N)%N; _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR_dream=(CURSOR_dream+1)%N;   _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='Enter')     { _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_cosmology=0; setPhase('cosmologysel'); }
     if (e.key==='Escape')    setPhase('modeselect');
     e.preventDefault(); return;
   }

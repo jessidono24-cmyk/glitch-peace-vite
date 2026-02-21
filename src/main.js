@@ -98,36 +98,24 @@ const ctx    = canvas.getContext('2d');
 const DPR    = Math.min(window.devicePixelRatio || 1, 2);
 
 function resizeCanvas() {
-  const fs = CFG.fontScale || 1.0;
   const logW = CW(), logH = CH();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  // Canvas fills the full viewport so no black borders appear
   canvas.width  = vw * DPR;
   canvas.height = vh * DPR;
   canvas.style.width  = vw + 'px';
   canvas.style.height = vh + 'px';
-  canvas.style.left = '0';
-  canvas.style.top  = '0';
-  // Uniform scale to fit the logical game world, centred within the viewport
-  const gameScale = Math.min(vw / logW, vh / logH) * fs;
+  // Scale the game world to fill the viewport (maintains aspect ratio, centres)
+  const gameScale = Math.min(vw / logW, vh / logH);
   const offsetX   = Math.round((vw - logW * gameScale) / 2);
   const offsetY   = Math.round((vh - logH * gameScale) / 2);
-  // Store for input-coordinate conversion (used by shooter mouse handling)
   window._canvasOffsetX   = offsetX;
   window._canvasOffsetY   = offsetY;
   window._canvasGameScale = gameScale;
-  // Build the context transform as a single matrix call:
-  //   a = sx = gameScale * DPR  (horizontal scale: game zoom × device pixel ratio)
-  //   d = sy = gameScale * DPR  (vertical scale:   game zoom × device pixel ratio)
-  //   e = tx = offsetX  * DPR  (horizontal translation in hardware pixels, centring the world)
-  //   f = ty = offsetY  * DPR  (vertical   translation in hardware pixels, centring the world)
-  // Net effect: drawing code uses logical (0…logW, 0…logH) coordinates and the result
-  // is centred and scaled to fill the viewport at full device resolution.
   ctx.setTransform(gameScale * DPR, 0, 0, gameScale * DPR, offsetX * DPR, offsetY * DPR);
 }
 resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener('resize', () => { resizeCanvas(); });
 
 // ─── Shared systems ─────────────────────────────────────────────────────
 const emotionalField = new EmotionalField();
@@ -560,11 +548,10 @@ function loop(ts) {
   const w = CW(), h = CH();
   pollGamepad(); // Controller support — runs every frame
 
-  // ── Full-screen background: fill entire viewport so the letterbox/pillarbox
-  //    areas match the current dreamscape colour (no black bars visible) ──
+  // ── Full-screen background: fill entire viewport so the game world
+  //    background extends to all edges (no visible black bars) ──────────
   const _dsColor = (game?.ds?.bgColor) || ((phase === 'interlude' && interludeState.ds?.bgColor) ? interludeState.ds.bgColor : '#02020a');
   if (document.body.style.background !== _dsColor) document.body.style.background = _dsColor;
-  // Fill the full canvas (including bars around the game world) before drawing
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = _dsColor;

@@ -5,6 +5,7 @@ import { LANGUAGES, LANGUAGE_PATHS, LANG_LIST } from '../systems/learning/langua
 import { DIFFICULTY_TIERS } from '../systems/difficulty/adaptive-difficulty.js';
 import { PLAY_MODES, PLAY_MODE_LIST, getPlayModeMeta } from '../systems/play-modes.js';
 import { getCosmologyForDreamscape } from '../systems/cosmology/cosmologies.js';
+import { isChapterUnlocked } from '../systems/campaign-story.js';
 // ── Canvas-responsive font size helper ───────────────────────────────
 // base = ideal px at 1280×720; scales with canvas, never below base*0.75 or 10px
 function fs(base, canvas) {
@@ -1262,7 +1263,7 @@ export function drawCosmologySelect(ctx, w, h, cosmoIdx, cosmologyList, backgrou
 }
 
 // ─── Campaign Story Select Screen (ARCH3) ─────────────────────────────────
-export function drawCampaignSelect(ctx, w, h, chapterIdx, chapters, progress, backgroundStars, ts) {
+export function drawCampaignSelect(ctx, w, h, chapterIdx, chapters, progress, backgroundStars, ts, emergenceLvl) {
   ctx.fillStyle = '#02010a'; ctx.fillRect(0, 0, w, h);
   if (backgroundStars) {
     for (const s of backgroundStars) {
@@ -1276,30 +1277,58 @@ export function drawCampaignSelect(ctx, w, h, chapterIdx, chapters, progress, ba
   ctx.font = 'bold '+ fs(24, ctx.canvas) + 'px Courier New'; ctx.fillText('CAMPAIGN', w / 2, 46); ctx.shadowBlur = 0;
   ctx.fillStyle = '#554422'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
   ctx.fillText('10-chapter life progression · mirrors consciousness development', w / 2, 64);
-  if (progress) {
-    ctx.fillStyle = '#665533'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
-    ctx.fillText(`${progress.completedCount}/${progress.totalChapters} chapters complete  ·  ${progress.percentComplete}%`, w / 2, 80);
-  }
-  const rowH = 54, startY = 96, visN = Math.min(chapters.length, 8);
+  // Progress header
+  const completedIds = Array.isArray(progress?.completedChapters) ? progress.completedChapters
+    : (progress?.completedChapters ? [...progress.completedChapters] : []);
+  const completedCount = completedIds.length;
+  const totalScore = progress?.totalConsciousnessScore || 0;
+  ctx.fillStyle = '#665533'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
+  ctx.fillText(`${completedCount}/${chapters.length} chapters complete  ·  consciousness: ${totalScore}`, w / 2, 80);
+  const rowH = 54, startY = 100, visN = Math.min(chapters.length, 8);
   const startI = Math.max(0, Math.min(chapterIdx - 3, chapters.length - visN));
   for (let i = 0; i < visN; i++) {
     const ci = startI + i;
     if (ci >= chapters.length) break;
     const ch = chapters[ci], sel = ci === chapterIdx;
-    const done = progress?.completedChapters?.has ? progress.completedChapters.has(ch.chapter) : false;
+    // Determine chapter status
+    const chId = ch.id || String(ch.chapter);
+    const isDone = completedIds.includes(chId);
+    const isCurrent = progress?.currentChapter === ch.id;
+    const isLocked = ch.unlockCondition !== undefined
+      ? !isChapterUnlocked(ch, progress || { completedChapters: completedIds }, emergenceLvl || 0)
+      : false;
     const y = startY + i * rowH;
-    if (sel) {
-      ctx.fillStyle = 'rgba(255,204,68,0.07)'; ctx.fillRect(w / 2 - 195, y - 18, 390, 48);
-      ctx.strokeStyle = 'rgba(255,204,68,0.35)'; ctx.strokeRect(w / 2 - 195, y - 18, 390, 48);
+    // Act divider before first chapter of each new act
+    if (ci > 0 && ch.act && chapters[ci - 1] && ch.act !== chapters[ci - 1].act) {
+      ctx.strokeStyle = 'rgba(255,204,68,0.18)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(w / 2 - 180, y - rowH / 2); ctx.lineTo(w / 2 + 180, y - rowH / 2); ctx.stroke();
+      ctx.fillStyle = '#554422'; ctx.font = fs(10, ctx.canvas) + 'px Courier New';
+      ctx.fillText(`── ACT ${ch.act} ──`, w / 2, y - rowH / 2 + 7);
     }
-    ctx.fillStyle = done ? '#446644' : sel ? '#ffcc44' : '#443322';
-    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
-    ctx.fillText((done ? '✓ ' : `${ch.chapter}. `) + ch.title.toUpperCase(), w / 2, y);
-    ctx.fillStyle = sel ? '#667755' : '#332211'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
-    ctx.fillText(ch.subtitle + '  ·  ' + ch.theme, w / 2, y + 16);
+    // Selection highlight (pulsing for current chapter)
     if (sel) {
-      ctx.fillStyle = '#554433'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';
-      ctx.fillText(ch.narrative[0], w / 2, y + 30);
+      const pulse = isCurrent ? 0.05 + 0.04 * Math.sin(ts * 0.004) : 0.07;
+      ctx.fillStyle = `rgba(255,204,68,${pulse})`; ctx.fillRect(w / 2 - 195, y - 18, 390, 48);
+      const strokeA = isCurrent ? 0.3 + 0.15 * Math.sin(ts * 0.004) : 0.35;
+      ctx.strokeStyle = `rgba(255,204,68,${strokeA})`; ctx.strokeRect(w / 2 - 195, y - 18, 390, 48);
+    }
+    // Status icon
+    const icon = isDone ? '✓' : isLocked ? '🔒' : isCurrent ? '▶' : '○';
+    // Chapter title
+    ctx.fillStyle = isLocked ? '#332222' : isDone ? '#446644' : sel ? '#ffcc44' : '#664422';
+    ctx.font = sel ? 'bold ' + fs(16, ctx.canvas) + 'px Courier New' : fs(13, ctx.canvas) + 'px Courier New';
+    ctx.fillText(`${icon}  ${ch.title ? ch.title.toUpperCase() : ''}`, w / 2, y);
+    // Sub-info: description or legacy subtitle/theme
+    ctx.fillStyle = isLocked ? '#221111' : sel ? '#667755' : '#332211';
+    ctx.font = fs(11, ctx.canvas) + 'px Courier New';
+    let sub = ch.description || '';
+    if (!sub && ch.subtitle) sub = ch.theme ? ch.subtitle + '  ·  ' + ch.theme : ch.subtitle;
+    ctx.fillText(sub, w / 2, y + 16);
+    // Mode/dreamscape hint for selected unlocked chapter
+    if (sel && !isLocked) {
+      ctx.fillStyle = '#443322'; ctx.font = fs(11, ctx.canvas) + 'px Courier New';
+      const hint = [ch.mode, ch.dreamscape].filter(Boolean).join(' · ');
+      ctx.fillText(hint, w / 2, y + 30);
     }
   }
   ctx.fillStyle = '#221100'; ctx.font = fs(13, ctx.canvas) + 'px Courier New';

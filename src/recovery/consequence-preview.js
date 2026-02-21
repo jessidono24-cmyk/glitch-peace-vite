@@ -11,6 +11,9 @@
  * - Helps player anticipate hazards
  */
 
+// ARCH5 COGNITIVE_ARCHITECTURE.md: working memory limit (7±2, conservative cap = 3)
+const MAX_PREVIEW_DEPTH = 3;
+
 export class ConsequencePreview {
   constructor() {
     this.active = false;
@@ -64,8 +67,10 @@ export class ConsequencePreview {
     let py = game.player.y;
     let px = game.player.x;
     const sz = game.sz;
+    // ARCH5: cap depth at MAX_PREVIEW_DEPTH (working memory limit)
+    const depth = Math.min(steps, MAX_PREVIEW_DEPTH);
 
-    for (let i = 0; i < steps; i++) {
+    for (let i = 0; i < depth; i++) {
       const ny = py + dy;
       const nx = px + dx;
 

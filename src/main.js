@@ -65,7 +65,8 @@ import { empathyTraining }    from './intelligence/emotional/empathy-training.js
 import { emotionRecognition } from './intelligence/emotional/emotion-recognition.js';
 // ─── Phase M3: Campaign Structure ────────────────────────────────────────
 import { campaignManager } from './modes/campaign-manager.js';
-import { campaignStory, CAMPAIGN_CHAPTERS } from './modes/campaign-story.js';
+import { campaignStory } from './modes/campaign-story.js';
+import { CAMPAIGN_CHAPTERS, loadCampaignProgress, saveChapterComplete, getDreamscapeIndex, isChapterUnlocked } from './systems/campaign-story.js';
 // ─── Phase M4+: Play Modes System (from glitch-peace-vite) ───────────────
 import { PLAY_MODES, PLAY_MODE_LIST, applyPlayMode, getPlayModeMeta } from './systems/play-modes.js';
 // ─── Phase 10+: Cosmologies (from glitch-peace-vite) ─────────────────────
@@ -536,6 +537,11 @@ function nextDreamscape() {
   const empathyReflection = empathyTraining.getReflection();
   // Phase M3: campaign completion
   const milestone = campaignManager.onDreamscapeComplete(g.ds.id % DREAMSCAPES.length, g.score);
+  // ARCH3: save campaign chapter progress when playing a campaign chapter
+  if (CFG.campaignChapterId) {
+    saveChapterComplete(CFG.campaignChapterId, g.score);
+    CFG.campaignChapterId = null;
+  }
   // Phase M5: RPG — reward XP on dreamscape completion
   characterStats.onDreamComplete();
   // Quest: dream completion
@@ -663,7 +669,7 @@ function loop(ts) {
   if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, dreamselFiltered, CURSOR_dream); animId=requestAnimationFrame(loop); return; }
   if (phase === 'playmodesel') { drawPlayModeSelect(ctx, w, h, CURSOR_playmode, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'cosmologysel'){ drawCosmologySelect(ctx, w, h, CURSOR_cosmology, cosmologyList, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'campaignsel') { drawCampaignSelect(ctx, w, h, CURSOR_campaign, CAMPAIGN_CHAPTERS, campaignStory.getProgress(), backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
+  if (phase === 'campaignsel') { drawCampaignSelect(ctx, w, h, CURSOR_campaign, CAMPAIGN_CHAPTERS, loadCampaignProgress(), backgroundStars, ts, emergenceIndicators.emergenceLevel); animId=requestAnimationFrame(loop); return; }
   if (phase === 'archsel')     { drawArchetypeSelect(ctx, w, h, CURSOR.archsel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'options')     { drawOptions(ctx, w, h, CURSOR.opt); animId=requestAnimationFrame(loop); return; }
   if (phase === 'highscores')  { drawHighScores(ctx, w, h, highScores); animId=requestAnimationFrame(loop); return; }
@@ -1478,7 +1484,7 @@ window.addEventListener('keydown', e => {
       sfxManager.resume(); sfxManager.playMenuSelect();
       // ARCH1: 0=FREEPLAY→modeselect, 1=CAMPAIGN→campaignsel, 2=HOW TO PLAY, 3=OPTIONS, 4=HIGH SCORES, 5=UPGRADES, 6=ACHIEVEMENTS
       if (CURSOR.menu===0)      { CURSOR.modesel=0; CURSOR_cosmology=0; CURSOR_playmode=0; setPhase('modeselect'); }
-      else if (CURSOR.menu===1) { CURSOR_campaign = campaignStory.getCurrentChapter().chapter - 1; setPhase('campaignsel'); }
+      else if (CURSOR.menu===1) { const _cp = loadCampaignProgress(); CURSOR_campaign = Math.max(0, CAMPAIGN_CHAPTERS.findIndex(c => c.id === _cp.currentChapter)); setPhase('campaignsel'); }
       else if (CURSOR.menu===2) setPhase('howtoplay');
       else if (CURSOR.menu===3) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
       else if (CURSOR.menu===4) setPhase('highscores');
@@ -1554,15 +1560,20 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowUp')   { CURSOR_campaign=(CURSOR_campaign-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowDown') { CURSOR_campaign=(CURSOR_campaign+1)%N;   sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='Enter'||e.key===' ') {
-      sfxManager.resume(); sfxManager.playMenuSelect();
+      sfxManager.resume();
       const ch = CAMPAIGN_CHAPTERS[CURSOR_campaign];
-      // Apply chapter settings to CFG and launch
-      gameMode = ch.mode || 'grid-classic';
+      const _campProgress = loadCampaignProgress();
+      if (!isChapterUnlocked(ch, _campProgress, emergenceIndicators.emergenceLevel)) {
+        sfxManager.playMenuNav(); e.preventDefault(); return;
+      }
+      sfxManager.playMenuSelect();
+      // startCampaignChapter: apply chapter settings to CFG
+      gameMode = ch.mode || 'grid';
       CFG.playMode = ch.playstyle || 'balanced';
-      if (ch.cosmology) CFG.chosenCosmology = ch.cosmology;
-      // Find matching dreamscape index
-      const dsIdx = DREAMSCAPES.findIndex(d => d.id === ch.dreamscape || d.name?.toLowerCase().includes(ch.dreamscape));
-      if (dsIdx >= 0) CFG.dreamIdx = dsIdx;
+      CFG.chosenCosmology = (ch.cosmology && ch.cosmology !== 'none') ? ch.cosmology : null;
+      CFG.dreamIdx = getDreamscapeIndex(ch.dreamscape, DREAMSCAPES);
+      CFG.campaignChapterId = ch.id;
+      window._dreamIdx = CFG.dreamIdx;
       _startSelectedMode();
     }
     if (e.key==='Escape') setPhase('title');

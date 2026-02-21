@@ -9,6 +9,7 @@ import { AlchemyMode }      from '../gameplay-modes/alchemy/AlchemyMode.js';
 import { ArchitectureMode } from '../gameplay-modes/architecture/ArchitectureMode.js';
 import { MycologyMode }     from '../gameplay-modes/mycology/MycologyMode.js';
 import { OrnithologyMode }  from '../gameplay-modes/ornithology/OrnithologyMode.js';
+import RPGMode              from '../gameplay-modes/rpg/RPGMode.js';
 
 /**
  * ModeManager - Orchestrates multiple gameplay modes
@@ -36,6 +37,7 @@ export class ModeManager {
     this.registerMode('architecture', ArchitectureMode);
     this.registerMode('mycology',     MycologyMode);
     this.registerMode('ornithology',  OrnithologyMode);
+    this.registerMode('rpg',          RPGMode);
   }
 
   /**

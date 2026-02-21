@@ -27,7 +27,7 @@ import { drawTitle, drawDreamSelect, drawOptions, drawHighScores,
          drawModeSelect, drawPlayModeSelect, drawCosmologySelect,
          drawAchievementPopup, drawAchievements,
          drawCampaignSelect,
-         GAME_MODES, MODE_DREAMSCAPES } from './ui/menus.js';
+         GAME_MODES, MODE_DREAMSCAPES, TZ_OPTIONS } from './ui/menus.js';
 // ─── Phase 2-5 systems ───────────────────────────────────────────────────
 import { sfxManager } from './audio/sfx-manager.js';
 import { temporalSystem } from './systems/temporal-system.js';
@@ -1628,11 +1628,11 @@ window.addEventListener('keydown', e => {
         resizeCanvas();
       }
       else if(CURSOR.opt===9) { // ARCH4: TIMEZONE offset cycling
-        const TZ_OPTS = [null, -12, -6, -5, -4, 0, 1, 2, 5.5, 8, 9, 12];
+        const TZ_VALS = TZ_OPTIONS.map(o => o.value);
         const curTz = PLAYER_PROFILE.utcOffsetHours;
-        const ti = TZ_OPTS.findIndex(v => v === curTz);
-        const ni = (ti < 0 ? 0 : ti + dir + TZ_OPTS.length) % TZ_OPTS.length;
-        PLAYER_PROFILE.utcOffsetHours = TZ_OPTS[ni];
+        const ti = TZ_VALS.findIndex(v => v === curTz);
+        const ni = (ti < 0 ? 0 : ti + dir + TZ_VALS.length) % TZ_VALS.length;
+        PLAYER_PROFILE.utcOffsetHours = TZ_VALS[ni];
         temporalSystem.setTimezoneOffset(PLAYER_PROFILE.utcOffsetHours);
         saveTimezoneOffset(PLAYER_PROFILE.utcOffsetHours);
         savePlayerProfile();

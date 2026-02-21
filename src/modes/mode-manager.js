@@ -5,6 +5,11 @@
 //  Central orchestrator for Grid, Shooter, RPG, Constellation modes.
 // ═══════════════════════════════════════════════════════════════════════
 
+import { AlchemyMode }      from '../gameplay-modes/alchemy/AlchemyMode.js';
+import { ArchitectureMode } from '../gameplay-modes/architecture/ArchitectureMode.js';
+import { MycologyMode }     from '../gameplay-modes/mycology/MycologyMode.js';
+import { OrnithologyMode }  from '../gameplay-modes/ornithology/OrnithologyMode.js';
+
 /**
  * ModeManager - Orchestrates multiple gameplay modes
  * 
@@ -25,6 +30,12 @@ export class ModeManager {
     this.currentModeName = null;      // Currently active mode name
     this.sharedSystems = sharedSystems;
     this.config = {};                 // Mode-specific configs
+
+    // Pre-register gameplay-modes/ implementations
+    this.registerMode('alchemy',      AlchemyMode);
+    this.registerMode('architecture', ArchitectureMode);
+    this.registerMode('mycology',     MycologyMode);
+    this.registerMode('ornithology',  OrnithologyMode);
   }
 
   /**

@@ -32,9 +32,9 @@ export class ModeManager {
     this.sharedSystems = sharedSystems;
     this.config = {};                 // Mode-specific configs
 
-    // ARCH2: Bind to the persistent consciousness engine (window._consciousnessEngine)
-    // so all modes receive the same live emotional field across mode switches.
-    this._consciousness = (typeof window !== 'undefined' && window._consciousnessEngine) || null;
+    // ARCH2: Bind to the persistent consciousness engine.
+    // Prefer window._consciousness (spec property names) over legacy window._consciousnessEngine.
+    this._consciousness = (typeof window !== 'undefined' && (window._consciousness || window._consciousnessEngine)) || null;
 
     // Pre-register gameplay-modes/ implementations
     this.registerMode('alchemy',      AlchemyMode);

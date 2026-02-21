@@ -139,7 +139,19 @@ window._consciousnessEngine = {
   reset() {
     emotionalField.setAll({ joy:0, hope:0, trust:0, surprise:0, fear:0, sadness:0, disgust:0, anger:0, shame:0, anticipation:0 });
     dreamYoga.resetSession();
+    alchemySystem.resetSession();
+    emergenceIndicators.resetSession();
   },
+};
+// ARCH2: Canonical window._consciousness with spec property names —
+// all modes should read from this object so state persists across mode switches.
+window._consciousness = {
+  emotion: emotionalField,
+  temporal: temporalSystem,
+  dreamYoga,
+  alchemy: alchemySystem,
+  emergence: emergenceIndicators,
+  achievements: achievementSystem,
 };
 
 // Shooter mode instance (shared systems)
@@ -440,7 +452,7 @@ function startGame(dreamIdx) {
   if (gameMode === 'shooter') {
     game = null;
     resetSession();
-    shooterMode.init({});
+    shooterMode.init({ consciousness: window._consciousness });
     setPhase('playing'); lastMove = 0;
     cancelAnimationFrame(animId);
     animId = requestAnimationFrame(loop);
@@ -458,7 +470,8 @@ function startGame(dreamIdx) {
   // Phase 6-8: start learning & session tracking
   vocabularyEngine.resetSession();
   selfReflection.resetSession();
-  emergenceIndicators.resetSession();
+  // ARCH2: emergenceIndicators and alchemySystem persist across mode switches;
+  // they only reset via window._consciousnessEngine.reset() (true new-game).
   sessionTracker.startSession();
   patternRecognition.onScoreChange(0);
   // Phase 9: reset intelligence systems
@@ -474,7 +487,7 @@ function startGame(dreamIdx) {
   archetypeDialogue.reset();
   bossSystem.reset();
   window._bossDefeatedThisRound = false;
-  alchemySystem.resetSession();
+  // ARCH2: alchemySystem persists across mode switches; only resets via window._consciousnessEngine.reset().
   // Apply chosen archetype (from archetype selector) as starting power
   if (CFG.chosenArchetype && ARCHETYPES[CFG.chosenArchetype]) {
     const archData = ARCHETYPES[CFG.chosenArchetype];
@@ -614,6 +627,32 @@ function loop(ts) {
   // Process external achievement queue (from modes)
   if (window._achievementQueue && window._achievementQueue.length) {
     while (window._achievementQueue.length) achievementSystem.unlock(window._achievementQueue.shift());
+  }
+
+  // ── ARCH2: Global consciousness tick — runs every play frame, all modes ──
+  // emotionalField, dreamYoga, alchemySystem, emergenceIndicators persist
+  // across mode switches; they tick here so all modes share one live state.
+  if (phase === 'playing') {
+    const tmods0 = temporalSystem.getModifiers();
+    const coherenceMul0 = (matrixActive === 'B' ? 1.2 : 0.7) * (tmods0.coherenceMul || 1);
+    emotionalField.weekdayCoherenceMul = coherenceMul0;
+    emotionalField.decay(dt / 1000);
+    dreamYoga.tick(dt);
+    alchemySystem.tick();
+    emergenceIndicators.tick();
+    const domEmotion0 = emotionalField.getDominantEmotion();
+    const biomeEmotion0 = (domEmotion0.value > EMOTION_THRESHOLD ? domEmotion0.id : null) || (game?.ds?.emotion);
+    if (biomeEmotion0) biomeSystem.setEmotion(biomeEmotion0);
+    biomeSystem.update(dt);
+    // Expose shared emotion state for HUD/renderer (all modes)
+    window._emotionField = {
+      realm:      emotionalField.realm       || 'Mind',
+      dominant:   domEmotion0.id,
+      coherence:  emotionalField.coherence   || 0,
+      distortion: emotionalField.distortion  || 0,
+      valence:    emotionalField.valence     || 0,
+    };
+    window._dreamYoga = dreamYoga;
   }
 
   if (phase === 'onboarding')  { drawOnboarding(ctx, w, h, onboardState); animId=requestAnimationFrame(loop); return; }
@@ -763,11 +802,8 @@ function loop(ts) {
   game.temporalEnemyMul = tmods.enemyMul;
   game.insightMul = tmods.insightMul;
 
-  // Emotional field decay
-  const coherenceMul = (matrixActive === 'B' ? 1.2 : 0.7) * (tmods.coherenceMul || 1);
-  emotionalField.weekdayCoherenceMul = coherenceMul;
-  emotionalField.decay(dt / 1000);
   // Propagate dominant emotion and synergy to UPG/window for HUD
+  // (emotionalField.decay and biomeSystem already ran in the global consciousness tick above)
   const domEmotion = emotionalField.getDominantEmotion();
   if (domEmotion.value > EMOTION_THRESHOLD) UPG.emotion = domEmotion.id;
   window._emotionSynergy = emotionalField.synergy;
@@ -776,19 +812,6 @@ function loop(ts) {
   const pd = emotionalField.purgDepth;
   game.dmgMul  = pd >= 0.8 ? 1.30 : pd >= 0.5 ? 1.15 : 1.0;
   game.healMul = pd <= 0.2 ? 1.25 : pd <= 0.35 ? 1.10 : 1.0;
-  // Expose full emotion state for renderer (realm tinting, HUD header)
-  window._emotionField = {
-    realm:      emotionalField.realm       || 'Mind',
-    dominant:   domEmotion.id,
-    coherence:  emotionalField.coherence   || 0,
-    distortion: emotionalField.distortion  || 0,
-    valence:    emotionalField.valence     || 0,
-  };
-  // Update biome system from dominant emotion (or dreamscape base emotion)
-  const biomeEmotion = (domEmotion.value > EMOTION_THRESHOLD ? domEmotion.id : null) ||
-                       (game?.ds?.emotion) || null;
-  if (biomeEmotion) biomeSystem.setEmotion(biomeEmotion);
-  biomeSystem.update(dt);
   // Expand fog radius based on insight collected
   window._fogRadius = 4 + Math.min(3, Math.floor((window._insightTokens || 0) / 5));
 
@@ -822,9 +845,7 @@ function loop(ts) {
     game.hp = Math.min(UPG.maxHp, game.hp + game.autoHealRate * dt / 1000);
   }
 
-  // ── Dream Yoga: tick + expose to renderer ───────────────────────────
-  dreamYoga.tick(dt);
-  window._dreamYoga = dreamYoga;
+  // ── Dream Yoga: lucidity check (tick already ran in global consciousness tick above) ──
   if (dreamYoga.lucidity >= 50) questSystem.onLucidityReached();
 
   const MOVE_DELAY = UPG.moveDelay * (game.slowMoves ? 1.5 : 1) * (game.ritualSlowMul || 1);

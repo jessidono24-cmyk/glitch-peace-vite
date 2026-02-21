@@ -34,6 +34,10 @@ import { EmotionalField } from './systems/emotional-engine.js';
 import { ConsequencePreview } from './recovery/consequence-preview.js';
 import { ImpulseBuffer } from './recovery/impulse-buffer.js';
 import { ShooterMode } from './modes/shooter-mode.js';
+import { AlchemyMode }      from './gameplay-modes/alchemy/AlchemyMode.js';
+import { ArchitectureMode } from './gameplay-modes/architecture/ArchitectureMode.js';
+import { MycologyMode }     from './gameplay-modes/mycology/MycologyMode.js';
+import { OrnithologyMode }  from './gameplay-modes/ornithology/OrnithologyMode.js';
 // ─── Phase 6: Learning Systems ───────────────────────────────────────────
 import { vocabularyEngine } from './systems/learning/vocabulary-engine.js';
 import { patternRecognition } from './systems/learning/pattern-recognition.js';
@@ -136,6 +140,36 @@ const constellationMode = new ConstellationMode(shooterSharedSystems);
 const meditationMode    = new MeditationMode(shooterSharedSystems);
 const coopMode          = new CoopMode(shooterSharedSystems);
 const rhythmMode        = new RhythmMode(shooterSharedSystems);
+
+// ─── gameplay-modes/ instances (use their own gameState object) ──────────
+const alchemyMode      = new AlchemyMode();
+const architectureMode = new ArchitectureMode();
+const mycologyMode     = new MycologyMode();
+const ornithologyMode  = new OrnithologyMode();
+let modeGame = null; // shared gameState object for gameplay-modes/ instances
+
+// ─── Input adapter for gameplay-modes/ classes ────────────────────────────
+// ─── gameplay-modes/ set (for gameMode checks) ────────────────────────────
+const GAMEPLAY_MODES = new Set(['alchemy', 'architecture', 'mycology', 'ornithology']);
+
+function makeInputAdapter(k) {
+  return {
+    isKeyPressed: (key) => k.has(key),
+    getDirectionalInput: () => ({
+      x: (k.has('ArrowRight')||k.has('d')||k.has('D')) ? 1
+        : (k.has('ArrowLeft')||k.has('a')||k.has('A')) ? -1 : 0,
+      y: (k.has('ArrowDown')||k.has('s')||k.has('S')) ? 1
+        : (k.has('ArrowUp')||k.has('w')||k.has('W')) ? -1 : 0,
+    }),
+  };
+}
+
+function updateModeHUD(modeType, mg) {
+  updateHUD({ state: 'PLAYING', _currentModeType: modeType,
+    player: { hp: mg.player?.hp ?? 100, maxHp: mg.player?.maxHp ?? 100 },
+    level: mg.level || 1, score: mg.score || 0,
+    peaceTotal: mg.peaceTotal || 0, peaceCollected: mg.peaceCollected || 0 });
+}
 
 // ─── Runtime globals ────────────────────────────────────────────────────
 let game       = null;
@@ -661,7 +695,51 @@ function loop(ts) {
     return;
   }
 
-  // ── Grid mode: Playing ───────────────────────────────────────────────
+  // ── Alchemy mode ──────────────────────────────────────────────────────
+  if (gameMode === 'alchemy') {
+    alchemyMode.update(modeGame, dt);
+    alchemyMode.handleInput(modeGame, makeInputAdapter(keys));
+    alchemyMode.render(modeGame, ctx);
+    updateModeHUD('alchemy', modeGame);
+    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
+    animId = requestAnimationFrame(loop);
+    return;
+  }
+
+  // ── Architecture mode ─────────────────────────────────────────────────
+  if (gameMode === 'architecture') {
+    architectureMode.update(modeGame, dt);
+    architectureMode.handleInput(modeGame, makeInputAdapter(keys));
+    architectureMode.render(modeGame, ctx);
+    updateModeHUD('architecture', modeGame);
+    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
+    animId = requestAnimationFrame(loop);
+    return;
+  }
+
+  // ── Mycology mode ─────────────────────────────────────────────────────
+  if (gameMode === 'mycology') {
+    mycologyMode.update(modeGame, dt);
+    mycologyMode.handleInput(modeGame, makeInputAdapter(keys));
+    mycologyMode.render(modeGame, ctx);
+    updateModeHUD('mycology', modeGame);
+    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
+    animId = requestAnimationFrame(loop);
+    return;
+  }
+
+  // ── Ornithology mode ──────────────────────────────────────────────────
+  if (gameMode === 'ornithology') {
+    ornithologyMode.update(modeGame, dt);
+    ornithologyMode.handleInput(modeGame, makeInputAdapter(keys));
+    ornithologyMode.render(modeGame, ctx);
+    updateModeHUD('ornithology', modeGame);
+    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
+    animId = requestAnimationFrame(loop);
+    return;
+  }
+
+
   // Apply temporal modifiers to enemy speed
   const tmods = window._tmods || temporalSystem.getModifiers();
   game.temporalEnemyMul = tmods.enemyMul;
@@ -1305,17 +1383,29 @@ window.addEventListener('keydown', e => {
           updateHUD({ ...game, state: 'PLAYING' });
         }
       } else if (chosen === 'ornithology') {
-        gameMode = 'grid';
-        startGame(CFG.dreamIdx);
-        if (game) { game._currentModeType = 'ornithology'; updateHUD({ ...game, state: 'PLAYING' }); }
+        gameMode = 'ornithology';
+        modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
+        ornithologyMode.init(modeGame, canvas, ctx);
+        updateHUD({ state: 'PLAYING', _currentModeType: 'ornithology', player: { hp: 100, maxHp: 100 },
+          level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
+        setPhase('playing');
+        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
       } else if (chosen === 'mycology') {
-        gameMode = 'grid';
-        startGame(CFG.dreamIdx);
-        if (game) { game._currentModeType = 'mycology'; updateHUD({ ...game, state: 'PLAYING' }); }
+        gameMode = 'mycology';
+        modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
+        mycologyMode.init(modeGame, canvas, ctx);
+        updateHUD({ state: 'PLAYING', _currentModeType: 'mycology', player: { hp: 100, maxHp: 100 },
+          level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
+        setPhase('playing');
+        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
       } else if (chosen === 'architecture') {
-        gameMode = 'grid';
-        startGame(CFG.dreamIdx);
-        if (game) { game._currentModeType = 'architecture'; updateHUD({ ...game, state: 'PLAYING' }); }
+        gameMode = 'architecture';
+        modeGame = { gridSize: 14, level: 1, score: 0, peaceCollected: 0, peaceTotal: 6 };
+        architectureMode.init(modeGame, canvas, ctx);
+        updateHUD({ state: 'PLAYING', _currentModeType: 'architecture', player: { hp: 100, maxHp: 100 },
+          level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
+        setPhase('playing');
+        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
       } else if (chosen === 'constellation') {
         gameMode = 'constellation';
         constellationMode.init({ dreamscapeId: null, level: 1 });
@@ -1324,9 +1414,13 @@ window.addEventListener('keydown', e => {
         setPhase('playing');
         cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
       } else if (chosen === 'alchemy') {
-        gameMode = 'grid';
-        startGame(CFG.dreamIdx);
-        if (game) { game._currentModeType = 'alchemy'; updateHUD({ ...game, state: 'PLAYING' }); }
+        gameMode = 'alchemy';
+        modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 8 };
+        alchemyMode.init(modeGame, canvas, ctx);
+        updateHUD({ state: 'PLAYING', _currentModeType: 'alchemy', player: { hp: 100, maxHp: 100 },
+          level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
+        setPhase('playing');
+        cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
       } else if (chosen === 'rhythm') {
         gameMode = 'rhythm';
         rhythmMode.init({ level: 1, dsIdx: CFG.dreamIdx, score: 0 });
@@ -1595,6 +1689,14 @@ window.addEventListener('keydown', e => {
       }
       e.preventDefault(); return;
     }
+    // Alchemy / Architecture / Mycology / Ornithology: ESC returns to title
+    if (GAMEPLAY_MODES.has(gameMode)) {
+      if (e.key === 'Escape') {
+        modeGame = null; gameMode = 'grid';
+        setPhase('title'); CURSOR.menu = 0;
+      }
+      e.preventDefault(); return;
+    }
     if (e.key==='Escape') { CURSOR.pause=0; sessionTracker.pauseSession(); emergenceIndicators.record('pause_frequency'); characterStats.onPauseUsed(); questSystem.onPause(); dashboardOpen = false; setPhase('paused'); }
     if ((e.key==='h'||e.key==='H') && !e.repeat) dashboardOpen = !dashboardOpen;
     if (e.key==='Shift' && !e.repeat) {
@@ -1837,6 +1939,7 @@ Object.defineProperties(_gpAPI, {
     if (gameMode === 'shooter') return 'shooter';
     if (gameMode === 'constellation') return game?._currentModeType || 'constellation';
     if (gameMode === 'rhythm') return 'rhythm';
+    if (GAMEPLAY_MODES.has(gameMode)) return gameMode;
     return game?._currentModeType || null;
   }, enumerable: true, configurable: true },
   _waveNumber: { get() { return gameMode === 'shooter' ? (shooterMode?.wave ?? 1) : null; }, enumerable: true, configurable: true },
@@ -1844,6 +1947,7 @@ Object.defineProperties(_gpAPI, {
   peaceTotal:  { get() {
     if (gameMode === 'constellation') return constellationMode.starNodes?.length || 0;
     if (gameMode === 'rhythm') return Math.max(8, (rhythmMode._level || 1) * 8);
+    if (modeGame && GAMEPLAY_MODES.has(gameMode)) return modeGame.peaceTotal || 0;
     return game?.peaceTotal || 0;
   }, enumerable: true, configurable: true },
   score: { get() {

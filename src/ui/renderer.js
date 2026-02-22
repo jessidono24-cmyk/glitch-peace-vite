@@ -21,6 +21,32 @@ export function PAL(matrixActive) {
   return matrixActive === 'A' ? PAL_A : PAL_B;
 }
 
+const GRID_BASED_MODES = ['grid', 'rpg', 'grid_roguelike'];
+
+function getActiveModeId(state) {
+  return state._currentModeType || state.modeId || state.mode || 'grid';
+}
+
+function drawBackground(ctx, canvas, state) {
+  const modeId = getActiveModeId(state);
+  const gridBg  = state.ds?.bgColor || '#0a0a0f';
+  const BG_COLORS = {
+    'grid':           gridBg,
+    'rpg':            gridBg,
+    'grid_roguelike': gridBg,
+    'shooter':        '#000005',
+    'constellation':  '#000008',
+    'meditation':     '#040810',
+    'rhythm':         '#080004',
+    'alchemy':        '#060402',
+    'ornithology':    '#020804',
+    'mycology':       '#040200',
+    'architecture':   '#050508',
+  };
+  ctx.fillStyle = BG_COLORS[modeId] || '#0a0a0f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
 export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, hallucinations, anomalyActive, anomalyData, glitchFrames, DPR, ghostPath) {
   const g = game; if (!g) return;
   const sz = g.sz;
@@ -31,8 +57,14 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
 
   ctx.clearRect(0, 0, w, h);
 
-  // Background
-  ctx.fillStyle = ds.bgColor; ctx.fillRect(0, 0, w, h);
+  // Background — mode-appropriate fill
+  drawBackground(ctx, ctx.canvas, g);
+
+  // Only render grid content for grid-based modes
+  const _activeMode = getActiveModeId(g);
+  if (!GRID_BASED_MODES.includes(_activeMode)) {
+    return;
+  }
   const bg2 = ctx.createRadialGradient(w * 0.7, h * 0.3, 0, w * 0.7, h * 0.3, w * 0.8);
   bg2.addColorStop(0, ds.bgAccent + '33'); bg2.addColorStop(1, 'transparent');
   ctx.fillStyle = bg2; ctx.fillRect(0, 0, w, h);

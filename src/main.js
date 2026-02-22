@@ -105,26 +105,48 @@ const ctx    = canvas.getContext('2d');
 const DPR    = Math.min(window.devicePixelRatio || 1, 2);
 
 function resizeCanvas() {
-  const logW = CW(), logH = CH();
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   canvas.width  = vw * DPR;
   canvas.height = vh * DPR;
   canvas.style.width  = vw + 'px';
   canvas.style.height = vh + 'px';
-  // Scale the game world to fill the viewport (maintains aspect ratio, centres)
-  const gameScale = Math.min(vw / logW, vh / logH);
-  const offsetX   = Math.round((vw - logW * gameScale) / 2);
-  const offsetY   = Math.round((vh - logH * gameScale) / 2);
-  window._canvasOffsetX   = offsetX;
-  window._canvasOffsetY   = offsetY;
-  window._canvasGameScale = gameScale;
-  ctx.setTransform(gameScale * DPR, 0, 0, gameScale * DPR, offsetX * DPR, offsetY * DPR);
+  // No letterboxing — canvas fills the full viewport; drawGame handles its own centering
+  window._canvasOffsetX   = 0;
+  window._canvasOffsetY   = 0;
+  window._canvasGameScale = 1;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
 resizeCanvas();
 window.addEventListener('resize', () => { resizeCanvas(); });
 
-// ─── Shared systems ─────────────────────────────────────────────────────
+// ─── Loading screen helpers ──────────────────────────────────────────────
+const FONT = "'Share Tech Mono', monospace";
+function _fsMain(base) {
+  const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  return Math.max(14, Math.round(base * Math.max(scale, 0.85)));
+}
+function drawLoadingScreen(progress) {
+  const W = window.innerWidth, H = window.innerHeight;
+  ctx.fillStyle = '#01010a';
+  ctx.fillRect(0, 0, W, H);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88';
+  ctx.font = _fsMain(52) + 'px ' + FONT;
+  ctx.fillText('GLITCH·PEACE', W / 2, H * 0.42);
+  ctx.fillStyle = '#224433';
+  ctx.font = _fsMain(16) + 'px ' + FONT;
+  ctx.fillText('a consciousness engine', W / 2, H * 0.52);
+  const bw = W * 0.28, bh = 3;
+  const bx = (W - bw) / 2, by = H * 0.65;
+  ctx.fillStyle = '#001a11';
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = '#00ff88';
+  ctx.fillRect(bx, by, bw * progress, bh);
+  ctx.textAlign = 'left';
+}
+
+
 const emotionalField = new EmotionalField();
 const consequencePreview = new ConsequencePreview();
 const impulseBuffer = new ImpulseBuffer();
@@ -471,8 +493,8 @@ function initGame(dreamIdx, prevScore, prevLevel, prevHp) {
   g.cosmology = getCosmologyForDreamscape(ds.id);
   // Apply active play mode
   applyPlayMode(g, CFG.playMode || 'arcade');
-  spawnVisions(CW(), CH()); hallucinations = []; glitchTimer = 500 + rnd(500);
-  initStars(CW(), CH());
+  spawnVisions(window.innerWidth, window.innerHeight); hallucinations = []; glitchTimer = 500 + rnd(500);
+  initStars(window.innerWidth, window.innerHeight);
   return g;
 }
 
@@ -649,7 +671,7 @@ function buyUpgrade(id) {
 // ─── Main loop ───────────────────────────────────────────────────────────
 function loop(ts) {
   const dt = Math.min(ts - prevTs, 100); prevTs = ts; // cap at 100 ms to absorb tab-switch spikes
-  const w = CW(), h = CH();
+  const w = window.innerWidth, h = window.innerHeight;
   pollGamepad(); // Controller support — runs every frame
 
   // ── Full-screen background: fill entire viewport so the game world
@@ -2006,7 +2028,7 @@ if (_savedTzOffset !== null) temporalSystem.setTimezoneOffset(_savedTzOffset);
 // Adaptive difficulty tuned to Csikszentmihalyi (1990) + Yerkes-Dodson.
 // Lunar phases tuned to Bevington (2013) + Cajochen (2013).
 // Impulse buffer documented per Baumeister (1996) + Stuss & Benson (1986).
-initStars(CW(), CH());
+initStars(window.innerWidth, window.innerHeight);
 // Apply saved audio settings
 if (PLAYER_PROFILE.sfxMuted) {
   sfxManager.setVolume(0);
@@ -2022,9 +2044,9 @@ window.AudioManager = {
     } catch (_) { /* silently ignore if audio unavailable */ }
   },
 };
-// Show onboarding screen on first ever launch (no saved profile)
-if (!PLAYER_PROFILE.onboardingDone) {
-  setPhase('onboarding');
+// Show onboarding screen on first ever launch (no saved profile); otherwise loading → title
+const _onboardNeeded = !PLAYER_PROFILE.onboardingDone;
+if (_onboardNeeded) {
   onboardState.step = 0; onboardState.ageIdx = 4; onboardState.nativeIdx = 0; onboardState.targetIdx = 0;
 }
 // ─── Test / Debug API ─────────────────────────────────────────────────────
@@ -2114,4 +2136,14 @@ window.GlitchPeaceGame = new Proxy(_gpAPI, {
     target[prop] = value; return true;
   },
 });
-animId = requestAnimationFrame(loop);
+// ─── Loading screen → title/onboarding ──────────────────────────────────
+let _loadProg = 0;
+const _loadTimer = setInterval(() => {
+  _loadProg = Math.min(1, _loadProg + 0.05);
+  drawLoadingScreen(_loadProg);
+  if (_loadProg >= 1) {
+    clearInterval(_loadTimer);
+    setPhase(_onboardNeeded ? 'onboarding' : 'title');
+    animId = requestAnimationFrame(loop);
+  }
+}, 80);

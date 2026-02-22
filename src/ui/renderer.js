@@ -817,9 +817,18 @@ const EMOTION_COLOR = {
   neutral:    '#334455',
 };
 
+// ── Emotion flash-on-change state (module-level) ─────────────────────────
+let _prevEmotionId = '';
+let _emotionFlashFrames = 0;    // countdown in frames (120 = 2s at 60fps)
+let _emotionFlashLabel = '';
+let _emotionFlashColor = '#ffffff';
+
 function drawEmotionRow(ctx, w, efData) {
   if (!efData) return;
-  const dominant   = efData.dominant   || 'neutral';
+  // Defensive string extraction in case dominant is an object
+  const dominantRaw = efData.dominant || 'neutral';
+  const dominant    = typeof dominantRaw === 'string' ? dominantRaw
+    : (dominantRaw?.label || dominantRaw?.name || dominantRaw?.id || 'neutral');
   const coherence  = efData.coherence  || 0;
   const distortion = efData.distortion || 0;
   const synergy    = window._emotionSynergy;
@@ -828,13 +837,29 @@ function drawEmotionRow(ctx, w, efData) {
   const rowY    = 74;
   const barW    = 88;
 
-  // Dominant emotion label
-  ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'left';
-  ctx.fillStyle = '#223322'; ctx.fillText('EM', 14, rowY + 9);
-  ctx.fillStyle = emColor; ctx.shadowColor = emColor; ctx.shadowBlur = 4;
-  ctx.font = 'bold '+ fs(14, ctx.canvas) + 'px Courier New';
-  ctx.fillText(dominant.toUpperCase(), 32, rowY + 9);
+  // Detect emotion change → trigger brief flash instead of permanent label
+  if (dominant !== _prevEmotionId) {
+    _emotionFlashLabel  = dominant.toUpperCase();
+    _emotionFlashColor  = emColor;
+    _emotionFlashFrames = 120; // ~2 seconds at 60 fps
+    _prevEmotionId      = dominant;
+  }
+
+  // Emotion bar color indicator (left edge tinted with emotion color)
+  ctx.fillStyle = emColor; ctx.shadowColor = emColor; ctx.shadowBlur = 3;
+  ctx.fillRect(14, rowY + 2, 4, 22);
   ctx.shadowBlur = 0;
+
+  // Flash label: show briefly when emotion changes, then fade over last 30 frames
+  if (_emotionFlashFrames > 0) {
+    const flashAlpha = Math.min(1, _emotionFlashFrames / 30);
+    ctx.globalAlpha = flashAlpha;
+    ctx.fillStyle = _emotionFlashColor; ctx.shadowColor = _emotionFlashColor; ctx.shadowBlur = 6;
+    ctx.font = 'bold '+ fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'left';
+    ctx.fillText(_emotionFlashLabel, 22, rowY + 9);
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+    _emotionFlashFrames--;
+  }
 
   // Coherence bar (blue)
   const cohX = 32;
@@ -900,15 +925,15 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
   // Show realm label from emotional field if available
   const efData = window._emotionField;
   const realmName = efData ? efData.realm : '';
-  const dominantEmotion = efData ? efData.dominant : '';
   const realmColor = realmName === 'Heaven' ? '#aaffcc' : realmName === 'Hell' ? '#ff5533' :
                      realmName === 'Purgatory' ? '#ff8844' : realmName === 'Imagination' ? '#cc88ff' : '#334455';
   ctx.fillStyle = realmColor; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'center';
   const tm = window._tmods;
   const temporalSuffix = tm ? ('  |  ' + tm.lunarName + '  ' + tm.planetName) : '';
-  const headerText = realmName ? (g.ds.name + '  ·  ' + (dominantEmotion || g.ds.emotion) + '  ·  ' + realmName + temporalSuffix)
-                               : (g.ds.name + '  ·  ' + g.ds.emotion + temporalSuffix);
-  ctx.fillText(headerText, w / 2, 11); ctx.textAlign = 'left';
+  // Header shows: Dreamscape name + temporal only (max 2 of 4 items; score/level shown below)
+  const dsName = typeof g.ds.name === 'string' ? g.ds.name
+    : (g.ds.name?.name || g.ds.name?.id || String(g.ds.name || ''));
+  ctx.fillText(dsName + temporalSuffix, w / 2, 11); ctx.textAlign = 'left';
 
   // HP
   const hpBarW = 138;
@@ -1326,8 +1351,10 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
   ctx.fillStyle = rl.color; ctx.shadowColor = rl.color; ctx.shadowBlur = 5;
   ctx.fillText(rl.name, 14, h - 11);
   ctx.shadowBlur = 0;
-  ctx.fillStyle = '#1a1a2a'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'right';
-  ctx.fillText('WASD SHIFT=MTX J R Q C ESC=pause H=dash', w - 10, h - 11);
+  // Show mode name on right side of bottom bar
+  const modeLabel = (g._currentModeType || 'grid').toUpperCase().replace(/_/g, ' ');
+  ctx.fillStyle = '#223344'; ctx.font = fs(13, ctx.canvas) + 'px Courier New'; ctx.textAlign = 'right';
+  ctx.fillText(modeLabel, w - 10, h - 11);
   ctx.textAlign = 'left';
 
   // ── Rhythm mode: beat pulse indicator in bottom bar ──────────────────

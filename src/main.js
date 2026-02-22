@@ -137,16 +137,16 @@ function drawLoadingScreen(progress) {
   ctx.fillStyle = '#224433';
   ctx.font = _fsMain(16) + 'px ' + FONT;
   ctx.fillText('a consciousness engine', W / 2, H * 0.52);
-  const bw = W * 0.28, bh = 3;
-  const bx = (W - bw) / 2, by = H * 0.65;
+  const barW = W * 0.28, barH = 3;
+  const bx = (W - barW) / 2, by = H * 0.65;
   ctx.fillStyle = '#001a11';
-  ctx.fillRect(bx, by, bw, bh);
+  ctx.fillRect(bx, by, barW, barH);
   ctx.fillStyle = '#00ff88';
-  ctx.fillRect(bx, by, bw * progress, bh);
+  ctx.fillRect(bx, by, barW * progress, barH);
   ctx.textAlign = 'left';
 }
 
-
+// ─── Shared systems ─────────────────────────────────────────────────────
 const emotionalField = new EmotionalField();
 const consequencePreview = new ConsequencePreview();
 const impulseBuffer = new ImpulseBuffer();

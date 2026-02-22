@@ -10,10 +10,10 @@ const MSG_LEN_LONG    = 55;  // chars — triggers word-wrap + small font
 const MSG_LEN_MEDIUM  = 35;  // chars — uses medium font
 
 // ── Canvas-responsive font size helper ───────────────────────────────
-// base = ideal px at 1280×720; scales with canvas, never below 14px
+// base = ideal px at 1280×720; scales with CSS pixel canvas size, never below 14px
 const FONT = "'Share Tech Mono', monospace";
 function fs(base, canvas) {
-  const scale = Math.min(canvas.width / (1280 * (window.devicePixelRatio || 1)), canvas.height / (720 * (window.devicePixelRatio || 1)));
+  const scale = Math.min(canvas.clientWidth / 1280, canvas.clientHeight / 720);
   return Math.max(14, Math.round(base * Math.max(scale, 0.85)));
 }
 

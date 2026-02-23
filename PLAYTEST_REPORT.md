@@ -1,5 +1,5 @@
 # GLITCH·PEACE Playtest Report
-**Generated:** 2026-02-23T19:07:01.474Z
+**Generated:** 2026-02-23T21:09:07.526Z
 **Viewport:** 1280x720
 **Screenshots:** test-results/playtest/
 

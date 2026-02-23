@@ -130,19 +130,20 @@ function drawLoadingScreen(progress) {
   const W = window.innerWidth, H = window.innerHeight;
   ctx.fillStyle = '#01010a';
   ctx.fillRect(0, 0, W, H);
+  const alpha = Math.min(1, progress * 2); // fade in text over first half of load
+  ctx.globalAlpha = alpha;
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#00ff88';
-  ctx.font = _fsMain(52) + 'px ' + FONT;
-  ctx.fillText('GLITCH·PEACE', W / 2, H * 0.42);
-  ctx.fillStyle = '#224433';
-  ctx.font = _fsMain(16) + 'px ' + FONT;
-  ctx.fillText('a consciousness engine', W / 2, H * 0.52);
-  const barW = W * 0.28, barH = 3;
-  const bx = (W - barW) / 2, by = H * 0.65;
-  ctx.fillStyle = '#001a11';
+  ctx.fillStyle = '#334444';
+  ctx.font = _fsMain(14) + 'px ' + FONT;
+  ctx.fillText('consciousness simulation loading', W / 2, H * 0.52);
+  // subtle progress indicator
+  const barW = W * 0.18, barH = 1;
+  const bx = (W - barW) / 2, by = H * 0.60;
+  ctx.fillStyle = '#112211';
   ctx.fillRect(bx, by, barW, barH);
-  ctx.fillStyle = '#00ff88';
+  ctx.fillStyle = '#336633';
   ctx.fillRect(bx, by, barW * progress, barH);
+  ctx.globalAlpha = 1;
   ctx.textAlign = 'left';
 }
 
@@ -1550,9 +1551,8 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowDown') { CURSOR.menu=(CURSOR.menu+1)%5; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
-      // 0=NEW JOURNEY→memory_select (always), 1=CONTINUE→memory_select (both show same slot screen;
-      // slot selection itself handles new vs load distinction)
-      if (CURSOR.menu===0||CURSOR.menu===1) { CURSOR_slot=0; memorySlots=loadAllSlots(); setPhase('memory_select'); }
+      // 0=NEW JOURNEY / 1=CONTINUE → dreamselect (direct selection flow)
+      if (CURSOR.menu===0||CURSOR.menu===1) { dreamselFiltered=[...DREAMSCAPES]; CURSOR_dream=0; dreamPage=0; setPhase('dreamselect'); }
       else if (CURSOR.menu===2) setPhase('howtoplay');
       else if (CURSOR.menu===3) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
       else if (CURSOR.menu===4) setPhase('highscores');
@@ -1583,18 +1583,9 @@ window.addEventListener('keydown', e => {
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
       gameMode = GAME_MODES[CURSOR.modesel].id;
-      // ARCH1: build filtered dreamscape list for chosen mode, then go to dreamselect (step 2)
-      const dsIds = MODE_DREAMSCAPES[gameMode] || [];
-      const dsById = new Map(DREAMSCAPES.map(d => [d.id, d]));
-      dreamselFiltered = dsIds.length > 0
-        ? dsIds.map(id => dsById.get(id)).filter(Boolean)
-        : [...DREAMSCAPES];
-      if (dreamselFiltered.length === 0) dreamselFiltered = [...DREAMSCAPES];
-      CURSOR_dream = 0; dreamPage = 0;
-      CFG.dreamIdx = Math.max(0, DREAMSCAPES.indexOf(dreamselFiltered[0]));
-      setPhase('dreamselect');
+      _startSelectedMode();
     }
-    if (e.key==='Escape') setPhase('title');
+    if (e.key==='Escape') setPhase('cosmologysel');
     e.preventDefault(); return;
   }
   // ── Dreamscape selector (ARCH1: step 2) ─────────────────────────────────
@@ -1610,11 +1601,25 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowDown')  { CURSOR_dream=(CURSOR_dream+1)%N;   dreamPage=Math.floor(CURSOR_dream/ITEMS_PER_PAGE); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowRight') { dreamPage=Math.min(dreamPage+1, totalPages-1); CURSOR_dream=Math.min(dreamPage*ITEMS_PER_PAGE+(CURSOR_dream%2), N-1); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowLeft')  { dreamPage=Math.max(dreamPage-1, 0); CURSOR_dream=Math.min(dreamPage*ITEMS_PER_PAGE+(CURSOR_dream%2), N-1); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='Enter')     { _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_cosmology=0; setPhase('cosmologysel'); }
-    if (e.key==='Escape')    setPhase('modeselect');
+    if (e.key==='Enter')     { _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_playmode=0; setPhase('playmodesel'); }
+    if (e.key==='Escape')    setPhase('title');
     e.preventDefault(); return;
   }
-  // ── Cosmology selector (ARCH1: step 3 — launches game) ────────────────
+  // ── Play mode selector (ARCH1: step 2.5 — between dreamselect and cosmologysel) ──
+  if (phase === 'playmodesel') {
+    const N = PLAY_MODE_LIST.length;
+    if (e.key==='ArrowUp'||e.key==='ArrowLeft')   { CURSOR_playmode=(CURSOR_playmode-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown'||e.key==='ArrowRight') { CURSOR_playmode=(CURSOR_playmode+1)%N;   sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='Enter'||e.key===' ') {
+      sfxManager.resume(); sfxManager.playMenuSelect();
+      CFG.playMode = PLAY_MODE_LIST[CURSOR_playmode] || 'arcade';
+      CURSOR_cosmology = 0;
+      setPhase('cosmologysel');
+    }
+    if (e.key==='Escape') setPhase('dreamselect');
+    e.preventDefault(); return;
+  }
+  // ── Cosmology selector (ARCH1: step 3 — goes to gamemode select) ────────
   if (phase === 'cosmologysel') {
     const N = cosmologyList.length + 1; // +1 for "no cosmology" entry at index 0
     if (e.key==='ArrowUp'||e.key==='ArrowLeft')   { CURSOR_cosmology=(CURSOR_cosmology-1+N)%N; sfxManager.resume(); sfxManager.playMenuNav(); }
@@ -1622,9 +1627,10 @@ window.addEventListener('keydown', e => {
     if (e.key==='Enter') {
       sfxManager.resume(); sfxManager.playMenuSelect();
       CFG.chosenCosmology = CURSOR_cosmology === 0 ? null : cosmologyList[CURSOR_cosmology - 1]?.id || null;
-      _startSelectedMode();
+      CURSOR.modesel = 0;
+      setPhase('modeselect');
     }
-    if (e.key==='Escape') setPhase('dreamselect');
+    if (e.key==='Escape') setPhase('playmodesel');
     e.preventDefault(); return;
   }
   // ── Campaign chapter selector (ARCH3) ─────────────────────────────────
@@ -2097,7 +2103,9 @@ Object.defineProperties(_gpAPI, {
   }, enumerable: true, configurable: true },
   player:   { get() {
     if (gameMode === 'shooter') return { hp: shooterMode?.player?.health ?? 0, maxHp: shooterMode?.player?.maxHealth ?? 100 };
-    return game?.player || null;
+    // In grid mode, hp is stored on the game object directly (not on game.player)
+    if (game?.player) return { ...game.player, hp: game.hp ?? 100, maxHp: UPG?.maxHp ?? 100 };
+    return null;
   }, enumerable: true, configurable: true },
   grid:     { get() { return game?.grid || null; },      enumerable: true },
   gridSize: { get() { return game?.sz || 0; },           enumerable: true },

@@ -82,6 +82,45 @@ const BLUEPRINTS = [
 // Tile placement order in selector
 const PLACEABLE = Object.keys(ARCH_TILES).filter(k => k !== 'EMPTY');
 
+// ── Architecture Sub-Modes ─────────────────────────────────────────────────
+export const ARCHITECTURE_SUBMODES = [
+  {
+    id: 'construction',
+    name: 'CONSTRUCTION',
+    icon: '🏗',
+    desc: 'Place structural elements to build load-bearing designs',
+    mechanic: 'Grid placement with physics constraints — structures must be stable',
+  },
+  {
+    id: 'engineering',
+    name: 'ENGINEERING',
+    icon: '⚙',
+    desc: 'Design systems: circuits, fluid dynamics, mechanisms',
+    mechanic: 'Logic puzzles — connect inputs to outputs through correct paths',
+  },
+  {
+    id: 'sacred_geometry',
+    name: 'SACRED GEOMETRY',
+    icon: '⬡',
+    desc: 'Construct geometric patterns used in world traditions',
+    mechanic: 'Compass-and-rule construction — follow ancient geometric principles',
+  },
+  {
+    id: 'ai_design',
+    name: 'AI SYSTEMS',
+    icon: '🧠',
+    desc: 'Design neural network architectures and decision trees',
+    mechanic: 'Node graph — connect layers to solve problems',
+  },
+  {
+    id: 'crafts',
+    name: 'CRAFTS',
+    icon: '🪵',
+    desc: 'Weaving, pottery, woodworking — making with hands',
+    mechanic: 'Pattern matching and material selection puzzles',
+  },
+];
+
 /**
  * ArchitectureMode — Spatial construction with blueprint matching.
  * Player navigates the grid and places tiles to complete blueprints.
@@ -105,6 +144,8 @@ export class ArchitectureMode extends GameMode {
     this._completedBlueprints = [];
     this._buildFlash = null;
     this._completionFlash = null;
+    this._subModeIdx = 0; // index into ARCHITECTURE_SUBMODES
+    this._subModeSelecting = false; // show sub-mode selection at start
   }
 
   init(gameState, canvas, ctx) {
@@ -119,6 +160,8 @@ export class ArchitectureMode extends GameMode {
     gameState.peaceCollected = 0;
     gameState.peaceTotal = BLUEPRINTS.length;
     this._blueprintIdx = 0;
+    this._subModeIdx = gameState._archSubMode || 0;
+    this._subModeSelecting = !gameState._archSubModeChosen;
     this._resetGrid(gameState);
     this._positionBlueprintMarkers(gameState);
   }
@@ -162,6 +205,24 @@ export class ArchitectureMode extends GameMode {
   handleInput(gameState, input) {
     const now = Date.now();
     if (now - this.lastMoveTime < this.moveDelay) return;
+
+    // Sub-mode selection screen
+    if (this._subModeSelecting) {
+      const dir = input.getDirectionalInput();
+      if (dir.y !== 0) {
+        this._subModeIdx = (this._subModeIdx + (dir.y > 0 ? 1 : -1) + ARCHITECTURE_SUBMODES.length) % ARCHITECTURE_SUBMODES.length;
+        this.lastMoveTime = now;
+        return;
+      }
+      if (input.isKeyPressed(' ') || input.isKeyPressed('Enter')) {
+        this._subModeSelecting = false;
+        gameState._archSubMode = this._subModeIdx;
+        gameState._archSubModeChosen = true;
+        this.lastMoveTime = now;
+        return;
+      }
+      return;
+    }
 
     const dir = input.getDirectionalInput();
     const sz = gameState.gridSize || 14;
@@ -269,6 +330,16 @@ export class ArchitectureMode extends GameMode {
     // Background
     ctx.fillStyle = '#080810';
     ctx.fillRect(0, 0, w, h);
+
+    // Sub-mode selection screen
+    if (this._subModeSelecting) {
+      this._renderSubModeSelect(ctx, w, h);
+      return;
+    }
+
+    // Show active sub-mode label in top-left
+    const activeSubMode = ARCHITECTURE_SUBMODES[this._subModeIdx];
+
     ctx.save();
     ctx.translate(this._xOff || 0, this._yOff || 0);
 
@@ -398,6 +469,11 @@ export class ArchitectureMode extends GameMode {
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(`${bp.icon} Blueprint: ${gameState.peaceCollected || 0}/${gameState.peaceTotal}  ·  Score: ${gameState.score || 0}  ·  Lv.${gameState.level || 1}`, 8, 6);
+    // Sub-mode label
+    ctx.fillStyle = '#6644aa';
+    ctx.font = `${Math.floor(w / 50)}px monospace`;
+    ctx.textAlign = 'right';
+    ctx.fillText(`${activeSubMode.icon} ${activeSubMode.name}`, w - 8, 6);
 
     // Blueprint completion flash
     if (this._completionFlash) {
@@ -427,5 +503,46 @@ export class ArchitectureMode extends GameMode {
         ctx.restore();
       }
     }
+  }
+
+  _renderSubModeSelect(ctx, w, h) {
+    ctx.fillStyle = '#060612';
+    ctx.fillRect(0, 0, w, h);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#8866cc';
+    ctx.shadowColor = '#8866cc';
+    ctx.shadowBlur = 14;
+    ctx.font = `bold ${Math.floor(w / 20)}px monospace`;
+    ctx.fillText('ARCHITECTURE', w / 2, h * 0.12);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#445566';
+    ctx.font = `${Math.floor(w / 40)}px monospace`;
+    ctx.fillText('Choose your discipline', w / 2, h * 0.20);
+
+    ARCHITECTURE_SUBMODES.forEach((sm, i) => {
+      const isSelected = i === this._subModeIdx;
+      const oy = h * (0.30 + i * 0.13);
+      const boxW = w * 0.68;
+      const boxX = (w - boxW) / 2;
+      ctx.fillStyle = isSelected ? '#1a1230' : '#0a0818';
+      ctx.fillRect(boxX, oy - 18, boxW, 38);
+      ctx.strokeStyle = isSelected ? '#8866cc' : '#2a1a44';
+      ctx.lineWidth = isSelected ? 2 : 1;
+      ctx.strokeRect(boxX, oy - 18, boxW, 38);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = isSelected ? '#cc88ff' : '#664488';
+      ctx.font = `${isSelected ? 'bold ' : ''}${Math.floor(w / 28)}px monospace`;
+      ctx.fillText(`${sm.icon} ${sm.name}`, boxX + 12, oy + 4);
+      if (isSelected) {
+        ctx.fillStyle = '#445566';
+        ctx.font = `${Math.floor(w / 44)}px monospace`;
+        ctx.fillText(sm.mechanic, boxX + 12, oy + 18);
+      }
+    });
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#334455';
+    ctx.font = `${Math.floor(w / 44)}px monospace`;
+    ctx.fillText('↑↓ to select  ·  SPACE / ENTER to confirm', w / 2, h * 0.94);
   }
 }

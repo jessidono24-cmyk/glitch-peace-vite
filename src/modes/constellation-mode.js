@@ -23,6 +23,77 @@ import { SZ, buildDreamscape, CW, CH } from '../game/grid.js';
 import { burst } from '../game/particles.js';
 import { getStarField } from '../rendering/three-layer.js';
 
+// ── Real constellation data with correct connection sequences ─────────────
+const CONSTELLATIONS = {
+  orion: {
+    name: 'Orion',
+    stars: [
+      { id: 'betelgeuse', x: 0.3, y: 0.3, name: 'Betelgeuse' },
+      { id: 'bellatrix',  x: 0.6, y: 0.3, name: 'Bellatrix' },
+      { id: 'alnitak',    x: 0.35, y: 0.5, name: 'Alnitak' },
+      { id: 'alnilam',    x: 0.5,  y: 0.5, name: 'Alnilam' },
+      { id: 'mintaka',    x: 0.65, y: 0.5, name: 'Mintaka' },
+      { id: 'rigel',      x: 0.65, y: 0.7, name: 'Rigel' },
+      { id: 'saiph',      x: 0.35, y: 0.7, name: 'Saiph' },
+    ],
+    correctEdges: [
+      ['betelgeuse', 'alnitak'],
+      ['bellatrix',  'mintaka'],
+      ['alnitak',    'alnilam'],
+      ['alnilam',    'mintaka'],
+      ['alnitak',    'saiph'],
+      ['mintaka',    'rigel'],
+      ['betelgeuse', 'bellatrix'],
+    ],
+    story: 'The Hunter stands eternal — confronting the void.',
+  },
+  cassiopeia: {
+    name: 'Cassiopeia',
+    stars: [
+      { id: 'schedar',  x: 0.2,  y: 0.45, name: 'Schedar' },
+      { id: 'caph',     x: 0.35, y: 0.35, name: 'Caph' },
+      { id: 'gamma',    x: 0.5,  y: 0.5,  name: 'Gamma Cas' },
+      { id: 'ruchbah',  x: 0.65, y: 0.4,  name: 'Ruchbah' },
+      { id: 'segin',    x: 0.8,  y: 0.45, name: 'Segin' },
+    ],
+    correctEdges: [
+      ['schedar', 'caph'], ['caph', 'gamma'], ['gamma', 'ruchbah'], ['ruchbah', 'segin'],
+    ],
+    story: 'The Queen — W-shaped, never setting in northern skies.',
+  },
+  ursa_major: {
+    name: 'Ursa Major',
+    stars: [
+      { id: 'dubhe',    x: 0.55, y: 0.25, name: 'Dubhe' },
+      { id: 'merak',    x: 0.55, y: 0.40, name: 'Merak' },
+      { id: 'phecda',   x: 0.40, y: 0.45, name: 'Phecda' },
+      { id: 'megrez',   x: 0.40, y: 0.32, name: 'Megrez' },
+      { id: 'alioth',   x: 0.28, y: 0.28, name: 'Alioth' },
+      { id: 'mizar',    x: 0.18, y: 0.35, name: 'Mizar' },
+      { id: 'alkaid',   x: 0.08, y: 0.45, name: 'Alkaid' },
+    ],
+    correctEdges: [
+      ['dubhe', 'merak'], ['merak', 'phecda'], ['phecda', 'megrez'],
+      ['megrez', 'dubhe'], ['megrez', 'alioth'], ['alioth', 'mizar'], ['mizar', 'alkaid'],
+    ],
+    story: 'The Great Bear — its tail traces the wandering path of seasons.',
+  },
+};
+
+const CONSTELLATION_KEYS = Object.keys(CONSTELLATIONS);
+
+// Returns true when all correct edges have been connected by the player
+function checkConstellationComplete(playerEdges, correctEdges) {
+  return correctEdges.every(([a, b]) =>
+    playerEdges.some(([pa, pb]) =>
+      (pa === a && pb === b) || (pa === b && pb === a)
+    )
+  );
+}
+
+// HP penalty for connecting the wrong stars
+const WRONG_CONNECTION_HP_COST = 8;
+
 const STAR_DREAMSCAPE_IDS = ['orb_escape', 'integration', 'void_nexus', 'cloud_city', 'crystal_cave'];
 
 export class ConstellationMode {
@@ -33,14 +104,16 @@ export class ConstellationMode {
     this.isActive       = false;
 
     this.game         = null;
-    this.starNodes    = [];   // {y, x} of all star nodes on grid
-    this.visitedNodes = [];   // ordered list of visited {y, x}
+    this.starNodes    = [];   // {y, x, id} of all star nodes on grid
+    this.visitedNodes = [];   // ordered list of visited {y, x, id}
     this.connections  = [];   // [{from, to}] pairs for drawing lines
+    this.playerEdges  = [];   // [[idA, idB]] edges made by the player
     this.constellationName = '';
     this.lastMove     = 0;
     this.backgroundStars = [];
     this.meditationTime  = 0; // ms spent in this mode
     this._deathPending   = false;
+    this._activeConstellation = null; // current CONSTELLATIONS entry
   }
 
   init(config) {
@@ -60,39 +133,60 @@ export class ConstellationMode {
     // Build base dreamscape
     this.game = buildDreamscape(ds, sz, level, 0, UPG.maxHp, UPG.maxHp, []);
 
-    // Apply skymap: clear hazards, seed star nodes
+    // Apply skymap: clear hazards
     const g = this.game;
     for (let y = 0; y < sz; y++)
       for (let x = 0; x < sz; x++)
         if ([1,2,3,8,9,10,14,16].includes(g.grid[y][x])) g.grid[y][x] = 0;
 
-    // Seed 8-12 star nodes (INSIGHT = star, ARCHETYPE = nexus/bright star)
-    const total = 8 + rnd(5);
-    let placed = 0, itr = 0;
-    while (placed < total && itr < 9999) {
-      itr++;
-      const sy = rnd(sz), sx = rnd(sz);
-      if (g.grid[sy][sx] === 0) {
-        g.grid[sy][sx] = placed % 4 === 0 ? T.ARCHETYPE : T.INSIGHT;
-        placed++;
-      }
-    }
-
     // Remove all enemies
     g.enemies = [];
 
-    // Build ordered list of star positions
+    // Build ordered list of star positions using constellation data
     this.starNodes = [];
+    const starPlaced = new Set();
+    const margin = 1;
+    for (const starDef of this._activeConstellation.stars) {
+      // Map fractional position to grid coordinates
+      let sy = margin + Math.round(starDef.y * (sz - 2 * margin - 1));
+      let sx = margin + Math.round(starDef.x * (sz - 2 * margin - 1));
+      // Resolve 2D collisions by searching adjacent cells
+      let resolved = false;
+      outer: for (let dy = 0; dy <= 3 && !resolved; dy++) {
+        for (let dx = 0; dx <= 3 && !resolved; dx++) {
+          for (const [oy, ox] of [[dy,dx],[dy,-dx],[-dy,dx],[-dy,-dx]]) {
+            const ny = Math.max(margin, Math.min(sz - 1 - margin, sy + oy));
+            const nx = Math.max(margin, Math.min(sz - 1 - margin, sx + ox));
+            const key = `${ny},${nx}`;
+            if (!starPlaced.has(key)) {
+              sy = ny; sx = nx; resolved = true; break outer;
+            }
+          }
+        }
+      }
+      const starKey = `${sy},${sx}`;
+      starPlaced.add(starKey);
+      // Clear any hazard on this tile and mark as star
+      if (g.grid[sy][sx] !== T.WALL) {
+        g.grid[sy][sx] = this.starNodes.length % 4 === 0 ? T.ARCHETYPE : T.INSIGHT;
+        this.starNodes.push({ y: sy, x: sx, id: starDef.id, name: starDef.name });
+      }
+    }
+
+    // Clear all original random stars and hazards that might conflict
     for (let y = 0; y < sz; y++)
       for (let x = 0; x < sz; x++)
-        if (g.grid[y][x] === T.INSIGHT || g.grid[y][x] === T.ARCHETYPE)
-          this.starNodes.push({ y, x });
-
+        if ([T.INSIGHT, T.ARCHETYPE].includes(g.grid[y][x]) && !starPlaced.has(`${y},${x}`))
+          g.grid[y][x] = 0;
     g.peaceLeft = this.starNodes.length; // win when all collected
 
     this.visitedNodes  = [];
     this.connections   = [];
-    this.constellationName = pick(CONSTELLATION_NAMES);
+    this.playerEdges   = [];
+    // Pick a real constellation and map its stars to the grid
+    const ck = CONSTELLATION_KEYS[rnd(CONSTELLATION_KEYS.length)];
+    this._activeConstellation = CONSTELLATIONS[ck];
+    this.constellationName = this._activeConstellation.name;
     this.lastMove = 0;
 
     // Background stars
@@ -154,38 +248,71 @@ export class ConstellationMode {
             g.peaceLeft    = Math.max(0, g.peaceLeft - 1);
             addInsightToken();
 
+            const currentStar = this.starNodes.find(s => s.y === ny && s.x === nx);
             const last = this.visitedNodes[this.visitedNodes.length - 1];
-            if (last) this.connections.push({ from: last, to: { y: ny, x: nx } });
-            this.visitedNodes.push({ y: ny, x: nx });
+            if (last) {
+              this.connections.push({ from: last, to: { y: ny, x: nx } });
+              // Record the edge made and check if it's correct
+              if (currentStar && last.id) {
+                const edge = [last.id, currentStar.id];
+                this.playerEdges.push(edge);
+                const correctEdges = this._activeConstellation?.correctEdges || [];
+                const isCorrect = correctEdges.some(([a, b]) =>
+                  (edge[0] === a && edge[1] === b) || (edge[0] === b && edge[1] === a)
+                );
+                if (!isCorrect) {
+                  // Wrong connection — cost health
+                  g.hp = Math.max(1, (g.hp || g.maxHp) - WRONG_CONNECTION_HP_COST);
+                  window._constellationFlash = {
+                    name: '✗ Wrong connection',
+                    alpha: 0, timer: 60, color: '#ff4455',
+                  };
+                }
+              }
+            }
+            this.visitedNodes.push({ y: ny, x: nx, id: currentStar?.id || null });
 
             this.sfxManager.playPeaceCollect();
             burst(g, nx, ny, '#00eeff', 12, 3);
 
             // Every 3 stars = constellation named
             if (this.visitedNodes.length % 3 === 0) {
-              const idx = Math.floor(this.visitedNodes.length / 3 - 1) % CONSTELLATION_NAMES.length;
-              window._constellationFlash = {
-                name: CONSTELLATION_NAMES[idx],
-                alpha: 0, timer: 180,
-              };
+              if (!window._constellationFlash || window._constellationFlash.color === '#ff4455') {
+                window._constellationFlash = {
+                  name: this.constellationName,
+                  alpha: 0, timer: 180, color: '#aaddff',
+                };
+              }
               g.score += 300 + this.visitedNodes.length * 40;
             }
 
-            // Win condition
+            // Win condition: all stars collected AND all correct edges connected
             if (g.peaceLeft <= 0) {
+              const correctEdges = this._activeConstellation?.correctEdges || [];
+              const allCorrect = checkConstellationComplete(this.playerEdges, correctEdges);
+              const correctCount = correctEdges.filter(([a, b]) =>
+                this.playerEdges.some(([pa, pb]) =>
+                  (pa === a && pb === b) || (pa === b && pb === a)
+                )
+              ).length;
               this.sfxManager.playDreamComplete && this.sfxManager.playDreamComplete();
               window._achievementQueue = window._achievementQueue || [];
               window._achievementQueue.push('constellation');
               // Calculate stars-based bonus using O(1) Set lookup
               const starSet = new Set(this.starNodes.map(s => s.y + ',' + s.x));
               const archetypeBonus = this.visitedNodes.filter(n => starSet.has(n.y + ',' + n.x)).length * 100;
-              const completionScore = 2000 + archetypeBonus + this.visitedNodes.length * 150;
+              const accuracyBonus = allCorrect ? 1000 : correctCount * 80;
+              const completionScore = 2000 + archetypeBonus + this.visitedNodes.length * 150 + accuracyBonus;
               g.score += completionScore;
               // Show rich completion overlay (renders on top for 4 s)
               window._constellationComplete = {
                 name:         this.constellationName,
+                story:        this._activeConstellation?.story || '',
                 stars:        this.visitedNodes.length,
                 totalStars:   this.starNodes.length,
+                correctEdges: correctCount,
+                totalEdges:   correctEdges.length,
+                allCorrect,
                 timeMs:       this.meditationTime,
                 score:        g.score,
                 bonus:        completionScore,
@@ -338,13 +465,24 @@ export class ConstellationMode {
     const total  = this.starNodes.length;
     ctx.fillStyle = '#00ccff'; ctx.font = '11px Courier New';
     ctx.fillText('STARS CONNECTED: ' + (total - remain) + ' / ' + total, w/2, 62);
+    // Show correct edge progress
+    if (this._activeConstellation) {
+      const correctEdges = this._activeConstellation.correctEdges;
+      const correctCount = correctEdges.filter(([a, b]) =>
+        this.playerEdges.some(([pa, pb]) =>
+          (pa === a && pb === b) || (pa === b && pb === a)
+        )
+      ).length;
+      ctx.fillStyle = '#44aa88'; ctx.font = '10px Courier New';
+      ctx.fillText('CORRECT EDGES: ' + correctCount + ' / ' + correctEdges.length, w/2, 76);
+    }
 
     // Progress bar
     const barW = 200, barX = w/2 - barW/2;
-    ctx.fillStyle = 'rgba(0,150,200,0.2)'; ctx.fillRect(barX, 72, barW, 8);
+    ctx.fillStyle = 'rgba(0,150,200,0.2)'; ctx.fillRect(barX, 86, barW, 8);
     const prog = total > 0 ? (total - remain) / total : 0;
     ctx.fillStyle = '#00ccff'; ctx.shadowColor = '#00ccff'; ctx.shadowBlur = 6;
-    ctx.fillRect(barX, 72, barW * prog, 8);
+    ctx.fillRect(barX, 86, barW * prog, 8);
     ctx.shadowBlur = 0;
 
     // Constellation flash
@@ -353,7 +491,8 @@ export class ConstellationMode {
       cf.timer--;
       cf.alpha = cf.timer > 150 ? (180 - cf.timer) / 30 : cf.timer > 30 ? 1 : cf.timer / 30;
       ctx.globalAlpha = cf.alpha;
-      ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 20;
+      const flashColor = cf.color || '#aaddff';
+      ctx.fillStyle = flashColor; ctx.shadowColor = flashColor; ctx.shadowBlur = 20;
       ctx.font = 'bold 16px Courier New';
       ctx.fillText(cf.name, w/2, h/2);
       ctx.shadowBlur = 0; ctx.globalAlpha = 1;
@@ -382,13 +521,19 @@ export class ConstellationMode {
       const statY = h/2 - 22;
       ctx.fillStyle = '#667788'; ctx.font = '11px Courier New';
       ctx.fillText('STARS CONNECTED:  ' + cc.stars + ' / ' + cc.totalStars, w/2, statY);
-      ctx.fillText('SESSION TIME:  ' + Math.round(cc.timeMs / 1000) + 's', w/2, statY + 20);
-      ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 8;
+      ctx.fillText('CORRECT EDGES:  ' + (cc.correctEdges || 0) + ' / ' + (cc.totalEdges || 0), w/2, statY + 18);
+      ctx.fillText('SESSION TIME:  ' + Math.round(cc.timeMs / 1000) + 's', w/2, statY + 36);
+      if (cc.story) {
+        ctx.fillStyle = '#556677'; ctx.font = 'italic 9px Courier New';
+        ctx.fillText(cc.story, w/2, statY + 52);
+      }
+      ctx.fillStyle = cc.allCorrect ? '#00ff88' : '#ffdd88';
+      ctx.shadowColor = cc.allCorrect ? '#00ff88' : '#ffcc44'; ctx.shadowBlur = 8;
       ctx.font = 'bold 14px Courier New';
-      ctx.fillText('SCORE BONUS  +' + cc.bonus, w/2, statY + 48); ctx.shadowBlur = 0;
+      ctx.fillText(cc.allCorrect ? '★ PERFECT CONSTELLATION' : 'SCORE BONUS  +' + cc.bonus, w/2, statY + 68); ctx.shadowBlur = 0;
       ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 10;
       ctx.font = 'bold 18px Courier New';
-      ctx.fillText('TOTAL  ' + String(cc.score).padStart(7,'0'), w/2, statY + 74); ctx.shadowBlur = 0;
+      ctx.fillText('TOTAL  ' + String(cc.score).padStart(7,'0'), w/2, statY + 90); ctx.shadowBlur = 0;
       // Insight tokens reward line
       ctx.fillStyle = '#00eeff'; ctx.font = '10px Courier New';
       ctx.fillText('◆ ' + cc.stars + ' INSIGHT TOKENS EARNED', w/2, statY + 98);
@@ -408,7 +553,7 @@ export class ConstellationMode {
 
     // Footer
     ctx.fillStyle = '#334455'; ctx.font = '8px Courier New';
-    ctx.fillText('↑↓←→ navigate  ·  ESC pause  ·  collect all stars to complete', w/2, h - 14);
+    ctx.fillText('↑↓←→ navigate  ·  connect stars in correct order  ·  wrong connections cost HP', w/2, h - 14);
     ctx.textAlign = 'left';
   }
 

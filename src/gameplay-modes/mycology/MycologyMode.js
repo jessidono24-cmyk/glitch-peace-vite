@@ -82,6 +82,64 @@ const SUBSTRATES = {
   WETLOG:   { bg: '#0d150d', sy: '💧', note: 'Shiitake, velvet foot.' },
 };
 
+// Perceived effect system for awe/dread responses to mushroom encounters
+function _applyPerceivedEffect(gameState, effect, description) {
+  gameState._perceivedEffect = { effect, description, timer: effect === 'profound_awe' ? 4.0 : 3.0 };
+  switch (effect) {
+    case 'profound_awe':
+      gameState._awePulse = { timer: 3.0, color: '#88ffcc', intensity: 0.8 };
+      gameState.player.hp = Math.min(gameState.player.maxHp || 100, (gameState.player.hp || 100) + 5);
+      break;
+    case 'awe':
+      gameState._awePulse = { timer: 3.0, color: '#aaffaa', intensity: 0.5 };
+      gameState.player.hp = Math.min(gameState.player.maxHp || 100, (gameState.player.hp || 100) + 3);
+      break;
+    case 'dread':
+      gameState._dreadPulse = { timer: 2.0 };
+      // HP penalty already applied in _checkForage
+      break;
+    case 'curiosity':
+    default:
+      break;
+  }
+}
+
+function _drawPerceivedEffect(ctx, canvas, gameState, dt) {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (gameState._awePulse && gameState._awePulse.timer > 0) {
+    const alpha = (gameState._awePulse.timer / 3.0) * gameState._awePulse.intensity * 0.15;
+    ctx.fillStyle = gameState._awePulse.color || '#aaffaa';
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1;
+    gameState._awePulse.timer -= dt || 0.016;
+  }
+
+  if (gameState._dreadPulse && gameState._dreadPulse.timer > 0) {
+    const alpha = (gameState._dreadPulse.timer / 2.0) * 0.3;
+    ctx.fillStyle = '#220000';
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1;
+    gameState._dreadPulse.timer -= dt || 0.016;
+  }
+
+  const pe = gameState._perceivedEffect;
+  if (pe && pe.timer > 0) {
+    const alpha = Math.min(1, pe.timer * 0.5);
+    ctx.globalAlpha = alpha;
+    const effectColor = pe.effect === 'dread' ? '#ff6677' : '#aaffaa';
+    ctx.fillStyle = effectColor;
+    ctx.font = Math.round(w * 0.02) + "px 'Share Tech Mono', monospace";
+    ctx.textAlign = 'center';
+    ctx.fillText(pe.description, w / 2, h * 0.18);
+    ctx.globalAlpha = 1;
+    pe.timer -= dt || 0.016;
+  }
+}
+
 /**
  * MycologyMode — Foraging simulation with learning challenges.
  * Edible mushrooms award points and trigger connection reveals.
@@ -206,6 +264,11 @@ export class MycologyMode extends GameMode {
     }
     // Fade revealed connections
     this._revealedConnections = this._revealedConnections.filter(c => Date.now() - c.at < 3000);
+    // Tick perceived effect timers (deltaTime is in ms from main.js game loop)
+    const dt = deltaTime / 1000; // convert ms → seconds for timer fields
+    if (gameState._awePulse && gameState._awePulse.timer > 0) gameState._awePulse.timer -= dt;
+    if (gameState._dreadPulse && gameState._dreadPulse.timer > 0) gameState._dreadPulse.timer -= dt;
+    if (gameState._perceivedEffect && gameState._perceivedEffect.timer > 0) gameState._perceivedEffect.timer -= dt;
   }
 
   handleInput(gameState, input) {
@@ -251,12 +314,20 @@ export class MycologyMode extends GameMode {
       gameState._forageLog.safe = (gameState._forageLog.safe || 0) + 1;
       gameState._forageLog.species[m.name] = (gameState._forageLog.species[m.name] || 0) + 1;
       this._foragingFlash = { mushroom: m, outcome: 'safe', note: currentNote, shownAtMs: Date.now() };
+      // Perceived effect: awe for rare edibles
+      const effect = m.rarity >= 3 ? 'profound_awe' : m.rarity >= 2 ? 'awe' : 'curiosity';
+      const desc = m.rarity >= 3
+        ? `${m.name} — ancient medicine. You feel witnessed by the forest.`
+        : `${m.name} — the network notices you.`;
+      _applyPerceivedEffect(gameState, effect, desc);
       try { window.AudioManager?.play('spore'); } catch(e) {}
     } else {
       const dmg = 15 + m.rarity * 5;
       gameState.player.hp = Math.max(1, (gameState.player.hp || 100) - dmg);
       gameState._forageLog.toxic = (gameState._forageLog.toxic || 0) + 1;
       this._foragingFlash = { mushroom: m, outcome: 'toxic', note: currentNote, shownAtMs: Date.now() };
+      // Perceived effect: dread for toxic species
+      _applyPerceivedEffect(gameState, 'dread', `Something is deeply wrong here. Your skin prickles.`);
       // Mandatory identification challenge for toxic species
       this._launchToxicChallenge(m);
       try { window.AudioManager?.play('damage'); } catch(e) {}
@@ -431,6 +502,9 @@ export class MycologyMode extends GameMode {
 
     // ── End grid-space rendering — restore canvas transform ────────────
     ctx.restore();
+
+    // Perceived effect overlay (awe/dread responses to mushroom encounters)
+    _drawPerceivedEffect(ctx, ctx.canvas, gameState, 0.016);
 
     // HP bar (canvas-space overlay)
     const hpFrac = Math.max(0, (gameState.player.hp || 100) / (gameState.player.maxHp || 100));

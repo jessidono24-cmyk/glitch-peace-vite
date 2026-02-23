@@ -114,6 +114,72 @@ const BIOMES = {
 
 const BIOME_KEYS = Object.keys(BIOMES);
 
+// Perceived effect system for awe/dread/curiosity responses
+function _applyPerceivedEffect(gameState, effect, description) {
+  gameState._perceivedEffect = { effect, description, timer: effect === 'profound_awe' ? 4.0 : 3.0 };
+  switch (effect) {
+    case 'profound_awe':
+      gameState._awePulse = { timer: 3.0, color: '#ffdd88', intensity: 1.0 };
+      gameState.player.hp = Math.min(gameState.player.maxHp || 100, (gameState.player.hp || 100) + 8);
+      break;
+    case 'awe':
+      gameState._awePulse = { timer: 3.0, color: '#ffdd88', intensity: 0.6 };
+      gameState.player.hp = Math.min(gameState.player.maxHp || 100, (gameState.player.hp || 100) + 5);
+      break;
+    case 'dread':
+      gameState._dreadPulse = { timer: 2.0 };
+      gameState.player.hp = Math.max(1, (gameState.player.hp || 100) - 3);
+      break;
+    case 'curiosity':
+    default:
+      break;
+  }
+}
+
+function _drawPerceivedEffect(ctx, canvas, gameState, dt) {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  if (gameState._awePulse && gameState._awePulse.timer > 0) {
+    const alpha = (gameState._awePulse.timer / 3.0) * gameState._awePulse.intensity * 0.15;
+    ctx.fillStyle = gameState._awePulse.color || '#ffffff';
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1;
+    gameState._awePulse.timer -= dt || 0.016;
+  }
+
+  if (gameState._dreadPulse && gameState._dreadPulse.timer > 0) {
+    const alpha = (gameState._dreadPulse.timer / 2.0) * 0.3;
+    ctx.fillStyle = '#220000';
+    ctx.globalAlpha = alpha;
+    ctx.fillRect(0, 0, w, h);
+    ctx.globalAlpha = 1;
+    gameState._dreadPulse.timer -= dt || 0.016;
+  }
+
+  const pe = gameState._perceivedEffect;
+  if (pe && pe.timer > 0) {
+    const alpha = Math.min(1, pe.timer * 0.5);
+    ctx.globalAlpha = alpha;
+    const effectColor = pe.effect === 'dread' ? '#ff6677' : pe.effect === 'curiosity' ? '#88ddff' : '#ffdd88';
+    ctx.fillStyle = effectColor;
+    ctx.font = Math.round(w * 0.02) + "px 'Share Tech Mono', monospace";
+    ctx.textAlign = 'center';
+    ctx.fillText(pe.description, w / 2, h * 0.18);
+    ctx.globalAlpha = 1;
+    pe.timer -= dt || 0.016;
+  }
+}
+
+// Map bird rarity/type to a perceived effect
+function _getBirdEffect(bird) {
+  if (bird.rarity >= 4) return { effect: 'profound_awe', description: 'Something timeless. You feel witnessed by nature.' };
+  if (bird.rarity >= 3) return { effect: 'awe', description: `Majestic ${bird.name}. Something in your chest lifts.` };
+  if (bird.rarity >= 2) return { effect: 'curiosity', description: `Intelligent eyes. Watching you back.` };
+  return { effect: 'curiosity', description: `A common visitor. Still, it notices you.` };
+}
+
 /**
  * OrnithologyMode — A meditative observation mode.
  * Grid tiles represent biomes; bird sightings appear as collectible "observations".
@@ -223,6 +289,11 @@ export class OrnithologyMode extends GameMode {
         this._challengeActive = null;
       }
     }
+    // Tick perceived effect timers (deltaTime is in ms from main.js game loop)
+    const dt = deltaTime / 1000; // convert ms → seconds for timer fields
+    if (gameState._awePulse && gameState._awePulse.timer > 0) gameState._awePulse.timer -= dt;
+    if (gameState._dreadPulse && gameState._dreadPulse.timer > 0) gameState._dreadPulse.timer -= dt;
+    if (gameState._perceivedEffect && gameState._perceivedEffect.timer > 0) gameState._perceivedEffect.timer -= dt;
   }
 
   handleInput(gameState, input) {
@@ -283,6 +354,10 @@ export class OrnithologyMode extends GameMode {
     // Show sighting flash with the rotating fact
     this._sightingFlash = { bird: sighting.bird, note: currentNote, shownAtMs: Date.now() };
     try { window.AudioManager?.play('bird'); } catch(e) {}
+
+    // Apply perceived effect based on bird rarity
+    const { effect, description } = _getBirdEffect(sighting.bird);
+    _applyPerceivedEffect(gameState, effect, description);
 
     // Rare birds (rarity 3+) trigger identification challenge
     if (sighting.bird.rarity >= 3) {
@@ -440,6 +515,9 @@ export class OrnithologyMode extends GameMode {
 
     // ── End grid-space rendering — restore canvas transform ────────────
     ctx.restore();
+
+    // Perceived effect overlay (awe/dread/curiosity)
+    _drawPerceivedEffect(ctx, ctx.canvas, gameState, 0.016);
 
     // Bird identification challenge overlay (full-canvas)
     if (this._challengeActive) {

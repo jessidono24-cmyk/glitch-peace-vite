@@ -84,11 +84,11 @@ export const MODE_DREAMSCAPES = {
 
 // ─── Main menu items ──────────────────────────────────────────────────────
 const MAIN_MENU_ITEMS = [
-  { id: 'new_journey', label: 'NEW JOURNEY',  sub: 'Begin a new consciousness' },
-  { id: 'continue',    label: 'CONTINUE',      sub: 'Return to a saved consciousness' },
-  { id: 'how_to_play', label: 'HOW TO PLAY',   sub: '' },
-  { id: 'options',     label: 'OPTIONS',        sub: '' },
-  { id: 'high_scores', label: 'HIGH SCORES',   sub: '' },
+  { id: 'start',       label: 'START JOURNEY',  sub: 'Begin a new consciousness' },
+  { id: 'continue',    label: 'CONTINUE',        sub: 'Return to a saved consciousness' },
+  { id: 'how_to_play', label: 'HOW TO PLAY',     sub: '' },
+  { id: 'options',     label: 'OPTIONS',          sub: '' },
+  { id: 'high_scores', label: 'HIGH SCORES',     sub: '' },
 ];
 
 export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {

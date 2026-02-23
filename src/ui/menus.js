@@ -111,41 +111,46 @@ export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
   ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
   ctx.fillText('choose your path through the dreamscapes', w / 2, 70);
   ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-  ctx.fillText('STEP 1 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 86);
+  ctx.fillText('STEP 1 of 3  ·  Mode → Dreamscape → Cosmology', w / 2, 86);
 
-  const rowH = Math.round(h * 0.07), startY = Math.round(h * 0.13);
-  const _msPanelHalf = Math.round(w * 0.3);
+  const cols = 2;
+  const cardW = w * 0.38;
+  const cardH = h * 0.13;
+  const gapX = w * 0.04;
+  const gapY = h * 0.02;
+  const gridW = cols * cardW + (cols - 1) * gapX;
+  const startX = (w - gridW) / 2;
+  const startY = h * 0.16;
+
   GAME_MODES.forEach((mode, i) => {
-    const sel  = i === modeIdx;
-    const ry   = startY + i * rowH;
-    const col  = mode.color;
-    const pulse = sel ? 0.5 + 0.5 * Math.sin(ts * 0.005) : 0;
-    if (sel) {
-      // Animated glow background for selected mode
-      const bgAlpha   = Math.round(18 + pulse * 14).toString(16).padStart(2, '0');
-      const bordAlpha = Math.round(60 + pulse * 40).toString(16).padStart(2, '0');
-      const selGrd = ctx.createLinearGradient(w / 2 - _msPanelHalf, ry, w / 2 + _msPanelHalf, ry);
-      selGrd.addColorStop(0, 'rgba(0,0,0,0)');
-      selGrd.addColorStop(0.5, col + bgAlpha);
-      selGrd.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = selGrd; ctx.fillRect(w / 2 - _msPanelHalf, ry - 12, _msPanelHalf * 2, Math.round(rowH * 0.75));
-      ctx.strokeStyle = col + bordAlpha;
-      ctx.lineWidth = 1; ctx.strokeRect(w / 2 - _msPanelHalf, ry - 12, _msPanelHalf * 2, Math.round(rowH * 0.75));
-      // Selection arrow
-      ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6;
-      ctx.font = 'bold '+ fs(13, ctx.canvas) + "px " + FONT; ctx.fillText('▶', w / 2 - _msPanelHalf - 10, ry + 12); ctx.shadowBlur = 0;
-    }
-    ctx.fillStyle = sel ? col : '#2a3a2a';
-    ctx.shadowColor = sel ? col : 'transparent'; ctx.shadowBlur = sel ? 10 : 0;
-    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + "px " + FONT : fs(14, ctx.canvas) + "px " + FONT;
-    ctx.fillText(mode.label, w / 2, ry + 8);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = startX + col * (cardW + gapX);
+    const cy = startY + row * (cardH + gapY);
+    const isSelected = i === modeIdx;
+
+    ctx.fillStyle = isSelected ? '#001a11' : '#050a08';
+    ctx.fillRect(cx, cy, cardW, cardH);
+    ctx.strokeStyle = isSelected ? '#00ff88' : '#224433';
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.strokeRect(cx, cy, cardW, cardH);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = isSelected ? '#00ff88' : '#006644';
+    ctx.shadowColor = isSelected ? '#00ff88' : 'transparent';
+    ctx.shadowBlur = isSelected ? 8 : 0;
+    ctx.font = (isSelected ? 'bold ' : '') + fs(15, ctx.canvas) + 'px ' + FONT;
+    ctx.fillText(mode.label, cx + cardW * 0.06, cy + cardH * 0.42);
     ctx.shadowBlur = 0;
-    ctx.fillStyle = sel ? '#445566' : '#1a2a1a'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-    ctx.fillText(mode.sub, w / 2, ry + 26);
+
+    ctx.fillStyle = isSelected ? '#334433' : '#1a2a1a';
+    ctx.font = fs(12, ctx.canvas) + 'px ' + FONT;
+    ctx.fillText(mode.sub, cx + cardW * 0.06, cy + cardH * 0.72);
   });
 
+  ctx.textAlign = 'center';
   ctx.fillStyle = '#0d1a0d'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-  ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 20);
+  ctx.fillText('Arrow keys to select  ·  ENTER confirm  ·  ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
 
@@ -226,44 +231,73 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
   ctx.textAlign = 'left';
 }
 
-export function drawDreamSelect(ctx, w, h, dreamscapes, dreamIdx) {
+const DREAM_ITEMS_PER_PAGE = 8;
+
+export function drawDreamSelect(ctx, w, h, dreamscapes, dreamIdx, dreamPage) {
   // dreamscapes: filtered array of dreamscape objects for the chosen mode
   // dreamIdx: index into the dreamscapes array (not global DREAMSCAPES)
+  // dreamPage: current pagination page (0-based)
   const dsList = (dreamscapes && dreamscapes.length > 0) ? dreamscapes : DREAMSCAPES;
+  const page = dreamPage || 0;
+  const totalPages = Math.ceil(dsList.length / DREAM_ITEMS_PER_PAGE);
+  const pageStart = page * DREAM_ITEMS_PER_PAGE;
+  const visible = dsList.slice(pageStart, pageStart + DREAM_ITEMS_PER_PAGE);
+
   ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
   ctx.font = 'bold '+ fs(24, ctx.canvas) + "px " + FONT; ctx.fillText('SELECT DREAMSCAPE', w / 2, 50); ctx.shadowBlur = 0;
   ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillText('choose your symbolic environment', w / 2, 68);
   ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-  ctx.fillText('STEP 2 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
-  const visible = Math.min(dsList.length, 6);
-  const startI = Math.max(0, Math.min(dreamIdx - Math.floor(visible / 2), dsList.length - visible));
-  for (let i = 0; i < visible; i++) {
-    const di = startI + i, ds = dsList[di], sel = di === dreamIdx, y = 95 + i * 55;
-    if (!ds) continue;
-    if (sel) {
-      ctx.fillStyle = 'rgba(0,255,136,0.06)'; ctx.fillRect(w / 2 - 160, y - 18, 320, 46);
-      ctx.strokeStyle = 'rgba(0,255,136,0.25)'; ctx.strokeRect(w / 2 - 160, y - 18, 320, 46);
-    }
-    ctx.fillStyle = sel ? '#00ff88' : '#2a3a2a'; ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + "px " + FONT : fs(13, ctx.canvas) + "px " + FONT;
-    ctx.fillText((di + 1) + '.  ' + ds.name, w / 2, y);
-    ctx.fillStyle = sel ? '#334455' : '#1a2a1a'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-    ctx.fillText(ds.subtitle + '  ·  ' + ds.emotion, w / 2, y + 16);
-    if (sel) {
-      if (ds.archetype && ARCHETYPES[ds.archetype]) {
-        const arch = ARCHETYPES[ds.archetype];
-        ctx.fillStyle = '#665522'; ctx.fillText('archetype: ' + arch.name + ' — ' + arch.powerDesc, w / 2, y + 30);
-      }
-      // Show cosmological theme for selected dreamscape
-      const cosmo = getCosmologyForDreamscape(ds.id);
-      if (cosmo) {
-        ctx.fillStyle = '#334466'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-        ctx.fillText((cosmo.emoji || '') + ' ' + cosmo.name + '  ·  ' + cosmo.tradition, w / 2, y + 42);
-      }
-    }
+  ctx.fillText('STEP 2 of 3  ·  Mode → Dreamscape → Cosmology', w / 2, 84);
+
+  const cols = 2;
+  const cardW = w * 0.38;
+  const cardH = h * 0.10;
+  const gapX = w * 0.04;
+  const gapY = h * 0.015;
+  const gridW = cols * cardW + (cols - 1) * gapX;
+  const startX = (w - gridW) / 2;
+  const startY = h * 0.14;
+
+  visible.forEach((ds, vi) => {
+    if (!ds) return;
+    const di = pageStart + vi;
+    const col = vi % cols;
+    const row = Math.floor(vi / cols);
+    const cx = startX + col * (cardW + gapX);
+    const cy = startY + row * (cardH + gapY);
+    const isSelected = di === dreamIdx;
+
+    ctx.fillStyle = isSelected ? '#001a11' : '#050a08';
+    ctx.fillRect(cx, cy, cardW, cardH);
+    ctx.strokeStyle = isSelected ? '#00ff88' : '#224433';
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.strokeRect(cx, cy, cardW, cardH);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = isSelected ? '#00ff88' : '#2a3a2a';
+    ctx.shadowColor = isSelected ? '#00ff88' : 'transparent';
+    ctx.shadowBlur = isSelected ? 8 : 0;
+    ctx.font = (isSelected ? 'bold ' : '') + fs(14, ctx.canvas) + 'px ' + FONT;
+    ctx.fillText((di + 1) + '.  ' + ds.name, cx + cardW * 0.05, cy + cardH * 0.40);
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = isSelected ? '#334455' : '#1a2a1a';
+    ctx.font = fs(11, ctx.canvas) + 'px ' + FONT;
+    ctx.fillText(ds.subtitle + '  ·  ' + ds.emotion, cx + cardW * 0.05, cy + cardH * 0.72);
+  });
+
+  ctx.textAlign = 'center';
+  if (totalPages > 1) {
+    const prevHint = page > 0 ? '← prev' : '';
+    const nextHint = page < totalPages - 1 ? '→ next' : '';
+    const pageHints = [prevHint, nextHint].filter(Boolean).join('  ');
+    ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
+    ctx.fillText('Page ' + (page + 1) + ' / ' + totalPages + (pageHints ? '  ·  ' + pageHints : ''), w / 2, h - 36);
   }
-  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillText('↑↓ select  ·  ENTER start here  ·  ESC back', w / 2, h - 20);
+  ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
+  ctx.fillText('↑↓ ←→ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
 
@@ -1261,6 +1295,21 @@ export function drawPlayModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
 }
 
 // ─── Cosmology Selection Screen ────────────────────────────────────────────
+const COSMOLOGY_DESCS = {
+  null:       'Pure gameplay, no tradition overlay',
+  chakra_realm:         'Hindu chakra system · energy as power',
+  wheel_of_becoming:    'Buddhist dharma · suffering & release',
+  wu_wei_flow:          'Taoist wu wei · effortless action',
+  hermetic_principles:  'Hermetic principles · as above so below',
+  yggdrasil_realms:     'Norse cosmology · Yggdrasil worlds',
+  celtic_veil:          'Celtic tradition · thin places',
+  gnostic_gnosis:       'Gnostic gnosis · light & shadow',
+  confucian_harmony:    'Confucian harmony · relational ethics',
+  egyptian_duat:        'Egyptian mystery · underworld journey',
+  mayan_tzolkin:        'Mayan calendar · sacred time',
+  iching_changes:       'I Ching · change as constant',
+  stoic_path:           'Stoicism · virtue & reason',
+};
 export function drawCosmologySelect(ctx, w, h, cosmoIdx, cosmologyList, backgroundStars, ts) {
   ctx.fillStyle = '#01010a'; ctx.fillRect(0, 0, w, h);
   if (backgroundStars) { for (const s of backgroundStars) { ctx.globalAlpha = s.a * (0.5 + 0.5 * Math.sin(ts * 0.0008 + s.phase)); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); } ctx.globalAlpha = 1; }
@@ -1270,20 +1319,50 @@ export function drawCosmologySelect(ctx, w, h, cosmoIdx, cosmologyList, backgrou
   ctx.fillStyle = '#334455'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
   ctx.fillText('choose a world tradition (optional — affects tile lore)', w / 2, 70);
   ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-  ctx.fillText('STEP 3 of 4  ·  Mode → Dreamscape → Cosmology → Playstyle', w / 2, 84);
-  const entries = [{ id: null, name: '  NONE  ', emoji: '○', color: '#aaaaaa', subtitle: 'No cosmological overlay' }, ...cosmologyList];
-  const rowH = 32, startY = 90;
+  ctx.fillText('STEP 3 of 3  ·  Mode → Dreamscape → Cosmology', w / 2, 84);
+
+  const entries = [{ id: null, name: 'NONE', emoji: '·', color: '#aaaaaa', subtitle: 'Pure gameplay, no tradition overlay' }, ...cosmologyList];
+
+  const cols = 2;
+  const cardW = w * 0.38;
+  const cardH = h * 0.10;
+  const gapX = w * 0.04;
+  const gapY = h * 0.015;
+  const gridW = cols * cardW + (cols - 1) * gapX;
+  const startX = (w - gridW) / 2;
+  const startY = h * 0.14;
+
   entries.forEach((c, i) => {
-    const sel = i === cosmoIdx, y = startY + i * rowH;
-    if (y > h - 30) return;
-    ctx.fillStyle = sel ? 'rgba(170,221,255,0.08)' : 'transparent'; ctx.fillRect(w / 2 - 160, y - 16, 320, 28);
-    if (sel) { ctx.strokeStyle = 'rgba(170,221,255,0.4)'; ctx.strokeRect(w / 2 - 160, y - 16, 320, 28); }
-    ctx.fillStyle = sel ? (c.color || '#aaddff') : '#334455';
-    ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + "px " + FONT : fs(13, ctx.canvas) + "px " + FONT;
-    ctx.fillText(`${c.emoji || ''}  ${c.name}`, w / 2, y);
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    const cx = startX + col * (cardW + gapX);
+    const cy = startY + row * (cardH + gapY);
+    if (cy + cardH > h - 30) return;
+    const isSelected = i === cosmoIdx;
+
+    ctx.fillStyle = isSelected ? '#00060f' : '#050a08';
+    ctx.fillRect(cx, cy, cardW, cardH);
+    ctx.strokeStyle = isSelected ? '#aaddff' : '#224433';
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.strokeRect(cx, cy, cardW, cardH);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = isSelected ? (c.color || '#aaddff') : '#334455';
+    ctx.shadowColor = isSelected ? (c.color || '#aaddff') : 'transparent';
+    ctx.shadowBlur = isSelected ? 8 : 0;
+    ctx.font = (isSelected ? 'bold ' : '') + fs(14, ctx.canvas) + 'px ' + FONT;
+    ctx.fillText((c.emoji || '') + '  ' + c.name, cx + cardW * 0.05, cy + cardH * 0.40);
+    ctx.shadowBlur = 0;
+
+    const desc = COSMOLOGY_DESCS[c.id] || c.subtitle || '';
+    ctx.fillStyle = isSelected ? '#334466' : '#1a2233';
+    ctx.font = fs(11, ctx.canvas) + 'px ' + FONT;
+    ctx.fillText(desc, cx + cardW * 0.05, cy + cardH * 0.72);
   });
+
+  ctx.textAlign = 'center';
   ctx.fillStyle = '#0d1a0d'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-  ctx.fillText('↑↓ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 15);
+  ctx.fillText('Arrow keys to select  ·  ENTER confirm  ·  ESC back', w / 2, h - 15);
   ctx.textAlign = 'left';
 }
 

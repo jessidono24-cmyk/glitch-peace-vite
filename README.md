@@ -1,29 +1,43 @@
 # GLITCH·PEACE
 
-**A consciousness-awakening game disguised as a puzzle-action experience.**
+**A consciousness engine disguised as a video game.**
 
-Begin in stillness. Emerge through pattern recognition.
+> v4 · Vite modular · 11 play modes · 18 dreamscapes · 13 cosmologies
 
-> v2.0-alpha | February 2026 | JavaScript + Vite
+GLITCH·PEACE is a therapeutic gaming system that models consciousness
+emergence, emotional regulation, and pattern recognition through play.
+Built on peer-reviewed research in psychology, neuroscience, and biology.
 
----
+## Play Modes
+| Mode | Description |
+|------|-------------|
+| Grid Navigator | Tile-based tactical movement — mapping the mind |
+| Twin-Stick Shooter | Confrontation and integration through combat |
+| First Person | Full immersion — you ARE in the experience |
+| Narrative RPG | Identity formation through story and choice |
+| Constellation | Pattern recognition across a star field |
+| Meditation | Stillness, breath, presence |
+| Rhythm | Synchronization through music theory |
+| Alchemy | Transmutation — old patterns become new |
+| Ornithology | Presence and attention through bird watching |
+| Mycology | Hidden connection through fungal networks |
+| Architecture | Structure, form, and creation |
+| Learning Hub | Language, mathematics, science, and more |
 
-## What This Is
+## Dreamscapes (18)
+Void State · Mountain Dragon Realm · Mountain Courtyard of Ojos ·
+Leaping Field · Mountain Summit Realm · Childhood Neighborhood ·
+The Bedroom · Aztec Dreamscape · Orb Escape · Integration ·
+Crystal Cavern · Ocean Deep · Forest Cathedral · Desert Mirage ·
+Sky Temple · Underground Network · Starfield Nexus · Hearthspace
 
-GLITCH·PEACE is a multi-modal browser game built around four interlocking
-purposes:
+## Cosmologies (13)
+None · Seven Energy Fields · Cycle of Attachment · The Uncarved Block ·
+Field of Polarity · Nine Realm Tree · Veil Crossing · Order vs Entropy ·
+Seven Universal Laws · Five Relations · The Duat · Tzolk'in Cycles ·
+Book of Changes
 
-1. **Consciousness emergence** — meta-awareness through interactive play
-2. **Addiction cessation support** — gentle stress inoculation, no shame spirals
-3. **Learning acceleration** — embodied language and pattern recognition
-4. **Intelligence enhancement** — IQ and EQ development through gameplay
-
-It is not a simple game. It is a consciousness engine that looks like a game.
-
----
-
-## Quick Start
-
+## Development
 ```bash
 git clone https://github.com/jessidono24-cmyk/glitch-peace-vite.git
 cd glitch-peace-vite
@@ -31,163 +45,9 @@ npm install
 npm run dev
 ```
 
-Opens at `http://localhost:3000`
-
----
-
-## Controls
-
-| Key | Action |
-|-----|--------|
-| WASD / Arrow Keys | Move |
-| SHIFT | Toggle Matrix A/B |
-| J | Archetype power |
-| X | Alchemy transmutation |
-| Y | Acknowledge reality check |
-| H | Integration dashboard |
-| ESC | Pause |
-
----
-
-## What's Currently Implemented ✅
-
-### Core Gameplay
-- ✅ 17 tile types with full rendering
-- ✅ 10 dreamscapes with unique behaviors and emotional themes
-- ✅ 5 archetypes with power system (Dragon, Child Guide, Orb, Captor-Teacher, Protector)
-- ✅ Matrix A/B toggle (Coherence vs Erasure)
-- ✅ Enemy AI (wander, patrol, orbit, chase, adaptive, predictive, rush, scatter)
-- ✅ Boss system with 3-phase transitions and special attacks
-- ✅ Fibonacci peace scaling
-- ✅ Upgrade shop (insight token economy)
-- ✅ Full HUD (HP, energy, matrix, score, level, combo, emotion, coherence)
-- ✅ Particle system (burst, resonance wave, trail, echo)
-- ✅ Mobile controls (d-pad)
-- ✅ Save/load + high scores
-- ✅ Full-screen responsive canvas
-
-### Game Modes
-- ✅ Grid Roguelike (consciousness navigation)
-- ✅ Twin-stick Shooter
-- ✅ Constellation (2D + Three.js 3D)
-- ✅ Rhythm mode
-- ✅ Meditation mode
-- ✅ Local Co-op
-- 🔧 RPG Mode (NPC dialogue, 18×18 map) — wiring in progress
-
-### Consciousness Systems (Wired)
-- ✅ Emotional Field (10 emotions, synergies, distortion)
-- ✅ Temporal System (8 lunar phases, 7 planetary days)
-- ✅ Biome System (emotion-driven visual overlays)
-- ✅ Dream Yoga (lucidity tracking, reality checks)
-- ✅ Alchemy System (5 elements, transmutation, Philosopher's Stone)
-- ✅ Achievement System (26 achievements, popup notifications)
-- ✅ Emergence Indicators (8 awakening signs)
-- ✅ Self-Reflection (dreamscape-specific prompts on interlude)
-- ✅ Integration Dashboard (H key — live IQ/EQ/lucidity/emergence view)
-- ✅ Impulse Buffer (hazard prevention)
-- ✅ Consequence Preview (3-move ghost path)
-- ✅ Session Tracker + Urge Management
-- ✅ Chakra System
-- ✅ Tone.js ambient music
-
-### Intelligence Systems (Wired)
-- ✅ Emotion Recognition (EQ tracking, flash labels)
-- ✅ Empathy Training (enemy stun → compassion phrases)
-- ✅ Logic Puzzles (IQ tracking)
-- ✅ Strategic Thinking (decision quality scoring)
-
-### Rendering
-- ✅ Animated SpritePlayer (breathing, directional lean, hit flash)
-- ✅ Campaign Manager (first-visit tutorial hints)
-- ✅ 3D VoidNexus dreamscape (Three.js)
-- ✅ Procedural SFX (Web Audio API, no files needed)
-
----
-
-## In Progress 🔧
-
-- 🔧 RPGMode full wiring (generateGrid export)
-- 🔧 Research integration (psychology/neuroscience applied to systems)
-- 🔧 Leaderboard (Supabase — needs credentials)
-- 🔧 AI procedural content (needs server + API keys)
-
----
-
-## Planned 📋
-
-- 📋 Ornithology game mode (independent, non-grid)
-- 📋 Mycology game mode (independent, non-grid)
-- 📋 Narrative/RPG standalone mode
-- 📋 First-person shooter mode
-- 📋 Godot rebuild for 3D graphics fidelity
-- 📋 Online co-op
-- 📋 Steam integration
-
----
-
-## Design Laws (CANON)
-
-1. No shame spirals — relapse ≠ failure
-2. Sterilized wisdom — no dogma, simulation framing only
-3. Player identity is stable — cyan/white never changes
-4. Accessibility first — reduced motion, high contrast always available
-5. Hearth is always reachable — pause anytime, no data loss
-6. Embodiment maximized — learning through body, action, experience
-7. Effortless by design — align with natural cognition
-8. Sovereign codex compliance — individual sovereignty always respected
-
-See `CANON.md`, `SOVEREIGN_CODEX.md`, `EMBODIMENT.md` in docs/ for full principles.
-
----
-
-## Project Structure
-
-```
-src/
-├── main.js                    # Game loop, state machine
-├── core/                      # Constants, state, utils, storage
-├── game/                      # Grid, player, enemy, particles
-├── modes/                     # ModeManager + all game modes
-├── gameplay-modes/            # Extended mode implementations
-├── systems/                   # Emotional engine, temporal, biome,
-│                              # alchemy, dream-yoga, achievements,
-│                              # boss, emergence, self-reflection
-├── intelligence/              # Emotion recognition, empathy,
-│   ├── cognitive/             # logic puzzles, strategic thinking
-│   └── emotional/
-├── recovery/                  # Impulse buffer, consequence preview,
-│                              # session tracker, urge management
-├── audio/                     # SFX manager (procedural Web Audio)
-└── ui/                        # Renderer, menus
-docs/                          # CANON, ARCHITECTURE, SOVEREIGN_CODEX,
-                               # EMBODIMENT, research foundations
-```
-
----
-
-## Changelog
-
-### 2026-02-20
-- Full-screen responsive canvas (FIX1)
-- Gameplay-modes directory wired into ModeManager (FIX2)
-- Duplicate src/ui/ tree removed (FIX3)
-- Minimum font size 10px enforced everywhere (FIX4)
-- RPGMode generateGrid export (FIX5)
-- _archive excluded from Vite scan (FIX6)
-
-### Earlier (2026-02-19 to 2026-02-20)
-- All W/S/I/R/D tasks completed (EventBus, all consciousness systems wired,
-  intelligence systems wired, SpritePlayer, CampaignManager, Dashboard)
-- Emotional engine, temporal system, impulse buffer, consequence preview,
-  SFX manager all wired (E1-E4, T1-T2, Phase 4-5)
-
----
+## Research Foundation
+All game mechanics are mapped to peer-reviewed research in `docs/research/`.
+See `docs/research/INDEX.md` for the full mechanic-to-research map.
 
 ## License
-
-MIT — Personal project, all rights reserved.
-
----
-
-**Made with ◈ for consciousness explorers**
+MIT

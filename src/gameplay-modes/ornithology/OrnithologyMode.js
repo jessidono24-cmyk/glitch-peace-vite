@@ -139,13 +139,13 @@ export class OrnithologyMode extends GameMode {
   }
 
   init(gameState, canvas, ctx) {
-    // Use the shorter dimension for tile size to keep the grid square and centered
+    // Rectangular tiles fill the full canvas on wide screens
     const gridSz = gameState.gridSize || 12;
     const HUD_H = 40;
-    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
-    this.tileSize = Math.floor(gridPixels / gridSz);
-    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
-    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
+    this._tileW = Math.floor(canvas.width / gridSz);
+    this._tileH = Math.floor((canvas.height - HUD_H) / gridSz);
+    this._xOff = 0;
+    this._yOff = 0;
     gameState._birdNotebook = gameState._birdNotebook || {};
     gameState._totalObservations = gameState._totalObservations || 0;
     gameState.peaceCollected = 0;
@@ -160,10 +160,10 @@ export class OrnithologyMode extends GameMode {
     if (!gameState) return;
     const gridSz = gameState.gridSize || 12;
     const HUD_H = 40;
-    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
-    this.tileSize = Math.floor(gridPixels / gridSz);
-    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
-    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
+    this._tileW = Math.floor(canvas.width / gridSz);
+    this._tileH = Math.floor((canvas.height - HUD_H) / gridSz);
+    this._xOff = 0;
+    this._yOff = 0;
   }
 
   _generateBiomeGrid(gameState) {
@@ -362,7 +362,9 @@ export class OrnithologyMode extends GameMode {
 
   render(gameState, ctx) {
     const sz = gameState.gridSize || 12;
-    const ts = this.tileSize;
+    const tW = this._tileW || 1;
+    const tH = this._tileH || 1;
+    const fs = Math.min(tW, tH); // font-size base (smaller of the two)
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
     const xOff = this._xOff || 0;
@@ -382,18 +384,18 @@ export class OrnithologyMode extends GameMode {
         const biomeKey = this._biomeGrid[y]?.[x] || 'FOREST';
         const biome = BIOMES[biomeKey];
         ctx.fillStyle = biome.bg;
-        ctx.fillRect(x * ts, y * ts, ts, ts);
+        ctx.fillRect(x * tW, y * tH, tW, tH);
         ctx.strokeStyle = 'rgba(255,255,255,0.06)';
         ctx.lineWidth = 1;
-        ctx.strokeRect(x * ts, y * ts, ts, ts);
+        ctx.strokeRect(x * tW, y * tH, tW, tH);
         // Biome symbol (subtle)
-        if (ts >= 20) {
+        if (fs >= 20) {
           ctx.globalAlpha = 0.18;
-          ctx.font = `${Math.floor(ts * 0.45)}px monospace`;
+          ctx.font = `${Math.floor(fs * 0.45)}px monospace`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillStyle = '#fff';
-          ctx.fillText(biome.sy, x * ts + ts / 2, y * ts + ts / 2);
+          ctx.fillText(biome.sy, x * tW + tW / 2, y * tH + tH / 2);
           ctx.globalAlpha = 1;
         }
       }
@@ -403,8 +405,8 @@ export class OrnithologyMode extends GameMode {
     const now = Date.now();
     for (const s of this._birdSightings) {
       if (s.observed) continue;
-      const px = s.x * ts + ts / 2;
-      const py = s.y * ts + ts / 2;
+      const px = s.x * tW + tW / 2;
+      const py = s.y * tH + tH / 2;
       // Rarity glow
       const glowColors = ['', '#aaffaa', '#88ccff', '#ffcc44', '#ff88ff'];
       const glowColor = glowColors[s.bird.rarity] || '#aaffaa';
@@ -413,7 +415,7 @@ export class OrnithologyMode extends GameMode {
       ctx.shadowColor = glowColor;
       ctx.shadowBlur = 6 + pulse * 8;
       ctx.globalAlpha = 0.65 + pulse * 0.25;
-      ctx.font = `${Math.floor(ts * 0.65)}px monospace`;
+      ctx.font = `${Math.floor(fs * 0.65)}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = glowColor;
@@ -423,13 +425,13 @@ export class OrnithologyMode extends GameMode {
     }
 
     // Render player
-    const plx = gameState.player.x * ts + ts / 2;
-    const ply = gameState.player.y * ts + ts / 2;
+    const plx = gameState.player.x * tW + tW / 2;
+    const ply = gameState.player.y * tH + tH / 2;
     ctx.save();
     ctx.fillStyle = '#00e5ff';
     ctx.shadowColor = '#00e5ff';
     ctx.shadowBlur = 10;
-    ctx.font = `bold ${Math.floor(ts * 0.7)}px monospace`;
+    ctx.font = `bold ${Math.floor(fs * 0.7)}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('◈', plx, ply);
@@ -503,16 +505,14 @@ export class OrnithologyMode extends GameMode {
       }
     }
 
-    // Observations counter (top-left)
+    // Observations counter (top-left) — minimal: 3 lines max during active play
     ctx.save();
     ctx.fillStyle = '#aaffaa';
-    ctx.font = `${Math.floor(w / 32)}px monospace`;
+    const hudFs = Math.max(14, Math.floor(w / 36));
+    ctx.font = `${hudFs}px monospace`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`🐦 ${gameState.peaceCollected || 0}/${gameState.peaceTotal}  ·  Score: ${gameState.score || 0}  ·  Lv.${gameState.level || 1}`, 8, 8);
-    ctx.fillStyle = '#446644';
-    ctx.font = `${Math.floor(w / 40)}px monospace`;
-    ctx.fillText(`Notebook: ${Object.keys(gameState._birdNotebook || {}).length} species`, 8, 8 + Math.floor(w / 26));
+    ctx.fillText(`🐦 ${gameState.peaceCollected || 0} / ${gameState.peaceTotal}  observed  ·  Notebook: ${Object.keys(gameState._birdNotebook || {}).length} species`, 8, 8);
     ctx.restore();
   }
 
@@ -521,55 +521,67 @@ export class OrnithologyMode extends GameMode {
     const timeLeft = Math.max(0, Math.ceil(this._challengeTimer / 1000));
     const headerColor = c.isBirdLanguage ? '#55bbaa' : '#aaffaa';
     const borderColor = c.isBirdLanguage ? '#008888' : '#00aa44';
+
+    // Centered popup: 50% width, 60% height
+    const popW = w * 0.50;
+    const popH = h * 0.60;
+    const popX = (w - popW) / 2;
+    const popY = (h - popH) / 2;
+
     ctx.save();
-    ctx.globalAlpha = 0.93;
+    ctx.globalAlpha = 0.95;
     ctx.fillStyle = '#040a08';
-    ctx.fillRect(w * 0.05, h * 0.18, w * 0.90, h * 0.60);
+    ctx.fillRect(popX, popY, popW, popH);
     ctx.strokeStyle = borderColor;
     ctx.lineWidth = 2;
-    ctx.strokeRect(w * 0.05, h * 0.18, w * 0.90, h * 0.60);
+    ctx.strokeRect(popX, popY, popW, popH);
     ctx.globalAlpha = 1;
+
+    const cx = w / 2;
+    const fs = Math.max(14, Math.floor(popW / 22));
 
     // Mode label
     const modeLabel = c.isBirdLanguage ? '🔊 BIRD LANGUAGE' : '🐦 SPECIES IDENTIFICATION';
     ctx.fillStyle = headerColor;
-    ctx.font = `bold ${Math.floor(w / 40)}px monospace`;
+    ctx.font = `bold ${fs}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(modeLabel, w / 2, h * 0.22);
+    ctx.fillText(modeLabel, cx, popY + popH * 0.10);
 
     // Question (handle multi-line via newline split)
     const questionLines = c.question.split('\n');
     ctx.fillStyle = headerColor;
-    ctx.font = `bold ${Math.floor(w / 28)}px monospace`;
-    const LINE_SPACING = Math.floor(w / 22); // ~line height for question text
+    ctx.font = `bold ${Math.max(14, Math.floor(popW / 18))}px monospace`;
+    const LINE_SPACING = Math.max(16, Math.floor(popW / 16));
     questionLines.forEach((line, i) => {
-      ctx.fillText(line, w / 2, h * 0.27 + i * LINE_SPACING);
+      ctx.fillText(line, cx, popY + popH * 0.22 + i * LINE_SPACING);
     });
 
     ctx.fillStyle = '#446655';
-    ctx.font = `italic ${Math.floor(w / 38)}px monospace`;
-    ctx.fillText(c.hint, w / 2, h * 0.36);
+    ctx.font = `italic ${Math.max(12, Math.floor(popW / 28))}px monospace`;
+    ctx.fillText(c.hint, cx, popY + popH * 0.38);
 
     // Options
     c.options.forEach((opt, i) => {
-      const oy = h * (0.41 + i * 0.085);
+      const oy = popY + popH * (0.46 + i * 0.11);
+      const optW = popW * 0.85;
+      const optX = popX + (popW - optW) / 2;
       ctx.fillStyle = '#0a1a14';
-      ctx.fillRect(w * 0.10, oy - 14, w * 0.80, 28);
+      ctx.fillRect(optX, oy - 14, optW, 28);
       ctx.strokeStyle = '#224433';
       ctx.lineWidth = 1;
-      ctx.strokeRect(w * 0.10, oy - 14, w * 0.80, 28);
+      ctx.strokeRect(optX, oy - 14, optW, 28);
       ctx.fillStyle = '#88ccaa';
-      ctx.font = `${Math.floor(w / 32)}px monospace`;
+      ctx.font = `${Math.max(14, Math.floor(popW / 24))}px monospace`;
       ctx.textAlign = 'left';
-      ctx.fillText(`  [${i + 1}]  ${opt}`, w * 0.12, oy + 4);
+      ctx.fillText(`  [${i + 1}]  ${opt}`, optX + 6, oy + 4);
     });
 
     // Timer
     ctx.textAlign = 'center';
     ctx.fillStyle = timeLeft <= 3 ? '#ff4455' : '#446644';
-    ctx.font = `${Math.floor(w / 32)}px monospace`;
-    ctx.fillText(`${timeLeft}s`, w / 2, h * 0.76);
+    ctx.font = `${Math.max(14, Math.floor(popW / 24))}px monospace`;
+    ctx.fillText(`${timeLeft}s`, cx, popY + popH * 0.94);
     ctx.restore();
   }
 }

@@ -28,24 +28,256 @@ function getActiveModeId(state) {
   return state._currentModeType || state.modeId || state.mode || 'grid';
 }
 
+function drawGridBackground(ctx, canvas, state) {
+  ctx.fillStyle = state.ds?.bgColor || '#000d1a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawShooterBackground(ctx, canvas, state) {
+  ctx.fillStyle = '#000005';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!state._stars || state._stars._cw !== canvas.width || state._stars._ch !== canvas.height) {
+    const stars = Array.from({length: 200}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5,
+      brightness: Math.random()
+    }));
+    stars._cw = canvas.width; stars._ch = canvas.height;
+    state._stars = stars;
+  }
+  state._stars.forEach(s => {
+    ctx.fillStyle = `rgba(255,255,255,${0.3 + s.brightness * 0.7})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  for (let y = 0; y < canvas.height; y += 4) {
+    ctx.fillStyle = 'rgba(255,0,68,0.015)';
+    ctx.fillRect(0, y, canvas.width, 1);
+  }
+}
+
+function drawRPGBackground(ctx, canvas, state) {
+  ctx.fillStyle = '#0d0800';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const vignette = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height / 2, canvas.height * 0.2,
+    canvas.width / 2, canvas.height / 2, canvas.height * 0.8
+  );
+  vignette.addColorStop(0, 'rgba(0,0,0,0)');
+  vignette.addColorStop(1, 'rgba(0,0,0,0.7)');
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const glow = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height / 2, 0,
+    canvas.width / 2, canvas.height / 2, canvas.height * 0.5
+  );
+  glow.addColorStop(0, 'rgba(180,100,0,0.08)');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawConstellationBackground(ctx, canvas, state) {
+  ctx.fillStyle = '#000008';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!state._stars || state._stars._cw !== canvas.width || state._stars._ch !== canvas.height) {
+    const stars = Array.from({length: 400}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 2,
+      twinkle: Math.random() * Math.PI * 2,
+      speed: 0.02 + Math.random() * 0.03
+    }));
+    stars._cw = canvas.width; stars._ch = canvas.height;
+    state._stars = stars;
+  }
+  const t = state.time || 0;
+  state._stars.forEach(s => {
+    const alpha = 0.4 + 0.4 * Math.sin(t * s.speed + s.twinkle);
+    ctx.fillStyle = `rgba(200,220,255,${alpha})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  const nebula = ctx.createRadialGradient(
+    canvas.width * 0.3, canvas.height * 0.4, 0,
+    canvas.width * 0.3, canvas.height * 0.4, canvas.width * 0.3
+  );
+  nebula.addColorStop(0, 'rgba(68,68,255,0.06)');
+  nebula.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = nebula;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawMeditationBackground(ctx, canvas, state) {
+  const breathPhase = Math.sin((state.time || 0) * 0.3);
+  const intensity = 0.5 + breathPhase * 0.1;
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, `rgba(0,${Math.round(40 * intensity)},${Math.round(60 * intensity)},1)`);
+  grad.addColorStop(1, `rgba(0,${Math.round(15 * intensity)},${Math.round(25 * intensity)},1)`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!state._particles || state._particles._cw !== canvas.width || state._particles._ch !== canvas.height) {
+    const particles = Array.from({length: 40}, () => ({
+      x: Math.random() * canvas.width,
+      y: canvas.height + Math.random() * 100,
+      speed: 0.2 + Math.random() * 0.5,
+      size: 1 + Math.random() * 3,
+      alpha: Math.random()
+    }));
+    particles._cw = canvas.width; particles._ch = canvas.height;
+    state._particles = particles;
+  }
+  state._particles.forEach(p => {
+    p.y -= p.speed;
+    if (p.y < -10) { p.y = canvas.height + 10; p.x = Math.random() * canvas.width; }
+    ctx.fillStyle = `rgba(136,255,238,${p.alpha * 0.4})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawRhythmBackground(ctx, canvas, state) {
+  ctx.fillStyle = '#0d000d';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const beatPhase = ((state.time || 0) * 2) % 1;
+  const rings = 3;
+  for (let i = 0; i < rings; i++) {
+    const phase = (beatPhase + i / rings) % 1;
+    const r = phase * canvas.height * 0.8;
+    const alpha = (1 - phase) * 0.15;
+    ctx.strokeStyle = `rgba(204,0,204,${alpha})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+}
+
+function drawAlchemyBackground(ctx, canvas, state) {
+  ctx.fillStyle = '#000d00';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!state._bubbles || state._bubbles._cw !== canvas.width || state._bubbles._ch !== canvas.height) {
+    const bubbles = Array.from({length: 20}, () => ({
+      x: Math.random() * canvas.width,
+      y: canvas.height,
+      speed: 0.5 + Math.random() * 1.5,
+      size: 2 + Math.random() * 6,
+      wobble: Math.random() * Math.PI * 2
+    }));
+    bubbles._cw = canvas.width; bubbles._ch = canvas.height;
+    state._bubbles = bubbles;
+  }
+  state._bubbles.forEach(b => {
+    b.y -= b.speed;
+    b.wobble += 0.05;
+    b.x += Math.sin(b.wobble) * 0.5;
+    b.x = Math.max(0, Math.min(canvas.width, b.x));
+    if (b.y < -10) { b.y = canvas.height + 10; b.x = Math.random() * canvas.width; }
+    ctx.strokeStyle = 'rgba(0,170,0,0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+    ctx.stroke();
+  });
+  const glow = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height, 0,
+    canvas.width / 2, canvas.height, canvas.height * 0.4
+  );
+  glow.addColorStop(0, 'rgba(0,100,0,0.2)');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function drawOrnithologyBackground(ctx, canvas, state) {
+  const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grad.addColorStop(0, '#0a0d05');
+  grad.addColorStop(0.4, '#1a2a0a');
+  grad.addColorStop(1, '#0d1205');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = 'rgba(102,136,51,0.2)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, canvas.height * 0.55);
+  ctx.lineTo(canvas.width, canvas.height * 0.55);
+  ctx.stroke();
+}
+
+function drawMycologyBackground(ctx, canvas, state) {
+  ctx.fillStyle = '#0d0800';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  if (!state._mycelium || state._mycelium._cw !== canvas.width || state._mycelium._ch !== canvas.height) {
+    const nodes = Array.from({length: 30}, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+    }));
+    const edges = [];
+    nodes.forEach((a, i) => {
+      nodes.forEach((b, j) => {
+        if (i < j) {
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 180) edges.push([i, j, d]);
+        }
+      });
+    });
+    state._mycelium = { nodes, edges, _cw: canvas.width, _ch: canvas.height };
+  }
+  ctx.strokeStyle = 'rgba(102,68,34,0.15)';
+  ctx.lineWidth = 0.5;
+  state._mycelium.edges.forEach(([i, j]) => {
+    const a = state._mycelium.nodes[i];
+    const b = state._mycelium.nodes[j];
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  });
+}
+
+function drawArchitectureBackground(ctx, canvas, state) {
+  ctx.fillStyle = '#000510';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  const gridSize = 30;
+  ctx.strokeStyle = 'rgba(0,51,153,0.2)';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < canvas.width; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+    ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+    ctx.stroke();
+  }
+}
+
 function drawBackground(ctx, canvas, state) {
   const modeId = getActiveModeId(state);
-  const gridBg  = state.ds?.bgColor || '#0a0a0f';
-  const BG_COLORS = {
-    'grid':           gridBg,
-    'rpg':            gridBg,
-    'grid_roguelike': gridBg,
-    'shooter':        '#000005',
-    'constellation':  '#000008',
-    'meditation':     '#040810',
-    'rhythm':         '#080004',
-    'alchemy':        '#060402',
-    'ornithology':    '#020804',
-    'mycology':       '#040200',
-    'architecture':   '#050508',
-  };
-  ctx.fillStyle = BG_COLORS[modeId] || '#0a0a0f';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  switch (modeId) {
+    case 'grid':
+    case 'grid_roguelike':
+      drawGridBackground(ctx, canvas, state); break;
+    case 'rpg':            drawRPGBackground(ctx, canvas, state); break;
+    case 'shooter':        drawShooterBackground(ctx, canvas, state); break;
+    case 'constellation':  drawConstellationBackground(ctx, canvas, state); break;
+    case 'meditation':     drawMeditationBackground(ctx, canvas, state); break;
+    case 'rhythm':         drawRhythmBackground(ctx, canvas, state); break;
+    case 'alchemy':        drawAlchemyBackground(ctx, canvas, state); break;
+    case 'ornithology':    drawOrnithologyBackground(ctx, canvas, state); break;
+    case 'mycology':       drawMycologyBackground(ctx, canvas, state); break;
+    case 'architecture':   drawArchitectureBackground(ctx, canvas, state); break;
+    default:
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 }
 
 export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, hallucinations, anomalyActive, anomalyData, glitchFrames, DPR, ghostPath) {

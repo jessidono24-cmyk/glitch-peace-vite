@@ -289,8 +289,8 @@ export class OrnithologyMode extends GameMode {
         this._challengeActive = null;
       }
     }
-    // Tick perceived effect timers
-    const dt = deltaTime / 1000; // convert ms to seconds if needed (deltaTime may be ms)
+    // Tick perceived effect timers (deltaTime is in ms from main.js game loop)
+    const dt = deltaTime / 1000; // convert ms → seconds for timer fields
     if (gameState._awePulse && gameState._awePulse.timer > 0) gameState._awePulse.timer -= dt;
     if (gameState._dreadPulse && gameState._dreadPulse.timer > 0) gameState._dreadPulse.timer -= dt;
     if (gameState._perceivedEffect && gameState._perceivedEffect.timer > 0) gameState._perceivedEffect.timer -= dt;

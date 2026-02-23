@@ -105,7 +105,7 @@ export class FPSMode {
 
   update(dt, keys) {
     if (!this.initialized) return;
-    if (dt > 0.5) return; // safety guard against large dt spikes
+    if (dt > 0.1) return; // safety guard against large dt spikes
 
     const speed = 4 * dt;
     const turnSpeed = 2 * dt;
@@ -157,9 +157,19 @@ export class FPSMode {
 
   destroy() {
     if (this.renderer) {
+      // Dispose all scene objects to prevent memory leaks
+      this.scene.traverse(obj => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+          else obj.material.dispose();
+        }
+      });
       this.renderer.dispose();
       this.renderer = null;
     }
+    this.scene = null;
+    this.camera = null;
     this.initialized = false;
   }
 }

@@ -90,18 +90,58 @@ export const LEARNING_HUB_DISCIPLINES = [
   },
 ];
 
-// Sample quiz questions per discipline (shown during active learning)
+// Sample quiz questions per discipline — each entry is { q, options, correct (index) }
 const SAMPLE_QUESTIONS = {
-  language:      ['What does "bonjour" mean?', 'Translate: "Merci beaucoup"', '"Sayōnara" is which language?'],
-  mathematics:   ['What is π × r²?', 'Solve: 2x + 6 = 14', 'Area of triangle with base 6, height 4?'],
-  biology:       ['What does DNA stand for?', 'Organelle that makes energy?', 'What kingdom do fungi belong to?'],
-  physics:       ['F = ?', 'Speed of light (approx)?', 'What is entropy?'],
-  engineering:   ['What is Ohm\'s Law?', 'Name a renewable energy source', 'What is a stress-strain curve?'],
-  psychology:    ['What is cognitive dissonance?', 'Define classical conditioning', 'Name a defense mechanism'],
-  neuroscience:  ['What is the hippocampus responsible for?', 'Myelin does what?', 'Name a neurotransmitter'],
-  sociology:     ['What is social stratification?', 'Define culture', 'What is a social institution?'],
-  meteorology:   ['What causes thunder?', 'What is a cold front?', 'Name a cloud type'],
-  archaeology:   ['What is stratigraphy?', 'Carbon-14 is used for?', 'What is an artifact?'],
+  language: [
+    { q: 'What does "bonjour" mean?',         options: ['Good morning/Hello','Goodbye','Thank you','Please'], correct: 0 },
+    { q: '"Merci beaucoup" means:',            options: ['Thank you very much','Good afternoon','I am sorry','Excuse me'], correct: 0 },
+    { q: '"Sayōnara" is which language?',      options: ['Japanese','Korean','Mandarin','Thai'], correct: 0 },
+  ],
+  mathematics: [
+    { q: 'Area of a circle is:',               options: ['π × r²','2 × π × r','π × d','r²'], correct: 0 },
+    { q: 'Solve: 2x + 6 = 14 → x = ?',        options: ['4','3','7','8'], correct: 0 },
+    { q: 'Area of triangle (base 6, h 4)?',    options: ['12','24','10','8'], correct: 0 },
+  ],
+  biology: [
+    { q: 'DNA stands for:',                    options: ['Deoxyribonucleic acid','Dinitrogen acid','Dual nucleic array','Dynamic neutron acid'], correct: 0 },
+    { q: 'Which organelle makes energy?',      options: ['Mitochondria','Nucleus','Ribosome','Vacuole'], correct: 0 },
+    { q: 'Fungi belong to which kingdom?',     options: ['Fungi','Plantae','Protista','Monera'], correct: 0 },
+  ],
+  physics: [
+    { q: 'Newton\'s 2nd law: F = ?',           options: ['m × a','m + a','m / a','a / m'], correct: 0 },
+    { q: 'Speed of light (approx):',           options: ['3×10⁸ m/s','3×10⁶ m/s','3×10¹⁰ m/s','3×10⁴ m/s'], correct: 0 },
+    { q: 'Entropy is a measure of:',           options: ['Disorder/randomness','Temperature','Pressure','Force'], correct: 0 },
+  ],
+  engineering: [
+    { q: 'Ohm\'s Law states:',                 options: ['V = I × R','V = I + R','V = I / R','V = R / I'], correct: 0 },
+    { q: 'A renewable energy source:',         options: ['Solar','Coal','Oil','Natural gas'], correct: 0 },
+    { q: 'Stress-strain curve shows:',         options: ['Material elasticity','Current flow','Thermal expansion','Chemical bonds'], correct: 0 },
+  ],
+  psychology: [
+    { q: 'Cognitive dissonance is:',           options: ['Mental discomfort from conflicting beliefs','A brain disease','Short-term memory loss','Sensory overload'], correct: 0 },
+    { q: 'Classical conditioning was studied by:', options: ['Pavlov','Freud','Jung','Skinner'], correct: 0 },
+    { q: 'Repression is a:',                   options: ['Defense mechanism','Brain region','Cognitive bias','Perception error'], correct: 0 },
+  ],
+  neuroscience: [
+    { q: 'Hippocampus is responsible for:',    options: ['Memory formation','Vision','Breathing','Balance'], correct: 0 },
+    { q: 'Myelin sheaths:',                    options: ['Speed up nerve signals','Slow nerve signals','Store memories','Produce hormones'], correct: 0 },
+    { q: 'Serotonin is a:',                    options: ['Neurotransmitter','Hormone only','Enzyme','Vitamin'], correct: 0 },
+  ],
+  sociology: [
+    { q: 'Social stratification refers to:',  options: ['Hierarchical social layers','Weather patterns','Economic systems','Legal codes'], correct: 0 },
+    { q: 'Culture includes:',                  options: ['Shared beliefs and practices','Only food and music','Laws only','Technology'], correct: 0 },
+    { q: 'A social institution is:',           options: ['Established system meeting social needs','A building','A law firm','A hospital'], correct: 0 },
+  ],
+  meteorology: [
+    { q: 'Thunder is caused by:',              options: ['Rapid air expansion from lightning','Clouds colliding','Wind pressure','Water droplets'], correct: 0 },
+    { q: 'A cold front brings:',               options: ['Cooler temps & storms','Warm dry air','Fog','Clear skies'], correct: 0 },
+    { q: 'Cumulus clouds are:',                options: ['Puffy, fair-weather clouds','Thin streaky clouds','Dark storm clouds','Low fog-like clouds'], correct: 0 },
+  ],
+  archaeology: [
+    { q: 'Stratigraphy is:',                   options: ['Study of rock/soil layers','Carbon dating','Artifact cleaning','Site mapping'], correct: 0 },
+    { q: 'Carbon-14 dating measures:',         options: ['Age of organic materials','Rock hardness','Metal composition','Soil pH'], correct: 0 },
+    { q: 'An artifact is:',                    options: ['Human-made object from the past','A natural fossil','A written document','A geological feature'], correct: 0 },
+  ],
 };
 
 /**
@@ -232,12 +272,18 @@ export class LearningHubMode extends GameMode {
   _spawnQuestion(gameState) {
     const id = this._activeDiscipline?.id || 'mathematics';
     const questions = SAMPLE_QUESTIONS[id] || SAMPLE_QUESTIONS.mathematics;
-    const q = questions[Math.floor(Math.random() * questions.length)];
-    // Generate dummy multiple choice (one real hint + 3 distractors)
+    const qDef = questions[Math.floor(Math.random() * questions.length)];
+    // Shuffle the options and track correct index
+    const indexed = qDef.options.map((opt, i) => ({ opt, isCorrect: i === qDef.correct }));
+    for (let i = indexed.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indexed[i], indexed[j]] = [indexed[j], indexed[i]];
+    }
+    const correctIdx = indexed.findIndex(o => o.isCorrect);
     this._question = {
-      text: q,
-      options: ['Think carefully…', 'Use your knowledge', 'Apply what you know', 'Trust the pattern'],
-      correctIdx: 0, // simplified — all "correct" for now (tracking engagement, not testing)
+      text: qDef.q,
+      options: indexed.map(o => o.opt),
+      correctIdx,
       discipline: this._activeDiscipline?.name || '',
       sub: this._activeSub || '',
     };
@@ -251,7 +297,12 @@ export class LearningHubMode extends GameMode {
     if (correct) gameState._hubCorrect = (gameState._hubCorrect || 0) + 1;
     gameState.score = (gameState.score || 0) + (correct ? 200 : 50);
     gameState.peaceCollected = Math.min(gameState.peaceTotal, gameState._hubAnswers);
-    this._questionResult = { correct, text: correct ? '✓ Engaged!' : '✓ Keep learning', color: '#00ff88' };
+    const correctText = this._question.options[this._question.correctIdx];
+    this._questionResult = {
+      correct,
+      text: correct ? '✓ Correct!' : `✗ Answer: ${correctText}`,
+      color: correct ? '#00ff88' : '#ff6666',
+    };
     this._questionResultAt = Date.now();
     this._question = null;
     this._questionTimer = 0;

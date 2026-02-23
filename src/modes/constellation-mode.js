@@ -91,6 +91,9 @@ function checkConstellationComplete(playerEdges, correctEdges) {
   );
 }
 
+// HP penalty for connecting the wrong stars
+const WRONG_CONNECTION_HP_COST = 8;
+
 const STAR_DREAMSCAPE_IDS = ['orb_escape', 'integration', 'void_nexus', 'cloud_city', 'crystal_cave'];
 
 export class ConstellationMode {
@@ -147,15 +150,22 @@ export class ConstellationMode {
       // Map fractional position to grid coordinates
       let sy = margin + Math.round(starDef.y * (sz - 2 * margin - 1));
       let sx = margin + Math.round(starDef.x * (sz - 2 * margin - 1));
-      // Avoid duplicate positions
-      let key = `${sy},${sx}`;
-      let offset = 0;
-      while (starPlaced.has(key) && offset < 4) {
-        offset++;
-        sy = Math.min(sz - 1 - margin, sy + 1);
-        key = `${sy},${sx}`;
+      // Resolve 2D collisions by searching adjacent cells
+      let resolved = false;
+      outer: for (let dy = 0; dy <= 3 && !resolved; dy++) {
+        for (let dx = 0; dx <= 3 && !resolved; dx++) {
+          for (const [oy, ox] of [[dy,dx],[dy,-dx],[-dy,dx],[-dy,-dx]]) {
+            const ny = Math.max(margin, Math.min(sz - 1 - margin, sy + oy));
+            const nx = Math.max(margin, Math.min(sz - 1 - margin, sx + ox));
+            const key = `${ny},${nx}`;
+            if (!starPlaced.has(key)) {
+              sy = ny; sx = nx; resolved = true; break outer;
+            }
+          }
+        }
       }
-      starPlaced.add(key);
+      const starKey = `${sy},${sx}`;
+      starPlaced.add(starKey);
       // Clear any hazard on this tile and mark as star
       if (g.grid[sy][sx] !== T.WALL) {
         g.grid[sy][sx] = this.starNodes.length % 4 === 0 ? T.ARCHETYPE : T.INSIGHT;
@@ -168,7 +178,6 @@ export class ConstellationMode {
       for (let x = 0; x < sz; x++)
         if ([T.INSIGHT, T.ARCHETYPE].includes(g.grid[y][x]) && !starPlaced.has(`${y},${x}`))
           g.grid[y][x] = 0;
-
     g.peaceLeft = this.starNodes.length; // win when all collected
 
     this.visitedNodes  = [];
@@ -253,7 +262,7 @@ export class ConstellationMode {
                 );
                 if (!isCorrect) {
                   // Wrong connection — cost health
-                  g.hp = Math.max(1, (g.hp || g.maxHp) - 8);
+                  g.hp = Math.max(1, (g.hp || g.maxHp) - WRONG_CONNECTION_HP_COST);
                   window._constellationFlash = {
                     name: '✗ Wrong connection',
                     alpha: 0, timer: 60, color: '#ff4455',

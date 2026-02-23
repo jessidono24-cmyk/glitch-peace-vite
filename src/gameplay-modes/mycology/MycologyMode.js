@@ -264,8 +264,8 @@ export class MycologyMode extends GameMode {
     }
     // Fade revealed connections
     this._revealedConnections = this._revealedConnections.filter(c => Date.now() - c.at < 3000);
-    // Tick perceived effect timers (deltaTime may be in ms, normalize to seconds)
-    const dt = deltaTime > 1 ? deltaTime / 1000 : deltaTime;
+    // Tick perceived effect timers (deltaTime is in ms from main.js game loop)
+    const dt = deltaTime / 1000; // convert ms → seconds for timer fields
     if (gameState._awePulse && gameState._awePulse.timer > 0) gameState._awePulse.timer -= dt;
     if (gameState._dreadPulse && gameState._dreadPulse.timer > 0) gameState._dreadPulse.timer -= dt;
     if (gameState._perceivedEffect && gameState._perceivedEffect.timer > 0) gameState._perceivedEffect.timer -= dt;

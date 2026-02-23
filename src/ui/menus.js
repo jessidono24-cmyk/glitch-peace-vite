@@ -82,15 +82,13 @@ export const MODE_DREAMSCAPES = {
   'constellation-3d':['void', 'orb_escape', 'integration', 'void_nexus', 'cloud_city'],
 };
 
-// ─── ARCH1: Title screen menu (FREEPLAY and CAMPAIGN as primary entry points) ─
-const TITLE_MENU = [
-  '▶  FREEPLAY',
-  '📖 CAMPAIGN',
-  'HOW TO PLAY',
-  'OPTIONS',
-  'HIGH SCORES',
-  'UPGRADES',
-  'ACHIEVEMENTS',
+// ─── Main menu items ──────────────────────────────────────────────────────
+const MAIN_MENU_ITEMS = [
+  { id: 'new_journey', label: 'NEW JOURNEY',  sub: 'Begin a new consciousness' },
+  { id: 'continue',    label: 'CONTINUE',      sub: 'Return to a saved consciousness' },
+  { id: 'how_to_play', label: 'HOW TO PLAY',   sub: '' },
+  { id: 'options',     label: 'OPTIONS',        sub: '' },
+  { id: 'high_scores', label: 'HIGH SCORES',   sub: '' },
 ];
 
 export function drawModeSelect(ctx, w, h, modeIdx, backgroundStars, ts) {
@@ -200,24 +198,14 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
   ctx.fillStyle = `rgba(0,80,40,${0.6 + 0.4 * tlPulse})`;
   ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillText('v4  ·  dreamscape consciousness simulation  ·  18 dreamscapes  ·  6 modes', w / 2, h / 2 - 98);
 
-  // Mode indicator with pulsing background
-  const MODE_COLORS = { grid:'#00ff88', shooter:'#ff6622', constellation:'#aaddff', meditation:'#88ffcc', coop:'#ffcc44', challenge:'#cc88ff' };
-  const MODE_LABELS = { grid:'GRID', shooter:'SHOOTER', constellation:'CONSTELLATION', meditation:'MEDITATION', coop:'CO-OP', challenge:'CHALLENGE' };
-  const modeColor = MODE_COLORS[gameMode] || '#00ff88';
-  const modeLabel = '[ ' + (MODE_LABELS[gameMode] || gameMode.toUpperCase()) + ' MODE ]';
-  ctx.fillStyle = modeColor + '18'; ctx.fillRect(w / 2 - 80, h / 2 - 92, 160, 18);
-  ctx.fillStyle = modeColor; ctx.shadowColor = modeColor; ctx.shadowBlur = 8;
-  ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillText(modeLabel, w / 2, h / 2 - 79); ctx.shadowBlur = 0;
-
-  // Menu items — FREEPLAY (0) and CAMPAIGN (1) are primary entry points
+  // Menu items
   const _titleItemH = Math.max(28, Math.round(h * 0.05));
-  const menuTop = h / 2 - 58;
+  const menuTop = h / 2 - 68;
   const _titlePanelHalf = Math.round(w * 0.18);
-  TITLE_MENU.forEach((opt, i) => {
+  MAIN_MENU_ITEMS.forEach((item, i) => {
     const sel = i === menuIdx, y = menuTop + i * _titleItemH;
-    // Primary entry points (FREEPLAY=0, CAMPAIGN=1) get accent color treatment
     const isPrimary = i < 2;
-    const itemColor = isPrimary ? (i === 0 ? '#00ff88' : '#ffcc44') : '#00ff88';
+    const itemColor = '#00ff88';
     if (sel) {
       const selGrd = ctx.createLinearGradient(w / 2 - _titlePanelHalf, y - 18, w / 2 + _titlePanelHalf, y - 18);
       selGrd.addColorStop(0, 'rgba(0,255,136,0.01)');
@@ -229,7 +217,7 @@ export function drawTitle(ctx, w, h, backgroundStars, ts, menuIdx, gameMode) {
     const baseColor = sel ? itemColor : (isPrimary ? '#1e3a1e' : '#2a3a2a');
     ctx.fillStyle = baseColor; ctx.shadowColor = sel ? itemColor : 'transparent'; ctx.shadowBlur = sel ? 10 : 0;
     ctx.font = sel ? 'bold '+ fs(16, ctx.canvas) + "px " + FONT : (isPrimary ? 'bold '+ fs(14, ctx.canvas) + "px " + FONT : fs(13, ctx.canvas) + "px " + FONT);
-    ctx.fillText(opt, w / 2, y); ctx.shadowBlur = 0;
+    ctx.fillText(item.label, w / 2, y); ctx.shadowBlur = 0;
   });
 
   // Footer
@@ -1371,4 +1359,59 @@ export function drawCampaignSelect(ctx, w, h, chapterIdx, chapters, progress, ba
   ctx.fillStyle = '#221100'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
   ctx.fillText('↑↓ navigate  ·  ENTER begin chapter  ·  ESC back', w / 2, h - 18);
   ctx.textAlign = 'left';
+}
+
+export function drawMemorySlots(ctx, canvas, slots, selectedSlot) {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#00ff88';
+  ctx.font = fs(32, canvas) + 'px ' + FONT;
+  ctx.fillText('CHOOSE CONSCIOUSNESS', canvas.width / 2, canvas.height * 0.12);
+
+  const slotH = canvas.height * 0.22;
+  const slotW = canvas.width * 0.55;
+  const slotX = (canvas.width - slotW) / 2;
+  const startY = canvas.height * 0.20;
+  const gap = canvas.height * 0.26;
+
+  slots.forEach((slot, i) => {
+    const sy = startY + i * gap;
+    const isSelected = i === selectedSlot;
+
+    ctx.strokeStyle = isSelected ? '#00ff88' : '#224433';
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.strokeRect(slotX, sy, slotW, slotH);
+    ctx.fillStyle = isSelected ? '#001a11' : '#000';
+    ctx.fillRect(slotX, sy, slotW, slotH);
+
+    ctx.textAlign = 'left';
+    const tx = slotX + slotW * 0.06;
+
+    if (slot.empty) {
+      ctx.fillStyle = '#224433';
+      ctx.font = fs(18, canvas) + 'px ' + FONT;
+      ctx.fillText('SLOT ' + (i + 1) + '  ·  [ EMPTY ]', tx, sy + slotH * 0.45);
+      ctx.fillStyle = '#112211';
+      ctx.font = fs(14, canvas) + 'px ' + FONT;
+      ctx.fillText('Press ENTER to begin here', tx, sy + slotH * 0.72);
+    } else {
+      ctx.fillStyle = '#00ff88';
+      ctx.font = fs(20, canvas) + 'px ' + FONT;
+      ctx.fillText('SLOT ' + (i + 1) + '  ·  ' + slot.name, tx, sy + slotH * 0.32);
+      ctx.fillStyle = '#00aa66';
+      ctx.font = fs(15, canvas) + 'px ' + FONT;
+      ctx.fillText(slot.dreamscape + '  ·  ' + slot.emergence, tx, sy + slotH * 0.56);
+      ctx.fillStyle = '#336644';
+      ctx.font = fs(13, canvas) + 'px ' + FONT;
+      ctx.fillText('Score: ' + slot.score + '  ·  Saved: ' + slot.savedAt, tx, sy + slotH * 0.78);
+    }
+  });
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#224433';
+  ctx.font = fs(13, canvas) + 'px ' + FONT;
+  ctx.fillText('↑↓ to select  ·  ENTER to load  ·  DEL to erase  ·  ESC to go back',
+    canvas.width / 2, canvas.height * 0.94);
 }

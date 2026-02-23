@@ -12,7 +12,7 @@ import { CFG, UPG, CURSOR, phase, setPhase, resetUpgrades, resetSession,
          highScores, setHighScores,
          PLAYER_PROFILE, savePlayerProfile } from './core/state.js';
 import { rnd, pick } from './core/utils.js';
-import { saveHighScores, loadHighScores, loadTimezoneOffset, saveTimezoneOffset } from './core/storage.js';
+import { saveHighScores, loadHighScores, loadTimezoneOffset, saveTimezoneOffset, loadAllSlots, deleteSlot } from './core/storage.js';
 import { SZ, DIFF, GP, CW, CH, buildDreamscape } from './game/grid.js';
 import { stepEnemies } from './game/enemy.js';
 import { tryMove, triggerGlitchPulse, stepTileSpread, setEmotion, showMsg,
@@ -26,7 +26,7 @@ import { drawTitle, drawDreamSelect, drawOptions, drawHighScores,
          drawOnboarding, drawLanguageOptions, drawHowToPlay,
          drawModeSelect, drawPlayModeSelect, drawCosmologySelect,
          drawAchievementPopup, drawAchievements,
-         drawCampaignSelect,
+         drawCampaignSelect, drawMemorySlots,
          GAME_MODES, MODE_DREAMSCAPES, TZ_OPTIONS } from './ui/menus.js';
 // ─── Phase 2-5 systems ───────────────────────────────────────────────────
 import { sfxManager } from './audio/sfx-manager.js';
@@ -232,6 +232,8 @@ let CURSOR_playmode   = 0;  // index into PLAY_MODE_LIST for playmodesel screen
 let CURSOR_cosmology  = 0;  // index into cosmologyList for cosmologysel screen (0 = no cosmology)
 let CURSOR_campaign   = 0;  // index into CAMPAIGN_CHAPTERS for campaign select screen
 let CURSOR_dream      = 0;  // index into dreamselFiltered for dreamselect screen
+let CURSOR_slot       = 0;  // index into memory slot list (0-2) for memory_select screen
+let memorySlots       = []; // loaded slot data for memory_select screen
 let dreamselFiltered  = []; // filtered dreamscape objects for chosen game mode
 const EMOTION_THRESHOLD      = 0.15;   // emotion must exceed this to affect gameplay
 const ARCHETYPE_PERM_DURATION = 999999; // arbitrarily large — effectively permanent for a run
@@ -717,10 +719,18 @@ function loop(ts) {
     window._dreamYoga = dreamYoga;
   }
 
+  // Only draw HUD during active play or pause; hide it on all menu screens
+  const GAMEPLAY_PHASES = ['playing', 'paused', 'interlude', 'dead'];
+  if (!GAMEPLAY_PHASES.includes(phase)) {
+    const hudEl = document.getElementById('hud');
+    if (hudEl) hudEl.style.display = 'none';
+  }
+
   if (phase === 'onboarding')  { drawOnboarding(ctx, w, h, onboardState); animId=requestAnimationFrame(loop); return; }
   if (phase === 'langopts')    { drawLanguageOptions(ctx, w, h, langOptState); animId=requestAnimationFrame(loop); return; }
   if (phase === 'howtoplay')   { drawHowToPlay(ctx, w, h); animId=requestAnimationFrame(loop); return; }
   if (phase === 'title')       { drawTitle(ctx, w, h, backgroundStars, ts, CURSOR.menu, gameMode); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); animId=requestAnimationFrame(loop); return; }
+  if (phase === 'memory_select') { drawMemorySlots(ctx, canvas, memorySlots, CURSOR_slot); animId=requestAnimationFrame(loop); return; }
   if (phase === 'modeselect')  { drawModeSelect(ctx, w, h, CURSOR.modesel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, dreamselFiltered, CURSOR_dream); animId=requestAnimationFrame(loop); return; }
   if (phase === 'playmodesel') { drawPlayModeSelect(ctx, w, h, CURSOR_playmode, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
@@ -1535,19 +1545,33 @@ window.addEventListener('keydown', e => {
     e.preventDefault(); return;
   }
   if (phase === 'title') {
-    if (e.key==='ArrowUp')   { CURSOR.menu=(CURSOR.menu-1+7)%7; sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='ArrowDown') { CURSOR.menu=(CURSOR.menu+1)%7; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowUp')   { CURSOR.menu=(CURSOR.menu-1+5)%5; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR.menu=(CURSOR.menu+1)%5; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
-      // ARCH1: 0=FREEPLAY→modeselect, 1=CAMPAIGN→campaignsel, 2=HOW TO PLAY, 3=OPTIONS, 4=HIGH SCORES, 5=UPGRADES, 6=ACHIEVEMENTS
-      if (CURSOR.menu===0)      { CURSOR.modesel=0; CURSOR_cosmology=0; CURSOR_playmode=0; setPhase('modeselect'); }
-      else if (CURSOR.menu===1) { const _cp = loadCampaignProgress(); CURSOR_campaign = Math.max(0, CAMPAIGN_CHAPTERS.findIndex(c => c.id === _cp.currentChapter)); setPhase('campaignsel'); }
+      // 0=NEW JOURNEY→memory_select (always), 1=CONTINUE→memory_select (both show same slot screen;
+      // slot selection itself handles new vs load distinction)
+      if (CURSOR.menu===0||CURSOR.menu===1) { CURSOR_slot=0; memorySlots=loadAllSlots(); setPhase('memory_select'); }
       else if (CURSOR.menu===2) setPhase('howtoplay');
       else if (CURSOR.menu===3) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
       else if (CURSOR.menu===4) setPhase('highscores');
-      else if (CURSOR.menu===5) { CURSOR.shop=0; CURSOR.upgradeFrom='title'; setPhase('upgrade'); }
-      else if (CURSOR.menu===6) { CURSOR.achieveScroll=0; setPhase('achievements'); }
     }
+    e.preventDefault(); return;
+  }
+  // ── Memory slot selection screen ──────────────────────────────────────
+  if (phase === 'memory_select') {
+    if (e.key==='ArrowUp')   { CURSOR_slot=(CURSOR_slot-1+3)%3; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR_slot=(CURSOR_slot+1)%3;   sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='Enter'||e.key===' ') {
+      sfxManager.resume(); sfxManager.playMenuSelect();
+      CURSOR.modesel=0; CURSOR_cosmology=0; CURSOR_playmode=0;
+      setPhase('modeselect');
+    }
+    if (e.key==='Delete'||e.key==='Backspace') {
+      deleteSlot(CURSOR_slot);
+      memorySlots = loadAllSlots();
+    }
+    if (e.key==='Escape') { CURSOR.menu=0; setPhase('title'); }
     e.preventDefault(); return;
   }
   // ── Mode select screen (ARCH1: step 1 — Mode → Dreamscape → Cosmology → Playstyle) ─

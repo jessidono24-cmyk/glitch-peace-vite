@@ -110,10 +110,11 @@ export class MycologyMode extends GameMode {
   init(gameState, canvas, ctx) {
     const gridSz = gameState.gridSize || 12;
     const HUD_H = 40;
-    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
-    this.tileSize = Math.floor(gridPixels / gridSz);
-    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
-    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
+    // Rectangular tiles fill the full canvas on wide screens
+    this._tileW = Math.floor(canvas.width / gridSz);
+    this._tileH = Math.floor((canvas.height - HUD_H) / gridSz);
+    this._xOff = 0;
+    this._yOff = 0;
     gameState.player = gameState.player || { x: 1, y: 1, hp: 100, maxHp: 100, symbol: '◈', color: '#00e5ff' };
     gameState._forageLog = gameState._forageLog || { safe: 0, toxic: 0, species: {} };
     gameState.peaceCollected = 0;
@@ -127,10 +128,11 @@ export class MycologyMode extends GameMode {
     if (!gameState) return;
     const gridSz = gameState.gridSize || 12;
     const HUD_H = 40;
-    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
-    this.tileSize = Math.floor(gridPixels / gridSz);
-    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
-    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
+    // Rectangular tiles fill the full canvas on wide screens
+    this._tileW = Math.floor(canvas.width / gridSz);
+    this._tileH = Math.floor((canvas.height - HUD_H) / gridSz);
+    this._xOff = 0;
+    this._yOff = 0;
   }
 
   _buildSubstrateGrid(gameState) {
@@ -325,7 +327,9 @@ export class MycologyMode extends GameMode {
 
   render(gameState, ctx) {
     const sz = gameState.gridSize || 12;
-    const ts = this.tileSize;
+    const tW = this._tileW || 1;
+    const tH = this._tileH || 1;
+    const fs = Math.min(tW, tH); // font-size base (smaller of the two)
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
     const now = Date.now();
@@ -345,10 +349,10 @@ export class MycologyMode extends GameMode {
       for (let x = 0; x < sz; x++) {
         const sub = SUBSTRATES[this._substrateGrid[y]?.[x]] || SUBSTRATES.OAK;
         ctx.fillStyle = sub.bg;
-        ctx.fillRect(x * ts, y * ts, ts, ts);
+        ctx.fillRect(x * tW, y * tH, tW, tH);
         ctx.strokeStyle = 'rgba(255,255,255,0.05)';
         ctx.lineWidth = 1;
-        ctx.strokeRect(x * ts, y * ts, ts, ts);
+        ctx.strokeRect(x * tW, y * tH, tW, tH);
       }
     }
 
@@ -362,8 +366,8 @@ export class MycologyMode extends GameMode {
       ctx.lineWidth = 1.5;
       ctx.setLineDash([3, 4]);
       ctx.beginPath();
-      ctx.moveTo(conn.from[0] * ts + ts / 2, conn.from[1] * ts + ts / 2);
-      ctx.lineTo(conn.to[0] * ts + ts / 2, conn.to[1] * ts + ts / 2);
+      ctx.moveTo(conn.from[0] * tW + tW / 2, conn.from[1] * tH + tH / 2);
+      ctx.lineTo(conn.to[0] * tW + tW / 2, conn.to[1] * tH + tH / 2);
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.restore();
@@ -371,15 +375,15 @@ export class MycologyMode extends GameMode {
 
     // Network nodes
     for (const node of this._networkNodes) {
-      const px = node.x * ts + ts / 2;
-      const py = node.y * ts + ts / 2;
+      const px = node.x * tW + tW / 2;
+      const py = node.y * tH + tH / 2;
       const pulse = 0.5 + 0.5 * Math.sin(now / 700 + node.x);
       ctx.save();
       ctx.globalAlpha = node.active ? (0.6 + pulse * 0.35) : (0.3 + pulse * 0.2);
       ctx.fillStyle = '#44ff88';
       ctx.shadowColor = '#44ff88';
       ctx.shadowBlur = node.active ? 12 : 4;
-      ctx.font = `${Math.floor(ts * 0.55)}px monospace`;
+      ctx.font = `${Math.floor(fs * 0.55)}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(NETWORK.symbol, px, py);
@@ -390,8 +394,8 @@ export class MycologyMode extends GameMode {
     // Mushroom spawns
     for (const sp of this._mushroomSpawns) {
       if (sp.collected) continue;
-      const px = sp.x * ts + ts / 2;
-      const py = sp.y * ts + ts / 2;
+      const px = sp.x * tW + tW / 2;
+      const py = sp.y * tH + tH / 2;
       const m = sp.mushroom;
       // Toxic mushrooms have a subtle danger glow that only shows when nearby
       const distToPlayer = Math.abs(sp.x - gameState.player.x) + Math.abs(sp.y - gameState.player.y);
@@ -404,7 +408,7 @@ export class MycologyMode extends GameMode {
         ctx.shadowColor = '#44cc66';
         ctx.shadowBlur = 4;
       }
-      ctx.font = `${Math.floor(ts * 0.65)}px monospace`;
+      ctx.font = `${Math.floor(fs * 0.65)}px monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = m.safe ? '#aaffaa' : (isNear ? '#ff6677' : '#888');
@@ -418,10 +422,10 @@ export class MycologyMode extends GameMode {
     ctx.fillStyle = '#00e5ff';
     ctx.shadowColor = '#00e5ff';
     ctx.shadowBlur = 10;
-    ctx.font = `bold ${Math.floor(ts * 0.7)}px monospace`;
+    ctx.font = `bold ${Math.floor(fs * 0.7)}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('◈', gameState.player.x * ts + ts / 2, gameState.player.y * ts + ts / 2);
+    ctx.fillText('◈', gameState.player.x * tW + tW / 2, gameState.player.y * tH + tH / 2);
     ctx.shadowBlur = 0;
     ctx.restore();
 
@@ -501,50 +505,63 @@ export class MycologyMode extends GameMode {
       }
     }
 
-    // Status bar
+    // Status bar — simplified: max 1 line, min 14px, no duplicate HUD info
     ctx.save();
     ctx.fillStyle = '#aaffaa';
-    ctx.font = `${Math.floor(w / 34)}px monospace`;
+    const hudFs = Math.max(14, Math.floor(w / 36));
+    ctx.font = `${hudFs}px monospace`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillText(`🍄 ${gameState.peaceCollected || 0}/${gameState.peaceTotal}  ·  Score: ${gameState.score || 0}  ·  Lv.${gameState.level || 1}`, 8, 8);
     const log = gameState._forageLog || {};
-    ctx.fillStyle = '#446644';
-    ctx.font = `${Math.floor(w / 42)}px monospace`;
-    ctx.fillText(`Foraged: ${log.safe || 0} safe · ${log.toxic || 0} toxic · ${Object.keys(log.species || {}).length} species`, 8, 8 + Math.floor(w / 28));
+    ctx.fillText(`🍄 ${gameState.peaceCollected || 0} / ${gameState.peaceTotal}  foraged  ·  HP: ${gameState.player?.hp || 100}  ·  ${log.safe || 0} safe · ${log.toxic || 0} toxic`, 8, 8);
     ctx.restore();
   }
 
   _renderChallenge(ctx, w, h) {
     const c = this._challengeActive;
     const timeLeft = Math.max(0, Math.ceil(this._challengeTimer / 1000));
+
+    // Centered popup: 50% width, 56% height
+    const popW = w * 0.50;
+    const popH = h * 0.56;
+    const popX = (w - popW) / 2;
+    const popY = (h - popH) / 2;
+
     ctx.save();
-    ctx.globalAlpha = 0.93;
+    ctx.globalAlpha = 0.95;
     ctx.fillStyle = '#060c06';
-    ctx.fillRect(w * 0.05, h * 0.18, w * 0.90, h * 0.58);
+    ctx.fillRect(popX, popY, popW, popH);
     ctx.strokeStyle = '#ff4455';
     ctx.lineWidth = 2;
-    ctx.strokeRect(w * 0.05, h * 0.18, w * 0.90, h * 0.58);
+    ctx.strokeRect(popX, popY, popW, popH);
     ctx.globalAlpha = 1;
+
+    const cx = w / 2;
+    const fs = Math.max(14, Math.floor(popW / 20));
+
     ctx.fillStyle = '#ff8888';
-    ctx.font = `bold ${Math.floor(w / 22)}px monospace`;
+    ctx.font = `bold ${fs}px monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(c.question, w / 2, h * 0.26);
+    ctx.fillText(c.question, cx, popY + popH * 0.14);
+
     c.options.forEach((opt, i) => {
-      const oy = h * (0.36 + i * 0.09);
+      const oy = popY + popH * (0.32 + i * 0.14);
+      const optW = popW * 0.82;
+      const optX = popX + (popW - optW) / 2;
       ctx.fillStyle = '#1a0a0a';
-      ctx.fillRect(w * 0.12, oy - 14, w * 0.76, 28);
+      ctx.fillRect(optX, oy - 14, optW, 28);
       ctx.strokeStyle = '#442222';
       ctx.lineWidth = 1;
-      ctx.strokeRect(w * 0.12, oy - 14, w * 0.76, 28);
+      ctx.strokeRect(optX, oy - 14, optW, 28);
       ctx.fillStyle = '#cc8888';
-      ctx.font = `${Math.floor(w / 32)}px monospace`;
-      ctx.fillText(`[${i + 1}]  ${opt}`, w / 2, oy);
+      ctx.font = `${Math.max(14, Math.floor(popW / 24))}px monospace`;
+      ctx.fillText(`[${i + 1}]  ${opt}`, cx, oy);
     });
+
     ctx.fillStyle = timeLeft <= 3 ? '#ff4455' : '#884444';
-    ctx.font = `${Math.floor(w / 32)}px monospace`;
-    ctx.fillText(`${timeLeft}s`, w / 2, h * 0.73);
+    ctx.font = `${Math.max(14, Math.floor(popW / 24))}px monospace`;
+    ctx.fillText(`${timeLeft}s`, cx, popY + popH * 0.92);
     ctx.restore();
   }
 }

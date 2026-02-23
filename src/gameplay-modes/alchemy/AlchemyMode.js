@@ -202,8 +202,8 @@ export class AlchemyMode extends GameMode {
     this._completedReactions = gameState._completedReactions || new Set();
     this._labParticles = [];
     this._buildLab(gameState);
-    // Initialize Three.js 3D beaker overlay (idempotent)
-    this._init3D(canvas);
+    // Initialize Three.js 3D beaker overlay (idempotent); guard against WebGL unavailability
+    try { this._init3D(canvas); } catch(e) { console.warn('Alchemy 3D overlay init failed:', e); this._3d = null; }
   }
 
   onResize(canvas, gameState) {
@@ -689,7 +689,12 @@ export class AlchemyMode extends GameMode {
     this._renderDiscoveryLog(ctx, w, h, now);
 
     // ── Three.js 3D beaker overlay ────────────────────────────────────────
-    this._render3DOverlay((Date.now() - now) / 1000 || 0.016);
+    try { this._render3DOverlay((Date.now() - now) / 1000 || 0.016); } catch(e) {
+      // WebGL rendering failed; disable 3D overlay so the game loop continues
+      console.warn('Alchemy 3D overlay render failed:', e);
+      try { this._cleanup3D(); } catch(_) {}
+      this._3d = null;
+    }
   }
 
   _renderInventory(ctx, w, h, now) {

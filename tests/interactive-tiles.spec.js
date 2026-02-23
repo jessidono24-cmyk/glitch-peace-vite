@@ -3,7 +3,9 @@ import { test, expect } from '@playwright/test';
 test('interactive: step on PEACE, DESPAIR, GLITCH, TRAP and verify effects', async ({ page }) => {
   const base = process.env.PW_BASE_URL || 'http://localhost:3001/';
   await page.goto(base, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(600);
+
+  // Wait until game is fully loaded and in MENU state
+  await expect.poll(async () => page.evaluate(() => window.GlitchPeaceGame?.state), { timeout: 8000 }).toBe('MENU');
 
   // Skip onboarding if shown
   await page.keyboard.press('Escape');

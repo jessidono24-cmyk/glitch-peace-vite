@@ -128,23 +128,25 @@ function _fsMain(base) {
 }
 function drawLoadingScreen(progress) {
   const W = window.innerWidth, H = window.innerHeight;
-  ctx.fillStyle = '#01010a';
+  ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, W, H);
-  const alpha = Math.min(1, progress * 2); // fade in text over first half of load
-  ctx.globalAlpha = alpha;
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#334444';
-  ctx.font = _fsMain(14) + 'px ' + FONT;
-  ctx.fillText('consciousness simulation loading', W / 2, H * 0.52);
-  // subtle progress indicator
-  const barW = W * 0.18, barH = 1;
-  const bx = (W - barW) / 2, by = H * 0.60;
-  ctx.fillStyle = '#112211';
-  ctx.fillRect(bx, by, barW, barH);
-  ctx.fillStyle = '#336633';
-  ctx.fillRect(bx, by, barW * progress, barH);
-  ctx.globalAlpha = 1;
-  ctx.textAlign = 'left';
+  if (progress > 0.1) {
+    const alpha = Math.min(1, (progress - 0.1) * 2);
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#224433';
+    ctx.font = Math.round(W * 0.022) + 'px ' + FONT;
+    ctx.fillText('CONSCIOUSNESS SIMULATION LOADING', W / 2, H / 2);
+    // progress bar
+    const barW = W * 0.25;
+    const bx = (W - barW) / 2, by = H / 2 + 40;
+    ctx.fillStyle = '#112211';
+    ctx.fillRect(bx, by, barW, 2);
+    ctx.fillStyle = '#00aa66';
+    ctx.fillRect(bx, by, barW * progress, 2);
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+  }
 }
 
 // ─── Shared systems ─────────────────────────────────────────────────────
@@ -1551,8 +1553,8 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowDown') { CURSOR.menu=(CURSOR.menu+1)%5; sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
-      // 0=NEW JOURNEY / 1=CONTINUE → dreamselect (direct selection flow)
-      if (CURSOR.menu===0||CURSOR.menu===1) { dreamselFiltered=[...DREAMSCAPES]; CURSOR_dream=0; dreamPage=0; setPhase('dreamselect'); }
+      // 0=START JOURNEY / 1=CONTINUE → memory slot select
+      if (CURSOR.menu===0||CURSOR.menu===1) { memorySlots = loadAllSlots(); CURSOR_slot=0; setPhase('memory_select'); }
       else if (CURSOR.menu===2) setPhase('howtoplay');
       else if (CURSOR.menu===3) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
       else if (CURSOR.menu===4) setPhase('highscores');
@@ -1583,9 +1585,14 @@ window.addEventListener('keydown', e => {
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
       gameMode = GAME_MODES[CURSOR.modesel].id;
-      _startSelectedMode();
+      const modeDreams = MODE_DREAMSCAPES[gameMode];
+      dreamselFiltered = (modeDreams && modeDreams.length)
+        ? DREAMSCAPES.filter(d => modeDreams.includes(d.id))
+        : [...DREAMSCAPES];
+      if (!dreamselFiltered.length) dreamselFiltered = [...DREAMSCAPES];
+      CURSOR_dream=0; dreamPage=0; setPhase('dreamselect');
     }
-    if (e.key==='Escape') setPhase('cosmologysel');
+    if (e.key==='Escape') setPhase('memory_select');
     e.preventDefault(); return;
   }
   // ── Dreamscape selector (ARCH1: step 2) ─────────────────────────────────
@@ -1601,8 +1608,8 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowDown')  { CURSOR_dream=(CURSOR_dream+1)%N;   dreamPage=Math.floor(CURSOR_dream/ITEMS_PER_PAGE); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowRight') { dreamPage=Math.min(dreamPage+1, totalPages-1); CURSOR_dream=Math.min(dreamPage*ITEMS_PER_PAGE+(CURSOR_dream%2), N-1); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowLeft')  { dreamPage=Math.max(dreamPage-1, 0); CURSOR_dream=Math.min(dreamPage*ITEMS_PER_PAGE+(CURSOR_dream%2), N-1); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='Enter')     { _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_playmode=0; setPhase('playmodesel'); }
-    if (e.key==='Escape')    setPhase('title');
+    if (e.key==='Enter')     { _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_cosmology=0; setPhase('cosmologysel'); }
+    if (e.key==='Escape')    setPhase('modeselect');
     e.preventDefault(); return;
   }
   // ── Play mode selector (ARCH1: step 2.5 — between dreamselect and cosmologysel) ──
@@ -1627,10 +1634,9 @@ window.addEventListener('keydown', e => {
     if (e.key==='Enter') {
       sfxManager.resume(); sfxManager.playMenuSelect();
       CFG.chosenCosmology = CURSOR_cosmology === 0 ? null : cosmologyList[CURSOR_cosmology - 1]?.id || null;
-      CURSOR.modesel = 0;
-      setPhase('modeselect');
+      _startSelectedMode();
     }
-    if (e.key==='Escape') setPhase('playmodesel');
+    if (e.key==='Escape') setPhase('dreamselect');
     e.preventDefault(); return;
   }
   // ── Campaign chapter selector (ARCH3) ─────────────────────────────────

@@ -35,10 +35,12 @@ import { EmotionalField } from './systems/emotional-engine.js';
 import { ConsequencePreview } from './recovery/consequence-preview.js';
 import { ImpulseBuffer } from './recovery/impulse-buffer.js';
 import { ShooterMode } from './modes/shooter-mode.js';
+import { FPSMode } from './modes/fps-mode.js';
 import { AlchemyMode }      from './gameplay-modes/alchemy/AlchemyMode.js';
 import { ArchitectureMode } from './gameplay-modes/architecture/ArchitectureMode.js';
 import { MycologyMode }     from './gameplay-modes/mycology/MycologyMode.js';
 import { OrnithologyMode }  from './gameplay-modes/ornithology/OrnithologyMode.js';
+import { LearningHubMode }  from './gameplay-modes/learning-hub/LearningHubMode.js';
 // ─── Phase 6: Learning Systems ───────────────────────────────────────────
 import { vocabularyEngine } from './systems/learning/vocabulary-engine.js';
 import { patternRecognition } from './systems/learning/pattern-recognition.js';
@@ -198,11 +200,13 @@ const alchemyMode      = new AlchemyMode();
 const architectureMode = new ArchitectureMode();
 const mycologyMode     = new MycologyMode();
 const ornithologyMode  = new OrnithologyMode();
+const learningHubMode  = new LearningHubMode();
+let fpsMode = null; // Created lazily on first use (WebGL canvas takeover)
 let modeGame = null; // shared gameState object for gameplay-modes/ instances
 
 // ─── Input adapter for gameplay-modes/ classes ────────────────────────────
 // ─── gameplay-modes/ set (for gameMode checks) ────────────────────────────
-const GAMEPLAY_MODES = new Set(['alchemy', 'architecture', 'mycology', 'ornithology']);
+const GAMEPLAY_MODES = new Set(['alchemy', 'architecture', 'mycology', 'ornithology', 'learning_hub']);
 
 function makeInputAdapter(k) {
   return {
@@ -873,6 +877,30 @@ function loop(ts) {
   }
 
 
+  // ── Learning Hub mode ─────────────────────────────────────────────────
+  if (gameMode === 'learning_hub') {
+    learningHubMode.update(modeGame, dt);
+    learningHubMode.handleInput(modeGame, makeInputAdapter(keys));
+    learningHubMode.render(modeGame, ctx);
+    updateModeHUD('learning_hub', modeGame);
+    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
+    animId = requestAnimationFrame(loop);
+    return;
+  }
+
+  // ── FPS mode ──────────────────────────────────────────────────────────
+  if (gameMode === 'fps') {
+    if (fpsMode) {
+      const fpsKeys = {};
+      for (const k of keys) fpsKeys[k] = true;
+      fpsMode.update(dt, fpsKeys);
+      fpsMode.render();
+    }
+    animId = requestAnimationFrame(loop);
+    return;
+  }
+
+
   // Apply temporal modifiers to enemy speed
   const tmods = window._tmods || temporalSystem.getModifiers();
   game.temporalEnemyMul = tmods.enemyMul;
@@ -1427,6 +1455,23 @@ function _startSelectedMode() {
     updateHUD({ state: 'PLAYING', _currentModeType: 'rhythm', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: 8, peaceCollected: 0 });
     if (game) game._currentModeType = 'rhythm';
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'fps') {
+    gameMode = 'fps';
+    if (fpsMode) fpsMode.destroy();
+    fpsMode = new FPSMode(canvas, null);
+    fpsMode.init();
+    updateHUD({ state: 'PLAYING', _currentModeType: 'fps', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: 0, peaceCollected: 0 });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'learning_hub') {
+    gameMode = 'learning_hub';
+    modeGame = { gridSize: 10, level: 1, score: 0, peaceCollected: 0, peaceTotal: 5 };
+    learningHubMode.init(modeGame, canvas, ctx);
+    updateHUD({ state: 'PLAYING', _currentModeType: 'learning_hub', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: 5, peaceCollected: 0 });
     setPhase('playing');
     cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
   } else if (chosen === 'constellation-3d') {

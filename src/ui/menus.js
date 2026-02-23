@@ -57,14 +57,16 @@ function stars(ctx, backgroundStars, ts) {
 export const GAME_MODES = [
   { id: 'grid-classic',    label: '🗂️  GRID CLASSIC',       sub: 'tactical tile navigation · original',         color: '#00ff88' },
   { id: 'shooter',         label: '🔫  SHOOTER MODE',        sub: 'fast-paced arena combat · reflex',            color: '#ff6622' },
+  { id: 'fps',             label: '🎯  FIRST PERSON',        sub: '3D corridor dreamscapes · embodiment',        color: '#ff4444' },
   { id: 'rpg',             label: '⚔   RPG ADVENTURE',       sub: 'dialogue, quests, character stats',           color: '#ffcc44' },
-  { id: 'ornithology',     label: '🦅  ORNITHOLOGY',         sub: 'observe birds · answer challenges',           color: '#88ffcc' },
-  { id: 'mycology',        label: '🍄  MYCOLOGY',            sub: 'forage mushrooms · identify species',         color: '#cc88ff' },
+  { id: 'ornithology',     label: '🦅  ORNITHOLOGY',         sub: 'observe birds · awe effects',                 color: '#88ffcc' },
+  { id: 'mycology',        label: '🍄  MYCOLOGY',            sub: 'forage mushrooms · network visualization',    color: '#cc88ff' },
   { id: 'architecture',    label: '🏛   ARCHITECTURE',        sub: 'place tiles · design structures (SPACE/Q/E)', color: '#aaddff' },
-  { id: 'constellation',   label: '✦   CONSTELLATION',       sub: 'connect star nodes · meditative puzzle',      color: '#aaddff' },
-  { id: 'alchemy',         label: '⚗   ALCHEMY',             sub: 'collect elements · transmute at Athanor',     color: '#ff8800' },
-  { id: 'rhythm',          label: '🎵  RHYTHM MODE',         sub: 'move to beat tiles · build streak',           color: '#ffaa44' },
+  { id: 'constellation',   label: '✦   CONSTELLATION',       sub: 'connect stars correctly · wrong = HP cost',   color: '#aaddff' },
+  { id: 'alchemy',         label: '⚗   ALCHEMY',             sub: 'collect elements · rustic lab visuals',       color: '#ff8800' },
+  { id: 'rhythm',          label: '🎵  RHYTHM MODE',         sub: 'music theory intervals · beat matching',      color: '#ffaa44' },
   { id: 'constellation-3d',label: '🌌  CONSTELLATION 3D',    sub: 'Three.js WebGL 3D starfield · nebula',        color: '#ccaaff' },
+  { id: 'learning_hub',    label: '📚  LEARNING HUB',        sub: 'select discipline · contextual puzzles',      color: '#44aaff' },
 ];
 
 // ─── ARCH1: Dreamscapes available per game mode ───────────────────────
@@ -80,6 +82,8 @@ export const MODE_DREAMSCAPES = {
   'mycology':        ['void', 'neighborhood', 'leaping_field', 'mycelium_depths', 'forest_sanctuary'],
   'architecture':    ['courtyard', 'summit', 'integration', 'ancient_structure', 'crystal_cave'],
   'constellation-3d':['void', 'orb_escape', 'integration', 'void_nexus', 'cloud_city'],
+  'fps':             ['void', 'mountain_dragon', 'aztec', 'void_nexus', 'ancient_structure'],
+  'learning_hub':    ['leaping_field', 'neighborhood', 'integration', 'courtyard', 'cloud_city'],
 };
 
 // ─── Main menu items ──────────────────────────────────────────────────────

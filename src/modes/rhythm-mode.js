@@ -20,6 +20,40 @@ export const RHYTHM_KEYS = [
   ['f', 'arrowright', '4'],  // col 3
 ];
 
+// ── Music Theory Integration ─────────────────────────────────────────────
+export const MUSIC_THEORY_ELEMENTS = {
+  intervals: {
+    unison:         { semitones: 0,  feel: 'stillness' },
+    minor_second:   { semitones: 1,  feel: 'tension' },
+    major_second:   { semitones: 2,  feel: 'step' },
+    minor_third:    { semitones: 3,  feel: 'melancholy' },
+    major_third:    { semitones: 4,  feel: 'brightness' },
+    perfect_fourth: { semitones: 5,  feel: 'stability' },
+    tritone:        { semitones: 6,  feel: 'dissonance' },
+    perfect_fifth:  { semitones: 7,  feel: 'power' },
+    minor_sixth:    { semitones: 8,  feel: 'longing' },
+    major_sixth:    { semitones: 9,  feel: 'warmth' },
+    minor_seventh:  { semitones: 10, feel: 'tension' },
+    major_seventh:  { semitones: 11, feel: 'leading' },
+    octave:         { semitones: 12, feel: 'completion' },
+  },
+  rhythms: {
+    patterns: [
+      { name: '4/4 basic',      beats: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0] },
+      { name: 'syncopation',    beats: [1,0,1,0, 0,1,0,0, 1,0,1,0, 0,1,0,0] },
+      { name: 'triplet feel',   beats: [1,0,0,1,0,0,1,0,0,1,0,0] },
+      { name: 'polyrhythm 3:2', beats: [1,0,0,1,0,0,1,0,0,1,0,1,0,0,1,0,0,1] },
+    ],
+  },
+  earTraining: {
+    drills: ['identify interval', 'identify scale degree', 'match the rhythm', 'call and response'],
+  },
+};
+
+// Map beat patterns to lane activation for visual music theory drills
+const THEORY_PALETTE_LABELS = ['UNISON','MIN 3rd','PERF 5th','OCTAVE'];
+const THEORY_FEELS = ['stillness','melancholy','power','completion'];
+
 const COLS         = 4;
 const NOTE_SPEED   = 220;   // px per second
 const HIT_Y_FRAC   = 0.82;  // hit zone at 82% of canvas height
@@ -274,6 +308,10 @@ export class RhythmMode extends GameMode {
       ctx.font = 'bold 11px Courier New';
       ctx.textAlign = 'center';
       ctx.fillText(['A','S','D','F'][c], cx, hitY + NOTE_RADIUS + 18);
+      // Music theory label (interval feel)
+      ctx.fillStyle = col + '66';
+      ctx.font = '8px Courier New';
+      ctx.fillText(THEORY_PALETTE_LABELS[c], cx, hitY + NOTE_RADIUS + 30);
     }
 
     // Draw notes
@@ -324,6 +362,13 @@ export class RhythmMode extends GameMode {
     ctx.fillText('RHYTHM FLOW', 14, 22);
     ctx.fillStyle = '#445544'; ctx.font = '9px Courier New';
     ctx.fillText(this._dsName || '', 14, 36);
+    // Music theory interval hint (cycles through intervals)
+    const intervalKeys = Object.keys(MUSIC_THEORY_ELEMENTS.intervals);
+    const intervalIdx = Math.floor(this._elapsed / 8000) % intervalKeys.length;
+    const intervalName = intervalKeys[intervalIdx].replace(/_/g, ' ');
+    const intervalData = MUSIC_THEORY_ELEMENTS.intervals[intervalKeys[intervalIdx]];
+    ctx.fillStyle = '#334433'; ctx.font = '8px Courier New';
+    ctx.fillText(`♩ ${intervalName} — ${intervalData.feel}`, 14, 50);
 
     ctx.textAlign = 'right';
     ctx.fillStyle = '#ffffff'; ctx.font = 'bold 16px Courier New';

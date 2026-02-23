@@ -158,6 +158,110 @@ const STAT_LABELS = {
  *   - Transmutation = psychological transformation
  *   - Philosopher's Stone = integration of the Self
  */
+
+// ── Rustic Alchemical Laboratory Background ───────────────────────────────
+function _drawAlchemyLabScene(ctx, w, h, now) {
+  const t = now / 1000;
+
+  // Dark oak background
+  ctx.fillStyle = '#1a0f00';
+  ctx.fillRect(0, 0, w, h);
+
+  // Stone wall texture (subtle vertical lines)
+  for (let i = 0; i < 12; i++) {
+    ctx.strokeStyle = 'rgba(40,25,10,0.4)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(w * (i / 12), 0);
+    ctx.lineTo(w * (i / 12) + 8, h * 0.62);
+    ctx.stroke();
+  }
+
+  // Wooden workbench
+  const benchY = h * 0.65;
+  const benchH = h * 0.09;
+  ctx.fillStyle = '#3d2000';
+  ctx.fillRect(0, benchY, w, benchH);
+  for (let i = 0; i < 10; i++) {
+    ctx.strokeStyle = '#2a1500';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(w * (i / 10), benchY);
+    ctx.lineTo(w * (i / 10) + 18, benchY + benchH);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#553311';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, benchY); ctx.lineTo(w, benchY);
+  ctx.stroke();
+
+  // Glass vessels on bench
+  const vessels = [
+    { x: 0.18, color: '#003300', glow: '#00ff44', label: 'VIRIDIAN EXTRACT' },
+    { x: 0.36, color: '#330000', glow: '#ff4400', label: 'ESSENCE OF RAGE' },
+    { x: 0.64, color: '#000033', glow: '#4455ff', label: 'VOID TINCTURE' },
+    { x: 0.82, color: '#333300', glow: '#ffee00', label: 'SOLAR RESIN' },
+  ];
+
+  vessels.forEach(v => {
+    const vx = w * v.x;
+    const vy = benchY - h * 0.16;
+    const vw = w * 0.045;
+    const vh = h * 0.13;
+    const lp = 0.7 + 0.3 * Math.sin(t * 1.2 + v.x * 8);
+    ctx.save();
+    ctx.shadowColor = v.glow;
+    ctx.shadowBlur = 14 + lp * 6;
+    ctx.fillStyle = v.color;
+    ctx.globalAlpha = 0.85;
+    ctx.beginPath();
+    ctx.ellipse(vx, vy + vh * 0.72, vw * 0.48, vh * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillRect(vx - vw * 0.11, vy + vh * 0.1, vw * 0.22, vh * 0.44);
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#664422';
+    ctx.font = Math.max(8, Math.round(w * 0.008)) + 'px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(v.label, vx, vy + vh + 14);
+    ctx.restore();
+  });
+
+  // Central cauldron
+  const cx = w * 0.5;
+  const caulY = benchY - h * 0.22;
+  const caulR = w * 0.04;
+  ctx.save();
+  ctx.shadowColor = '#ff8800';
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = '#1a0800';
+  ctx.beginPath();
+  ctx.ellipse(cx, caulY + h * 0.08, caulR, caulR * 0.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#2d1500';
+  ctx.fillRect(cx - caulR * 0.55, caulY - h * 0.06, caulR * 1.1, h * 0.14);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // Animated flame beneath cauldron
+  const flameBaseY = benchY - h * 0.02;
+  for (let i = 0; i < 5; i++) {
+    const wobble = Math.sin(t * 3.2 + i * 1.3) * w * 0.008;
+    const alpha = 0.35 + Math.sin(t * 4.1 + i) * 0.18;
+    const flameH = h * (0.055 - i * 0.008);
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = `rgba(255,${Math.round(80 + i * 22)},0,1)`;
+    ctx.shadowColor = '#ff8800';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.ellipse(cx + wobble, flameBaseY - flameH * (i / 5), w * 0.012 - i * 1.5, flameH * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 export class AlchemyMode extends GameMode {
   constructor(config = {}) {
     super({
@@ -509,9 +613,8 @@ export class AlchemyMode extends GameMode {
     const h = ctx.canvas.height;
     const now = Date.now();
 
-    // Background — dark hermetic chamber
-    ctx.fillStyle = '#080610';
-    ctx.fillRect(0, 0, w, h);
+    // Background — rustic alchemical laboratory
+    _drawAlchemyLabScene(ctx, w, h, now);
     ctx.save();
     ctx.translate(this._xOff || 0, this._yOff || 0);
 

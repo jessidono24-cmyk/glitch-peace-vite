@@ -11,14 +11,14 @@ export default defineConfig({
     port: 3000,
     open: true,
     watch: {
-      ignored: ['**/_archive/**']
+      ignored: ['**/old-game-archive/**']
     }
   },
   optimizeDeps: {
-    exclude: ['_archive'],
+    exclude: ['old-game-archive'],
   },
-  // FIX6: Exclude legacy _archive directory from all Vite processing
+  // FIX6: Exclude legacy old-game-archive directory from all Vite processing
   resolve: {
-    exclude: ['_archive'],
+    exclude: ['old-game-archive'],
   },
 });

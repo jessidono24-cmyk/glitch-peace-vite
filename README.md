@@ -2,7 +2,7 @@
 
 **A consciousness engine disguised as a video game.**
 
-> v4 · Vite modular · 11 play modes · 18 dreamscapes · 13 cosmologies
+> v4 · Vite + Three.js · 12 play modes · 18 dreamscapes · 13 cosmologies
 
 GLITCH·PEACE is a therapeutic gaming system that models consciousness
 emergence, emotional regulation, and pattern recognition through play.
@@ -48,6 +48,22 @@ npm run dev
 ## Research Foundation
 All game mechanics are mapped to peer-reviewed research in `docs/research/`.
 See `docs/research/INDEX.md` for the full mechanic-to-research map.
+
+## Completed Tasks
+W1·W2 · FIX1-7 · ARCH1-5 · STABLE1-3 · UI1-4 · VIS1 ·
+PLAYTEST1-4 · RESEARCH1-2 · MODES1 · CLEANUP1 · AUDIT1 · UNIVERSAL1
+
+## Structure
+```
+src/          — all game code
+docs/
+  research/   — peer-reviewed sources per field
+  vision/     — CANON, GAMEPLAY_MODES, ROADMAP
+  tasks/      — all agent task files and playtest reports
+  archive/    — superseded design docs
+old-game-archive/ — pre-v4 versions (reference only)
+tests/        — Playwright test suite
+```
 
 ## License
 MIT

@@ -1,7 +1,7 @@
 /**
- * electron/main.js — Electron main process for GLITCH·PEACE desktop build.
+ * electron/main.cjs — Electron main process for GLITCH·PEACE desktop build.
  *
- * Usage (development):  npx electron electron/main.js
+ * Usage (development):  npx electron electron/main.cjs
  * Usage (production):   Built via `npm run electron:build` (electron-builder).
  *
  * Steam integration notes:

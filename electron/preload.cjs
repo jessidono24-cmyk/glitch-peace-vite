@@ -1,5 +1,5 @@
 /**
- * electron/preload.js — Context bridge for GLITCH·PEACE renderer process.
+ * electron/preload.cjs — Context bridge for GLITCH·PEACE renderer process.
  *
  * Exposes a minimal, typed API surface to the renderer via contextBridge.
  * The renderer calls window.glitchPeaceElectron.steam.*  to interact with

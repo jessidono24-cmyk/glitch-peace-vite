@@ -444,8 +444,9 @@ export default class RPGMode extends GameMode {
 
   render(gameState, ctx) {
     const theme = getDreamscapeTheme(gameState.currentDreamscape || 'LODGE');
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = this.canvas.width / dpr;
+    const h = this.canvas.height / dpr;
 
     // Background
     ctx.fillStyle = theme.bg || '#0d0d18';
@@ -581,8 +582,9 @@ export default class RPGMode extends GameMode {
     const node = this._currentNode();
     if (!node || node.text === null) return;
 
-    const w = this.canvas.width;
-    const h = this.canvas.height;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = this.canvas.width / dpr;
+    const h = this.canvas.height / dpr;
     const boxW = w * 0.84;
     const boxH = 170;
     const bx = (w - boxW) / 2;
@@ -696,7 +698,8 @@ export default class RPGMode extends GameMode {
     const active = this._quests.filter(q => !q.completed);
     if (!active.length) return;
 
-    const x = this.canvas.width - 190;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const x = this.canvas.width / dpr - 190;
     const y = 62; // below mode banner, avoid overlap
     const panelH = 18 + active.length * 18;
     ctx.fillStyle = 'rgba(5,5,20,0.88)';

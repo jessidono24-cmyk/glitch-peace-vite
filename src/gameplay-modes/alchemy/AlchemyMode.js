@@ -289,12 +289,15 @@ export class AlchemyMode extends GameMode {
   }
 
   init(gameState, canvas, ctx) {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const logW = canvas.width / dpr;
+    const logH = canvas.height / dpr;
     const gridSz = gameState.gridSize || 12;
     const HUD_H = 40;
-    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    const gridPixels = Math.min(logW, logH - HUD_H);
     this.tileSize = Math.floor(gridPixels / gridSz);
-    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
-    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
+    this._xOff = Math.floor((logW - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((logH - HUD_H) - this.tileSize * gridSz) / 2);
     this.canvas = canvas;
     gameState.player = gameState.player || { x: 1, y: 1, hp: 100, maxHp: 100, symbol: '◈', color: '#00e5ff' };
     gameState.score = gameState.score || 0;
@@ -306,18 +309,21 @@ export class AlchemyMode extends GameMode {
     this._completedReactions = gameState._completedReactions || new Set();
     this._labParticles = [];
     this._buildLab(gameState);
-    // Initialize Three.js 3D beaker overlay (idempotent); guard against WebGL unavailability
-    try { this._init3D(canvas); } catch(e) { console.warn('Alchemy 3D overlay init failed:', e); this._3d = null; }
+    // 3D beaker overlay disabled — caused freeze on some systems
+    this._3d = null;
   }
 
   onResize(canvas, gameState) {
     if (!gameState) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const logW = canvas.width / dpr;
+    const logH = canvas.height / dpr;
     const gridSz = gameState.gridSize || 12;
     const HUD_H = 40;
-    const gridPixels = Math.min(canvas.width, canvas.height - HUD_H);
+    const gridPixels = Math.min(logW, logH - HUD_H);
     this.tileSize = Math.floor(gridPixels / gridSz);
-    this._xOff = Math.floor((canvas.width - this.tileSize * gridSz) / 2);
-    this._yOff = Math.floor(((canvas.height - HUD_H) - this.tileSize * gridSz) / 2);
+    this._xOff = Math.floor((logW - this.tileSize * gridSz) / 2);
+    this._yOff = Math.floor(((logH - HUD_H) - this.tileSize * gridSz) / 2);
   }
 
   _buildLab(gameState) {
@@ -396,6 +402,8 @@ export class AlchemyMode extends GameMode {
   }
 
   update(gameState, deltaTime) {
+    // Freeze guard — skip abnormal frames
+    if (!deltaTime || deltaTime > 500 || isNaN(deltaTime)) return;
     // Update lab particles
     for (let i = this._labParticles.length - 1; i >= 0; i--) {
       const p = this._labParticles[i];
@@ -609,8 +617,9 @@ export class AlchemyMode extends GameMode {
   render(gameState, ctx) {
     const sz = gameState.gridSize || 12;
     const ts = this.tileSize;
-    const w = ctx.canvas.width;
-    const h = ctx.canvas.height;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = ctx.canvas.width / dpr;
+    const h = ctx.canvas.height / dpr;
     const now = Date.now();
 
     // Background — rustic alchemical laboratory

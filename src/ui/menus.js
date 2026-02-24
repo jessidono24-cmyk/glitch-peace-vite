@@ -55,25 +55,22 @@ function stars(ctx, backgroundStars, ts) {
 
 // ─── Mode select definitions ──────────────────────────────────────────
 export const GAME_MODES = [
-  { id: 'grid-classic',    label: '🗂️  GRID CLASSIC',       sub: 'tactical tile navigation · original',         color: '#00ff88' },
-  { id: 'shooter',         label: '🔫  SHOOTER MODE',        sub: 'fast-paced arena combat · reflex',            color: '#ff6622' },
-  { id: 'fps',             label: '🎯  FIRST PERSON',        sub: '3D corridor dreamscapes · embodiment',        color: '#ff4444' },
-  { id: 'rpg',             label: '⚔   RPG ADVENTURE',       sub: 'dialogue, quests, character stats',           color: '#ffcc44' },
-  { id: 'ornithology',     label: '🦅  ORNITHOLOGY',         sub: 'observe birds · awe effects',                 color: '#88ffcc' },
-  { id: 'mycology',        label: '🍄  MYCOLOGY',            sub: 'forage mushrooms · network visualization',    color: '#cc88ff' },
-  { id: 'architecture',    label: '🏛   ARCHITECTURE',        sub: 'place tiles · design structures (SPACE/Q/E)', color: '#aaddff' },
-  { id: 'constellation',   label: '✦   CONSTELLATION',       sub: 'connect stars correctly · wrong = HP cost',   color: '#aaddff' },
-  { id: 'alchemy',         label: '⚗   ALCHEMY',             sub: 'collect elements · rustic lab visuals',       color: '#ff8800' },
-  { id: 'rhythm',          label: '🎵  RHYTHM MODE',         sub: 'music theory intervals · beat matching',      color: '#ffaa44' },
-  { id: 'constellation-3d',label: '🌌  CONSTELLATION 3D',    sub: 'Three.js WebGL 3D starfield · nebula',        color: '#ccaaff' },
-  { id: 'learning_hub',    label: '📚  LEARNING HUB',        sub: 'select discipline · contextual puzzles',      color: '#44aaff' },
+  { id: 'grid-classic',    label: '🗂️  GRID CLASSIC',       sub: 'tactical tile navigation · original',                      color: '#00ff88' },
+  { id: 'fps',             label: '🎯  FIRST PERSON',        sub: '3D corridor dreamscapes · embodied movement · reflex',      color: '#ff4444' },
+  { id: 'rpg',             label: '⚔   RPG ADVENTURE',       sub: 'dialogue, quests, character stats',                        color: '#ffcc44' },
+  { id: 'ornithology',     label: '🦅  ORNITHOLOGY',         sub: 'observe birds · awe effects',                              color: '#88ffcc' },
+  { id: 'mycology',        label: '🍄  MYCOLOGY',            sub: 'forage mushrooms · network visualization',                 color: '#cc88ff' },
+  { id: 'architecture',    label: '🏛   ARCHITECTURE',        sub: 'place tiles · design structures (SPACE/Q/E)',              color: '#aaddff' },
+  { id: 'constellation',   label: '✦   CONSTELLATION',       sub: 'connect stars correctly · wrong = HP cost',                color: '#aaddff' },
+  { id: 'alchemy',         label: '⚗   ALCHEMY',             sub: 'collect elements · rustic lab visuals',                    color: '#ff8800' },
+  { id: 'rhythm',          label: '🎵  RHYTHM MODE',         sub: 'music theory intervals · beat matching',                   color: '#ffaa44' },
+  { id: 'learning_hub',    label: '📚  LEARNING HUB',        sub: 'select discipline · contextual puzzles',                   color: '#44aaff' },
   { id: 'language_learning', label: '🗣️  LANGUAGE LEARNING',   sub: 'FSRS-5 · French · Spanish · Japanese · immersive dreamscape', color: '#44ffdd' },
 ];
 
 // ─── ARCH1: Dreamscapes available per game mode ───────────────────────
 export const MODE_DREAMSCAPES = {
   'grid-classic':    ['void', 'mountain_dragon', 'courtyard', 'leaping_field', 'summit', 'neighborhood', 'bedroom', 'aztec', 'orb_escape', 'integration'],
-  'shooter':         ['void', 'aztec', 'orb_escape', 'bedroom', 'summit', 'void_nexus'],
   'rpg':             ['neighborhood', 'courtyard', 'summit', 'integration', 'crystal_cave', 'cloud_city'],
   'constellation':   ['void', 'orb_escape', 'integration', 'void_nexus', 'cloud_city'],
   'meditation':      ['leaping_field', 'neighborhood', 'integration', 'deep_ocean', 'forest_sanctuary'],
@@ -82,7 +79,6 @@ export const MODE_DREAMSCAPES = {
   'ornithology':     ['leaping_field', 'mountain_dragon', 'summit', 'forest_sanctuary'],
   'mycology':        ['void', 'neighborhood', 'leaping_field', 'mycelium_depths', 'forest_sanctuary'],
   'architecture':    ['courtyard', 'summit', 'integration', 'ancient_structure', 'crystal_cave'],
-  'constellation-3d':['void', 'orb_escape', 'integration', 'void_nexus', 'cloud_city'],
   'fps':             ['void', 'mountain_dragon', 'aztec', 'void_nexus', 'ancient_structure'],
   'learning_hub':    ['leaping_field', 'neighborhood', 'integration', 'courtyard', 'cloud_city'],
   'language_learning': ['leaping_field', 'neighborhood', 'integration', 'courtyard', 'cloud_city'],

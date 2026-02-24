@@ -456,19 +456,29 @@ export default class RPGMode extends GameMode {
       ctx.fillRect(0, 0, w, h);
     }
 
-    // Dark overlay for RPG atmosphere — keep subtle so grid is visible
-    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    // Dark overlay for RPG atmosphere
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
     ctx.fillRect(0, 0, w, h);
 
-    // ── Live walkable RPG grid ───────────────────────────────────────────
-    const ts      = Math.floor((h - RPG_TOP_OFFSET - RPG_BOT_OFFSET) / RPG_GRID_SIZE);
-    const gridPxW = ts * RPG_GRID_SIZE;
-    const gx      = Math.floor((w - gridPxW) / 2);
-    this._renderRpgGrid(ctx, gx, RPG_TOP_OFFSET, ts);
+    // ── Mode banner ────────────────────────────────────────────────────
+    ctx.fillStyle = theme.accent || '#00ff88';
+    ctx.font = 'bold 16px Courier New';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = theme.accent || '#00ff88';
+    ctx.shadowBlur = 8;
+    ctx.fillText('⚔  RPG ADVENTURE  ⚔', w / 2, 28);
+    ctx.shadowBlur = 0;
 
-    // Thin additional scrim so text overlays stay fully legible
-    ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.fillRect(0, 0, w, h);
+    // ── Level / XP info ────────────────────────────────────────────────
+    const lvl  = gameState.level || 1;
+    const xp   = (gameState.score || 0);
+    ctx.fillStyle = '#aabbcc';
+    ctx.font = '12px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Level ${lvl}  ·  XP: ${xp}`, w / 2, 50);
+
+    // ── Text-based world scene ──────────────────────────────────────────
+    this._renderSceneDescription(ctx, w, h, theme);
 
     // ── Stats panel (top-left) ──────────────────────────────────────────
     const stats = this.stats;
@@ -487,22 +497,6 @@ export default class RPGMode extends GameMode {
       ctx.fillStyle = col;
       ctx.fillText(`${label} ${val}`, 14, 22 + i * 18);
     });
-
-    // ── Mode banner ────────────────────────────────────────────────────
-    ctx.fillStyle = theme.accent || '#00ff88';
-    ctx.font = 'bold 16px Courier New';
-    ctx.textAlign = 'center';
-    ctx.shadowColor = theme.accent || '#00ff88';
-    ctx.shadowBlur = 8;
-    ctx.fillText('⚔  RPG ADVENTURE  ⚔', w / 2, 28);
-    ctx.shadowBlur = 0;
-
-    // ── Level / XP info ────────────────────────────────────────────────
-    const lvl  = gameState.level || 1;
-    const xp   = (gameState.score || 0);
-    ctx.fillStyle = '#aabbcc';
-    ctx.font = '12px Courier New';
-    ctx.fillText(`Level ${lvl}  ·  XP: ${xp}`, w / 2, 50);
 
     // ── Peace collection progress bar (just above dialogue) ───────────
     if (this._rpgState) {
@@ -529,6 +523,76 @@ export default class RPGMode extends GameMode {
 
     // Render quest log (top-right corner)
     this._renderQuestLog(ctx);
+  }
+
+  /** Render the text-based world description (replaces tile grid). */
+  _renderSceneDescription(ctx, w, h, theme) {
+    const zone   = this._currentZone || RPG_ZONES.find(z => z.id === 'center') || RPG_ZONES[0];
+    const sceneY = RPG_TOP_OFFSET + 10;
+    const sceneH = h - RPG_TOP_OFFSET - RPG_BOT_OFFSET - 10;
+    const accent = theme.accent || '#00ff88';
+
+    // Scene box
+    const boxX = Math.floor(w * 0.12);
+    const boxW = Math.floor(w * 0.76);
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(boxX, sceneY, boxW, sceneH);
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boxX, sceneY, boxW, sceneH);
+
+    // Zone name
+    ctx.fillStyle = accent;
+    ctx.shadowColor = accent;
+    ctx.shadowBlur = 6;
+    ctx.font = 'bold 18px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText(zone.name, w / 2, sceneY + 28);
+    ctx.shadowBlur = 0;
+
+    // Zone description
+    ctx.fillStyle = '#aabbcc';
+    ctx.font = '13px Courier New';
+    ctx.fillText(zone.desc, w / 2, sceneY + 50);
+
+    // Nearby NPCs
+    const st = this._rpgState;
+    if (st && this._npcs) {
+      const px = st.player.x, py = st.player.y;
+      const nearby = this._npcs.filter(n => !n.dialogueDone && Math.abs(n.x - px) + Math.abs(n.y - py) <= 3);
+      if (nearby.length > 0) {
+        ctx.fillStyle = '#ffdd88';
+        ctx.font = '12px Courier New';
+        ctx.fillText('Nearby:', w / 2, sceneY + 76);
+        nearby.forEach((n, i) => {
+          ctx.fillStyle = n.color || '#ffdd88';
+          ctx.fillText(`${n.symbol}  ${n.name}`, w / 2, sceneY + 94 + i * 18);
+        });
+      }
+    }
+
+    // Player HP bar
+    if (st) {
+      const hp = st.player.hp, maxHp = st.player.maxHp;
+      const hpPct = maxHp > 0 ? hp / maxHp : 1;
+      const barW = Math.floor(boxW * 0.4);
+      const barX = Math.floor(w / 2 - barW / 2);
+      const barY = sceneY + sceneH - 44;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(barX, barY, barW, 10);
+      ctx.fillStyle = hpPct > 0.5 ? '#00ff88' : hpPct > 0.25 ? '#ffcc00' : '#ff4444';
+      ctx.fillRect(barX, barY, Math.floor(barW * hpPct), 10);
+      ctx.fillStyle = '#667788';
+      ctx.font = '10px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText(`HP ${hp}/${maxHp}`, w / 2, barY + 22);
+    }
+
+    // Controls hint
+    ctx.fillStyle = '#334455';
+    ctx.font = '11px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('[WASD] navigate  ·  [ENTER] interact  ·  [J] archetype power', w / 2, sceneY + sceneH - 10);
   }
 
   // ── Dialogue System ──────────────────────────────────────────────────────────

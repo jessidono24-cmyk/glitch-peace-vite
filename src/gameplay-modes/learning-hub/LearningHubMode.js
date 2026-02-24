@@ -90,13 +90,62 @@ export const LEARNING_HUB_DISCIPLINES = [
   },
 ];
 
-// Sample quiz questions per discipline — each entry is { q, options, correct (index) }
-const SAMPLE_QUESTIONS = {
-  language: [
-    { q: 'What does "bonjour" mean?',         options: ['Good morning/Hello','Goodbye','Thank you','Please'], correct: 0 },
+// Per-language vocabulary questions — keyed by sub-discipline name
+const LANGUAGE_QUESTIONS = {
+  French: [
+    { q: 'What does "bonjour" mean?',         options: ['Hello / Good morning','Goodbye','Thank you','Please'],           correct: 0 },
     { q: '"Merci beaucoup" means:',            options: ['Thank you very much','Good afternoon','I am sorry','Excuse me'], correct: 0 },
-    { q: '"Sayōnara" is which language?',      options: ['Japanese','Korean','Mandarin','Thai'], correct: 0 },
+    { q: '"Au revoir" means:',                 options: ['Goodbye','Hello','Please','You\'re welcome'],                    correct: 0 },
+    { q: 'How do you say "water" in French?',  options: ['eau','feu','air','terre'],                                       correct: 0 },
+    { q: '"Liberté" means:',                   options: ['freedom','anger','sadness','time'],                              correct: 0 },
   ],
+  Spanish: [
+    { q: 'What does "hola" mean?',             options: ['Hello','Goodbye','Thank you','Please'],                          correct: 0 },
+    { q: '"Gracias" means:',                   options: ['Thank you','Hello','Goodbye','Good morning'],                    correct: 0 },
+    { q: '"Libertad" means:',                  options: ['freedom','anger','sadness','time'],                              correct: 0 },
+    { q: 'How do you say "water" in Spanish?', options: ['agua','fuego','aire','tierra'],                                  correct: 0 },
+    { q: '"Buenos días" means:',               options: ['Good morning','Good night','Goodbye','Good afternoon'],          correct: 0 },
+  ],
+  Japanese: [
+    { q: 'What does "Konnichiwa" mean?',       options: ['Hello / Good afternoon','Goodbye','Thank you','Good morning'],  correct: 0 },
+    { q: '"Sayōnara" means:',                  options: ['Goodbye','Hello','Thank you','Please'],                          correct: 0 },
+    { q: '"Arigatō" means:',                   options: ['Thank you','Hello','Goodbye','You\'re welcome'],                 correct: 0 },
+    { q: 'How do you say "water" in Japanese?',options: ['mizu','hi','kaze','tsuchi'],                                     correct: 0 },
+    { q: '"Sakura" refers to:',                options: ['Cherry blossom','Mountain','Ocean','Star'],                      correct: 0 },
+  ],
+  Arabic: [
+    { q: 'What does "Marhaba" mean?',          options: ['Hello / Welcome','Goodbye','Thank you','Please'],                correct: 0 },
+    { q: '"Shukran" means:',                   options: ['Thank you','Hello','Goodbye','Please'],                          correct: 0 },
+    { q: '"Maʿa salāma" means:',               options: ['Goodbye','Hello','Thank you','Good morning'],                   correct: 0 },
+    { q: '"Kitāb" means:',                     options: ['Book','Pen','Door','Water'],                                     correct: 0 },
+    { q: 'How do you say "yes" in Arabic?',    options: ['Naʿam','Lā','Tayyib','Afwan'],                                  correct: 0 },
+  ],
+  Sanskrit: [
+    { q: '"Namaste" means:',                   options: ['I bow to you / Hello','Goodbye','Thank you','Please'],           correct: 0 },
+    { q: '"Ahiṃsā" means:',                    options: ['Non-violence','Truth','Peace','Freedom'],                        correct: 0 },
+    { q: '"Dharma" refers to:',                options: ['Duty / cosmic order','Freedom','Love','Knowledge'],              correct: 0 },
+    { q: '"Śānti" means:',                     options: ['Peace','Power','Strength','Clarity'],                            correct: 0 },
+    { q: '"Yoga" literally means:',            options: ['Union / to yoke','To move','To breathe','To think'],             correct: 0 },
+  ],
+  'Ancient Greek': [
+    { q: '"Logos" means:',                     options: ['Word / reason','Love','Truth','Beauty'],                         correct: 0 },
+    { q: '"Aretē" means:',                     options: ['Excellence / virtue','Peace','Justice','Wisdom'],                correct: 0 },
+    { q: '"Polis" means:',                     options: ['City-state','Field','Sea','Mountain'],                           correct: 0 },
+    { q: '"Sophia" means:',                    options: ['Wisdom','Love','Beauty','Justice'],                              correct: 0 },
+    { q: '"Kairos" means:',                    options: ['The right / opportune moment','Long time','Eternity','Future'],  correct: 0 },
+  ],
+};
+
+// Fallback generic language questions (used only when sub is unrecognised)
+const LANGUAGE_FALLBACK = [
+  { q: 'What does "bonjour" mean?',            options: ['Hello / Good morning','Goodbye','Thank you','Please'],           correct: 0 },
+  { q: '"Gracias" means:',                     options: ['Thank you','Hello','Goodbye','Good morning'],                    correct: 0 },
+  { q: '"Arigatō" means:',                     options: ['Thank you','Hello','Goodbye','You\'re welcome'],                 correct: 0 },
+];
+
+// Sample quiz questions per discipline — each entry is { q, options, correct (index) }
+// Note: 'language' discipline is excluded here; _spawnQuestion uses LANGUAGE_QUESTIONS instead.
+const SAMPLE_QUESTIONS = {
   mathematics: [
     { q: 'Area of a circle is:',               options: ['π × r²','2 × π × r','π × d','r²'], correct: 0 },
     { q: 'Solve: 2x + 6 = 14 → x = ?',        options: ['4','3','7','8'], correct: 0 },
@@ -271,7 +320,13 @@ export class LearningHubMode extends GameMode {
 
   _spawnQuestion(gameState) {
     const id = this._activeDiscipline?.id || 'mathematics';
-    const questions = SAMPLE_QUESTIONS[id] || SAMPLE_QUESTIONS.mathematics;
+    let questions;
+    if (id === 'language') {
+      // Use per-language question pool filtered to the chosen sub-discipline
+      questions = LANGUAGE_QUESTIONS[this._activeSub] || LANGUAGE_FALLBACK;
+    } else {
+      questions = SAMPLE_QUESTIONS[id] || SAMPLE_QUESTIONS.mathematics;
+    }
     const qDef = questions[Math.floor(Math.random() * questions.length)];
     // Shuffle the options and track correct index
     const indexed = qDef.options.map((opt, i) => ({ opt, isCorrect: i === qDef.correct }));

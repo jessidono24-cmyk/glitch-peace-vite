@@ -18,7 +18,7 @@
 import { T, DREAMSCAPES, CELL, GAP } from '../core/constants.js';
 import { CFG, UPG, insightTokens, addInsightToken } from '../core/state.js';
 import { rnd } from '../core/utils.js';
-import { SZ, buildDreamscape, CW, CH } from '../game/grid.js';
+import { SZ, buildDreamscape } from '../game/grid.js';
 import { stepEnemies } from '../game/enemy.js';
 import { burst } from '../game/particles.js';
 import { drawGame } from '../ui/renderer.js';
@@ -175,7 +175,7 @@ export class CoopMode {
     this.visions = []; this.hallucinations = [];
 
     // Background stars
-    const w = CW(), h = CH();
+    const w = window.innerWidth, h = window.innerHeight;
     this.backgroundStars = [];
     for (let i = 0; i < 30; i++)
       this.backgroundStars.push({

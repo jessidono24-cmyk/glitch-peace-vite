@@ -22,7 +22,7 @@
 import { T, DREAMSCAPES, CELL, GAP } from '../core/constants.js';
 import { UPG } from '../core/state.js';
 import { rnd, pick } from '../core/utils.js';
-import { SZ, buildDreamscape, CW, CH } from '../game/grid.js';
+import { SZ, buildDreamscape } from '../game/grid.js';
 import { burst } from '../game/particles.js';
 
 const SOMATIC_PHRASES = [
@@ -120,7 +120,7 @@ export class MeditationMode {
     g.peaceLeft = p;
 
     // Background stars
-    const w = CW(), h = CH();
+    const w = window.innerWidth, h = window.innerHeight;
     this.backgroundStars = [];
     for (let i = 0; i < 60; i++)
       this.backgroundStars.push({

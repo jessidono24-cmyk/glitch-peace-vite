@@ -57,6 +57,19 @@ export class ModeManager {
   }
 
   /**
+   * Register an already-created mode instance (externally managed).
+   * switchMode will not call init/cleanup on externally-registered instances.
+   * @param {string} name - Unique mode name
+   * @param {Object} instance - Existing mode instance (already initialized by caller)
+   */
+  registerModeInstance(name, instance) {
+    this.instances.set(name, instance);
+    this.modes.set(name, instance.constructor);
+    if (!this._external) this._external = new Set();
+    this._external.add(name);
+  }
+
+  /**
    * Get or create a mode instance
    * @param {string} name - Mode name
    * @returns {GameMode|null} Mode instance or null if not found
@@ -81,19 +94,29 @@ export class ModeManager {
    * Switch to a different gameplay mode
    * ARCH2: The consciousness engine (emotionalField, temporalSystem, dreamYoga)
    * persists across this switch — it is never reset here.
+   * Idempotent: no-op if already on the requested mode.
+   * External instances (registered via registerModeInstance) are never re-init'd here.
    * @param {string} name - Mode name to switch to
    * @param {Object} config - Configuration for the mode
    * @returns {boolean} true if switch successful
    */
   switchMode(name, config = {}) {
+    // Idempotent — no re-init if already dispatching to this mode
+    if (this.currentModeName === name && this.currentMode) {
+      return true;
+    }
+
     // Get mode instance
     const newMode = this.getModeInstance(name);
     if (!newMode) {
       return false;
     }
 
-    // Cleanup current mode (saves mode-local state, does NOT reset consciousness engine)
-    if (this.currentMode) {
+    const isNewExternal     = this._external && this._external.has(name);
+    const isCurrentExternal = this._external && this._external.has(this.currentModeName);
+
+    // Cleanup current mode only for internally-managed modes
+    if (this.currentMode && !isCurrentExternal) {
       this.currentMode.cleanup();
     }
 
@@ -102,16 +125,20 @@ export class ModeManager {
     this.currentModeName = name;
     this.config[name] = config;
 
-    // Pass persistent consciousness engine into mode config
-    const enrichedConfig = {
-      ...config,
-      consciousness: this._consciousness,
-    };
+    if (!isNewExternal) {
+      // Pass persistent consciousness engine into mode config
+      const enrichedConfig = {
+        ...config,
+        consciousness: this._consciousness,
+      };
 
-    // Initialize new mode
-    this.currentMode.init(enrichedConfig);
+      // Initialize new mode
+      this.currentMode.init(enrichedConfig);
+      console.log(`[ModeManager] Switched to mode: ${name} (consciousness engine persists)`);
+    } else {
+      console.log(`[ModeManager] Dispatching to external instance: ${name}`);
+    }
 
-    console.log(`[ModeManager] Switched to mode: ${name} (consciousness engine persists)`);
     return true;
   }
 

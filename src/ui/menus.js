@@ -431,18 +431,23 @@ export function drawPause(ctx, w, h, game, pauseIdx) {
     }
   }
 
-  // Phase 7: Session wellness display
-  const wellness = window._sessionWellness;
-  const duration = window._sessionDuration || '00:00';
+  // Phase 7: Session wellness display — always visible
+  const wellness   = window._sessionWellness;
+  const duration   = window._sessionDuration || '00:00';
+  const dreamsDone = window._dreamscapesThisSession ?? 0;
+  const emerge     = window._emergenceAllTime ?? 0;
   const learnStats = window._learnStats || { words: 0, patterns: 0 };
   const pace = window._moveSpeedMPS;
-  if (wellness) {
-    ctx.fillStyle = wellness.color; ctx.shadowColor = wellness.color; ctx.shadowBlur = 4;
-    ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-    const paceSuffix = (pace !== undefined && pace !== null) ? `  ·  ${pace.toFixed(1)} mov/s` : '';
-    ctx.fillText('SESSION · ' + duration + paceSuffix + ' · ' + wellness.label, w / 2, h / 2 - 30);
-    ctx.shadowBlur = 0;
-  }
+  ctx.font = fs(13, ctx.canvas) + "px " + FONT;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = wellness?.color ?? '#556677';
+  if (wellness?.color) { ctx.shadowColor = wellness.color; ctx.shadowBlur = 4; }
+  const wellnessVal = wellness?.label ?? '--';
+  const paceSuffix = (pace !== undefined && pace !== null) ? `  ·  ${pace.toFixed(1)} mov/s` : '';
+  ctx.fillText(
+    `SESSION ${duration}${paceSuffix}  ·  WELLNESS ${wellnessVal}  ·  DREAMSCAPES ${dreamsDone}  ·  EMERGENCE ${emerge}`,
+    w / 2, h / 2 - 30);
+  ctx.shadowBlur = 0;
   // Phase 6: Learning stats
   ctx.fillStyle = '#335533'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
   ctx.fillText('WORDS: ' + learnStats.words + '  ·  PATTERNS: ' + learnStats.patterns, w / 2, h / 2 - 18);

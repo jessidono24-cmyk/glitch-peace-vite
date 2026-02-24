@@ -929,8 +929,8 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
   drawEmergenceFlash(ctx, w, h);
   drawTutorialHint(ctx, w);
   drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive);
-  drawDashboard(ctx, w, h);
   ctx.restore();
+  drawDashboard(ctx, canvW, canvH);
 }
 
 function drawTutorialHint(ctx, w) {
@@ -1611,6 +1611,16 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.fillStyle = '#665544'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
     ctx.fillText(fc.powerup, w/2, h*0.28 + 48);
     ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+  }
+
+  // ── Active cosmology modifier label ──────────────────────────────────
+  const cosmoMod = window._cosmologyMod;
+  if (cosmoMod) {
+    ctx.font      = fs(10, ctx.canvas) + 'px ' + FONT;
+    ctx.fillStyle = '#aa88ff';
+    ctx.textAlign = 'right';
+    ctx.fillText(cosmoMod.replace(/_/g, ' ').toUpperCase(), w - 12, 78);
+    ctx.textAlign = 'left';
   }
 
   ctx.fillStyle = '#070714'; ctx.fillRect(0, h - 28, w, 28);

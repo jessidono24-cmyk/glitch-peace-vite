@@ -569,6 +569,28 @@ function initGame(dreamIdx, prevScore, prevLevel, prevHp) {
   g.cosmology = getCosmologyForDreamscape(ds.id);
   // Apply active play mode
   applyPlayMode(g, CFG.playMode || 'arcade');
+  // ── Cosmology modifiers ────────────────────────────────────────────────
+  if (CFG.chosenCosmology) {
+    // Keys are actual cosmology IDs from src/systems/cosmology/cosmologies.js
+    const COSMO_MODS = {
+      'chakra_realm':        { insightMul: 1.4, enemyMul: 1.0, healMul: 1.1 }, // Hindu chakras
+      'wheel_of_becoming':   { insightMul: 1.6, enemyMul: 1.2, healMul: 0.9 }, // Buddhist wheel
+      'world_tree':          { insightMul: 1.3, enemyMul: 1.3, healMul: 1.0 }, // Norse Yggdrasil
+      'hermetic_laws':       { insightMul: 1.2, enemyMul: 1.2, healMul: 1.2 }, // Hermetic
+      'wu_wei_flow':         { insightMul: 1.1, enemyMul: 0.8, healMul: 1.3 }, // Taoist wu wei
+      'zoroastrian_duality': { insightMul: 1.5, enemyMul: 1.1, healMul: 0.8 }, // Gnostic veil
+      'i_ching_hexagrams':   { insightMul: 1.2, enemyMul: 1.4, healMul: 0.9 }, // Order vs entropy
+      'tantric_union':       { insightMul: 1.3, enemyMul: 1.1, healMul: 1.1 }, // Seven laws
+    };
+    const mod = COSMO_MODS[CFG.chosenCosmology] ?? null;
+    if (mod) {
+      g.insightMulMode = (g.insightMulMode || 1) * mod.insightMul;
+      g.enemySpeedMul  = (g.enemySpeedMul  || 1) * mod.enemyMul;
+      // healMul > 1 adds heal rate; healMul < 1 reduces it (0.05 = base heal rate unit)
+      g.autoHealRate   = (g.autoHealRate   || 0) + (mod.healMul - 1) * 0.05;
+      g._cosmologyActive = CFG.chosenCosmology;
+    }
+  }
   // Loop 1: Lucid state archetype bonus — spawn one extra ARCHETYPE tile
   if (window._lucidModifiers?.archetypeBonus) {
     spawnTile(g.grid, 1, T.ARCHETYPE, g.sz, true);
@@ -1408,6 +1430,7 @@ function loop(ts) {
     totalSessions: sessionTracker.sessionHistory.length,
   };
   window._dreamscapesThisSession = sessionTracker.dreamscapesCompleted;
+  window._cosmologyMod = game?._cosmologyActive || CFG.chosenCosmology || null;
 
   // ── Phase 9: Intelligence Enhancement tick ──────────────────────────
   logicPuzzles.tick();

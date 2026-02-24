@@ -1,0 +1,32 @@
+name: Weekly Wiring Audit
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'   # Monday 09:00 UTC
+  workflow_dispatch:        # allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  wiring-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (wiring check)
+        run: npm run build
+
+      - name: Report build success
+        run: |
+          echo "Build passed. Manual wiring audit due."
+          echo "See docs/tasks/task-WIRE1.md for the full audit protocol."
+          echo "Run the Copilot agent workflow .github/workflows/wiring-audit.md for a full automated audit."

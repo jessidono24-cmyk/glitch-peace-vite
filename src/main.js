@@ -46,7 +46,7 @@ import RPGMode              from './gameplay-modes/rpg/RPGMode.js';
 import { vocabularyEngine } from './systems/learning/vocabulary-engine.js';
 import { patternRecognition } from './systems/learning/pattern-recognition.js';
 // ─── Phase 6+: Language System + Sigil System ────────────────────────────
-import { languageSystem, LANGUAGES, LANGUAGE_PATHS, LANG_LIST } from './systems/learning/language-system.js';
+import { languageSystem, LANGUAGE_PATHS, LANG_LIST } from './systems/learning/language-system.js';
 import { sigilSystem } from './systems/learning/sigil-system.js';
 // ─── Phase 6+: Adaptive Difficulty ───────────────────────────────────────
 import { adaptiveDifficulty, DIFFICULTY_TIERS } from './systems/difficulty/adaptive-difficulty.js';
@@ -59,7 +59,7 @@ import { selfReflection } from './systems/awareness/self-reflection.js';
 import { emergenceIndicators } from './systems/awareness/emergence-indicators.js';
 // ─── Phase 10: Cosmology Integration ─────────────────────────────────────
 import { chakraSystem } from './systems/cosmology/chakra-system.js';
-import { TAROT_ARCHETYPES, getRandomArchetype } from './systems/cosmology/tarot-archetypes.js';
+// Reserved for COSMOLOGY1: TAROT_ARCHETYPES, getRandomArchetype from './systems/cosmology/tarot-archetypes.js'
 // ─── Phase 11: Integration Dashboard ─────────────────────────────────────
 // ─── Phase 9: Intelligence Enhancement ───────────────────────────────────
 import { logicPuzzles }       from './intelligence/cognitive/logic-puzzles.js';
@@ -68,21 +68,21 @@ import { empathyTraining }    from './intelligence/emotional/empathy-training.js
 import { emotionRecognition } from './intelligence/emotional/emotion-recognition.js';
 // ─── Phase M3: Campaign Structure ────────────────────────────────────────
 import { campaignManager } from './modes/campaign-manager.js';
-import { campaignStory } from './modes/campaign-story.js';
+// Reserved for NARRATIVE1: campaignStory from './modes/campaign-story.js'
 import { CAMPAIGN_CHAPTERS, loadCampaignProgress, saveChapterComplete, getDreamscapeIndex, isChapterUnlocked } from './systems/campaign-story.js';
 // ─── Phase M4+: Play Modes System (from glitch-peace-vite) ───────────────
 import { PLAY_MODES, PLAY_MODE_LIST, applyPlayMode, getPlayModeMeta } from './systems/play-modes.js';
 // ─── Phase 10+: Cosmologies (from glitch-peace-vite) ─────────────────────
-import { COSMOLOGIES, DREAMSCAPE_COSMOLOGY, getCosmologyForDreamscape } from './systems/cosmology/cosmologies.js';
+import { COSMOLOGIES, getCosmologyForDreamscape } from './systems/cosmology/cosmologies.js';
 // ─── Phase 2.5: Dream Yoga System ────────────────────────────────────────
 import { dreamYoga } from './systems/awareness/dream-yoga.js';
 // ─── Phase M5: RPG Basics ─────────────────────────────────────────────────
 import { characterStats } from './systems/rpg/character-stats.js';
 import { archetypeDialogue } from './systems/rpg/archetype-dialogue.js';
 // ─── Phase M3.5: Boss System ──────────────────────────────────────────────
-import { bossSystem, BOSS_TYPES } from './systems/boss-system.js';
+import { bossSystem } from './systems/boss-system.js';
 // ─── Phase M5: Quest System ───────────────────────────────────────────────
-import { questSystem, QUEST_DEFS } from './systems/rpg/quest-system.js';
+import { questSystem } from './systems/rpg/quest-system.js';
 // ─── Phase M6: Alchemy System ─────────────────────────────────────────────
 import { alchemySystem, TILE_ELEMENT_MAP } from './systems/alchemy-system.js';
 // ─── Phase M6: Constellation Mode ─────────────────────────────────────────
@@ -1520,6 +1520,7 @@ function loop(ts) {
 function _startSelectedMode() {
   const chosen = gameMode;
   if (chosen === 'grid-classic' || chosen === 'grid') {
+    gameMode = 'grid'; // normalise: grid-classic is rendered by the grid path
     startGame(CFG.dreamIdx);
     if (game) game._currentModeType = 'grid';
   } else if (chosen === 'shooter') {

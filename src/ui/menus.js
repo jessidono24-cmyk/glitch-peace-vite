@@ -435,10 +435,12 @@ export function drawPause(ctx, w, h, game, pauseIdx) {
   const wellness = window._sessionWellness;
   const duration = window._sessionDuration || '00:00';
   const learnStats = window._learnStats || { words: 0, patterns: 0 };
+  const pace = window._moveSpeedMPS;
   if (wellness) {
     ctx.fillStyle = wellness.color; ctx.shadowColor = wellness.color; ctx.shadowBlur = 4;
     ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-    ctx.fillText('SESSION · ' + duration + ' · ' + wellness.label, w / 2, h / 2 - 30);
+    const paceSuffix = (pace !== undefined && pace !== null) ? `  ·  ${pace.toFixed(1)} mov/s` : '';
+    ctx.fillText('SESSION · ' + duration + paceSuffix + ' · ' + wellness.label, w / 2, h / 2 - 30);
     ctx.shadowBlur = 0;
   }
   // Phase 6: Learning stats

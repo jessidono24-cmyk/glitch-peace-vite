@@ -1634,6 +1634,17 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.fillStyle = '#ffcc00';
     ctx.fillRect(0, h - 28, w * beatPulse, 2);
     ctx.globalAlpha = 1;
+    // Wire: beat countdown text (window._rhythmTimeToNext — set but unread before WIRE1)
+    const rtt = window._rhythmTimeToNext;
+    if (rtt !== undefined) {
+      ctx.globalAlpha = 0.55 + beatPulse * 0.35;
+      ctx.fillStyle = '#ffcc00';
+      ctx.font = fs(11, ctx.canvas) + "px " + FONT;
+      ctx.textAlign = 'right';
+      ctx.fillText(`BEAT ${(rtt / 1000).toFixed(1)}s`, w - 10, h - 30);
+      ctx.textAlign = 'left';
+      ctx.globalAlpha = 1;
+    }
   }
 
   // ── Phase 9: Empathy flash (enemy behavior label shown after freeze) ──

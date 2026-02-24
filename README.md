@@ -8,6 +8,10 @@ GLITCH·PEACE is a therapeutic gaming system that models consciousness
 emergence, emotional regulation, and pattern recognition through play.
 Built on peer-reviewed research in psychology, neuroscience, and biology.
 
+## Latest Main Update (2026-02-24)
+- Merged WIRE3 overlay/HUD integration and supporting UI renderer updates into `main`.
+- Added WIRE2 and WIRE3 task documentation under `docs/tasks/`.
+
 ## Play Modes
 | Mode | Description |
 |------|-------------|

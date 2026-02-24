@@ -220,7 +220,7 @@ const mycologyMode     = new MycologyMode();
 const ornithologyMode  = new OrnithologyMode();
 const learningHubMode  = new LearningHubMode();
 const rpgMode          = new RPGMode();
-const languageMode     = new LanguageMode(shooterSharedSystems);
+const languageMode     = new LanguageMode(canvas, { dreamscape: null });
 let fpsMode = null; // Created lazily on first use (WebGL canvas takeover)
 let modeGame = null; // shared gameState object for gameplay-modes/ instances
 
@@ -885,9 +885,8 @@ function loop(ts) {
 
   // ── Language Learning mode ────────────────────────────────────────────
   if (gameMode === 'language_learning') {
-    languageMode.update(modeGame, dt);
-    languageMode.handleInput(modeGame, makeInputAdapter(keys));
-    languageMode.render(modeGame, ctx);
+    languageMode.update(dt / 1000);
+    languageMode.render(ctx);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
     animId = requestAnimationFrame(loop);
     return;
@@ -1478,8 +1477,9 @@ function _startSelectedMode() {
     cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
   } else if (chosen === 'language_learning') {
     gameMode = 'language_learning';
-    modeGame = { gridSize: 10, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
-    languageMode.init(modeGame, canvas, ctx);
+    const dsName = DREAMSCAPES?.[CFG?.dreamIdx]?.name || 'Void State';
+    languageMode.gameState = { dreamscape: dsName };
+    languageMode.init();
     updateHUD({ state: 'PLAYING', _currentModeType: 'language_learning', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: 0, peaceCollected: 0 });
     setPhase('playing');
@@ -1913,6 +1913,17 @@ window.addEventListener('keydown', e => {
         constellationMode.cleanup(); meditationMode.cleanup(); coopMode.cleanup();
         gameMode = 'grid';
         setPhase('title'); CURSOR.menu=0; game=null;
+      }
+      e.preventDefault(); return;
+    }
+    // Language Learning mode: event-based key dispatch
+    if (gameMode === 'language_learning') {
+      languageMode.handleInput(e.key);
+      if (e.key === 'Escape') {
+        languageMode.destroy();
+        gameMode = 'grid';
+        setPhase('title');
+        CURSOR.menu = 0;
       }
       e.preventDefault(); return;
     }

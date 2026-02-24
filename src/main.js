@@ -101,6 +101,9 @@ import { RhythmMode, RHYTHM_KEYS } from './modes/rhythm-mode.js';
 import { biomeSystem } from './systems/biome-system.js';
 // ─── Archetype Select UI ──────────────────────────────────────────────────
 import { drawArchetypeSelect } from './ui/menus.js';
+import { ModeManager } from './modes/mode-manager.js';
+// ─── LANG1: Language Learning Mode ────────────────────────────────────────
+import { LanguageMode } from './modes/language-mode.js';
 
 // ─── Canvas setup ───────────────────────────────────────────────────────
 const canvas = document.getElementById('c');
@@ -190,6 +193,12 @@ const shooterSharedSystems = {
 };
 const shooterMode = new ShooterMode(shooterSharedSystems);
 
+// ARCH1: ModeManager — wired here so new modes can register through it.
+// Existing mode instances are managed directly; this provides a registry for
+// future modes (e.g. language-mode) and exposes window._modeManager globally.
+const modeManager = new ModeManager(shooterSharedSystems);
+window._modeManager = modeManager;
+
 // ─── Phase M6 / M7 / M8 mode instances ──────────────────────────────────
 const constellationMode = new ConstellationMode(shooterSharedSystems);
 const meditationMode    = new MeditationMode(shooterSharedSystems);
@@ -203,12 +212,13 @@ const mycologyMode     = new MycologyMode();
 const ornithologyMode  = new OrnithologyMode();
 const learningHubMode  = new LearningHubMode();
 const rpgMode          = new RPGMode();
+const languageMode     = new LanguageMode(shooterSharedSystems);
 let fpsMode = null; // Created lazily on first use (WebGL canvas takeover)
 let modeGame = null; // shared gameState object for gameplay-modes/ instances
 
 // ─── Input adapter for gameplay-modes/ classes ────────────────────────────
 // ─── gameplay-modes/ set (for gameMode checks) ────────────────────────────
-const GAMEPLAY_MODES = new Set(['alchemy', 'architecture', 'mycology', 'ornithology', 'learning_hub']);
+const GAMEPLAY_MODES = new Set(['alchemy', 'architecture', 'mycology', 'ornithology', 'learning_hub', 'language_learning']);
 
 function makeInputAdapter(k) {
   return {
@@ -901,6 +911,16 @@ function loop(ts) {
     return;
   }
 
+  // ── Language Learning mode ────────────────────────────────────────────
+  if (gameMode === 'language_learning') {
+    languageMode.update(modeGame, dt);
+    languageMode.handleInput(modeGame, makeInputAdapter(keys));
+    languageMode.render(modeGame, ctx);
+    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
+    animId = requestAnimationFrame(loop);
+    return;
+  }
+
   // ── FPS mode ──────────────────────────────────────────────────────────
   if (gameMode === 'fps') {
     if (fpsMode) {
@@ -1476,6 +1496,14 @@ function _startSelectedMode() {
     learningHubMode.init(modeGame, canvas, ctx);
     updateHUD({ state: 'PLAYING', _currentModeType: 'learning_hub', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: 5, peaceCollected: 0 });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
+  } else if (chosen === 'language_learning') {
+    gameMode = 'language_learning';
+    modeGame = { gridSize: 10, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
+    languageMode.init(modeGame, canvas, ctx);
+    updateHUD({ state: 'PLAYING', _currentModeType: 'language_learning', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: 0, peaceCollected: 0 });
     setPhase('playing');
     cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
   } else if (chosen === 'constellation-3d') {

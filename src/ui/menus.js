@@ -67,6 +67,7 @@ export const GAME_MODES = [
   { id: 'rhythm',          label: '🎵  RHYTHM MODE',         sub: 'music theory intervals · beat matching',      color: '#ffaa44' },
   { id: 'constellation-3d',label: '🌌  CONSTELLATION 3D',    sub: 'Three.js WebGL 3D starfield · nebula',        color: '#ccaaff' },
   { id: 'learning_hub',    label: '📚  LEARNING HUB',        sub: 'select discipline · contextual puzzles',      color: '#44aaff' },
+  { id: 'language_learning', label: '🗣️  LANGUAGE LEARNING',   sub: 'FSRS-5 · French · Spanish · Japanese · immersive dreamscape', color: '#44ffdd' },
 ];
 
 // ─── ARCH1: Dreamscapes available per game mode ───────────────────────
@@ -84,6 +85,7 @@ export const MODE_DREAMSCAPES = {
   'constellation-3d':['void', 'orb_escape', 'integration', 'void_nexus', 'cloud_city'],
   'fps':             ['void', 'mountain_dragon', 'aztec', 'void_nexus', 'ancient_structure'],
   'learning_hub':    ['leaping_field', 'neighborhood', 'integration', 'courtyard', 'cloud_city'],
+  'language_learning': ['leaping_field', 'neighborhood', 'integration', 'courtyard', 'cloud_city'],
 };
 
 // ─── Main menu items ──────────────────────────────────────────────────────

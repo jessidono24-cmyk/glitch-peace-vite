@@ -283,8 +283,9 @@ function drawBackground(ctx, canvas, state) {
 export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, hallucinations, anomalyActive, anomalyData, glitchFrames, DPR, ghostPath) {
   const g = game; if (!g) return;
   const sz = g.sz;
-  const gp = sz * CELL + (sz - 1) * GAP;
-  const w = gp + 48, h = gp + 148;
+  const gp  = sz * CELL + (sz - 1) * GAP;
+  const w   = ctx.canvas.width  ? ctx.canvas.width  / DPR : gp + 48;
+  const h   = ctx.canvas.height ? ctx.canvas.height / DPR : gp + 148;
   const P = PAL(matrixActive);
   const ds = g.ds;
 

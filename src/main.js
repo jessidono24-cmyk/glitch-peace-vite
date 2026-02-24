@@ -205,6 +205,14 @@ const meditationMode    = new MeditationMode(shooterSharedSystems);
 const coopMode          = new CoopMode(shooterSharedSystems);
 const rhythmMode        = new RhythmMode(shooterSharedSystems);
 
+// ARCH1: Register externally-managed instances so modeManager can dispatch to them.
+// init/cleanup for these instances is handled by the mode-selection code, not modeManager.
+modeManager.registerModeInstance('shooter',       shooterMode);
+modeManager.registerModeInstance('constellation', constellationMode);
+modeManager.registerModeInstance('meditation',    meditationMode);
+modeManager.registerModeInstance('coop',          coopMode);
+modeManager.registerModeInstance('rhythm',        rhythmMode);
+
 // ─── gameplay-modes/ instances (use their own gameState object) ──────────
 const alchemyMode      = new AlchemyMode();
 const architectureMode = new ArchitectureMode();
@@ -219,6 +227,8 @@ let modeGame = null; // shared gameState object for gameplay-modes/ instances
 // ─── Input adapter for gameplay-modes/ classes ────────────────────────────
 // ─── gameplay-modes/ set (for gameMode checks) ────────────────────────────
 const GAMEPLAY_MODES = new Set(['alchemy', 'architecture', 'mycology', 'ornithology', 'learning_hub', 'language_learning']);
+// ARCH1: non-grid modes dispatched through ModeManager in loop()
+const NON_GRID_MODES = new Set(['shooter', 'constellation', 'meditation', 'coop', 'rhythm']);
 
 function makeInputAdapter(k) {
   return {
@@ -770,73 +780,35 @@ function loop(ts) {
     animId = requestAnimationFrame(loop); return;
   }
 
-  // ── Rhythm mode ──────────────────────────────────────────────────────
-  if (gameMode === 'rhythm') {
-    rhythmMode.setSizes(w, h);
-    const result = rhythmMode.update(dt, keys, matrixActive, ts);
-    rhythmMode.render(ctx, ts, { backgroundStars });
-    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    if (result && result.phase === 'dead') {
-      deadGame = result.data;
-      setPhase('dead');
-    }
-    animId = requestAnimationFrame(loop); return;
-  }
-
-  // ── Shooter mode ─────────────────────────────────────────────────────
-  if (gameMode === 'shooter') {
+  // ── Non-grid modes (shooter / constellation / meditation / coop / rhythm) ──
+  if (NON_GRID_MODES.has(gameMode)) {
+    if (gameMode === 'rhythm') rhythmMode.setSizes(w, h);
     // Expose shooter state for pause menu display
-    window._shooterState = { wave: shooterMode.wave, score: shooterMode.player.score, health: Math.round(shooterMode.player.health) };
-    const result = shooterMode.update(dt, keys, matrixActive, ts);
-    shooterMode.render(ctx, ts, { w, h, DPR });
-    updateHUD({ state: 'PLAYING', _currentModeType: 'shooter',
-      player: { hp: shooterMode.player.health, maxHp: shooterMode.player.maxHealth },
-      level: shooterMode.wave, score: shooterMode.player.score,
-      _waveNumber: shooterMode.wave, _killCount: shooterMode.kills || 0, peaceTotal: 0 });
-    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    if (result && result.phase === 'dead') {
-      achievementSystem.onShooterWave(shooterMode.wave);
-      deadGame = { score: result.data.score, level: shooterMode.wave, ds: { name: 'SHOOTER ARENA' } };
-      game = null;
-      setPhase('dead');
+    if (gameMode === 'shooter') {
+      window._shooterState = { wave: shooterMode.wave, score: shooterMode.player.score, health: Math.round(shooterMode.player.health) };
+      updateHUD({ state: 'PLAYING', _currentModeType: 'shooter',
+        player: { hp: shooterMode.player.health, maxHp: shooterMode.player.maxHealth },
+        level: shooterMode.wave, score: shooterMode.player.score,
+        _waveNumber: shooterMode.wave, _killCount: shooterMode.kills || 0, peaceTotal: 0 });
     }
-    animId = requestAnimationFrame(loop);
-    return;
-  }
-
-  // ── Constellation mode ────────────────────────────────────────────────
-  if (gameMode === 'constellation') {
-    const result = constellationMode.update(dt, keys, matrixActive, ts);
-    constellationMode.render(ctx, ts, { w, h, DPR });
+    modeManager.switchMode(gameMode);
+    const result = modeManager.update(dt, keys, matrixActive, ts);
+    modeManager.render(ctx, ts, { w, h, DPR });
+    if (gameMode === 'meditation' && window._meditationTime) achievementSystem.onMeditationTime(window._meditationTime);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
     if (result && result.phase === 'dead') {
-      achievementSystem.onConstellationDone();
-      deadGame = { score: result.data.score, level: result.data.level || 1, ds: result.data.ds || { name: 'CONSTELLATION' } };
-      game = null;
-      setPhase('dead');
-    }
-    animId = requestAnimationFrame(loop);
-    return;
-  }
-
-  // ── Meditation mode ───────────────────────────────────────────────────
-  if (gameMode === 'meditation') {
-    meditationMode.update(dt, keys, matrixActive, ts);
-    meditationMode.render(ctx, ts, { w, h, DPR });
-    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    if (window._meditationTime) achievementSystem.onMeditationTime(window._meditationTime);
-    animId = requestAnimationFrame(loop);
-    return;
-  }
-
-  // ── Co-op mode ────────────────────────────────────────────────────────
-  if (gameMode === 'coop') {
-    const result = coopMode.update(dt, keys, matrixActive, ts);
-    coopMode.render(ctx, ts, { w, h, DPR });
-    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    if (result && result.phase === 'dead') {
-      achievementSystem.onCoopDreamComplete();
-      deadGame = { score: result.data.score, level: result.data.level || 1, ds: result.data.ds || { name: 'CO-OP ARENA' } };
+      if (gameMode === 'shooter') {
+        achievementSystem.onShooterWave(shooterMode.wave);
+        deadGame = { score: result.data.score, level: shooterMode.wave, ds: { name: 'SHOOTER ARENA' } };
+      } else if (gameMode === 'constellation') {
+        achievementSystem.onConstellationDone();
+        deadGame = { score: result.data.score, level: result.data.level || 1, ds: result.data.ds || { name: 'CONSTELLATION' } };
+      } else if (gameMode === 'coop') {
+        achievementSystem.onCoopDreamComplete();
+        deadGame = { score: result.data.score, level: result.data.level || 1, ds: result.data.ds || { name: 'CO-OP ARENA' } };
+      } else {
+        deadGame = result.data || { score: 0, level: 1, ds: { name: gameMode.toUpperCase() } };
+      }
       game = null;
       setPhase('dead');
     }
@@ -1468,7 +1440,13 @@ function _startSelectedMode() {
   } else if (chosen === 'alchemy') {
     gameMode = 'alchemy';
     modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 8 };
-    alchemyMode.init(modeGame, canvas, ctx);
+    try {
+      alchemyMode.init(modeGame, canvas, ctx);
+    } catch (e) {
+      console.error('[alchemy] init failed:', e);
+      setPhase('title');
+      return;
+    }
     updateHUD({ state: 'PLAYING', _currentModeType: 'alchemy', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
     setPhase('playing');

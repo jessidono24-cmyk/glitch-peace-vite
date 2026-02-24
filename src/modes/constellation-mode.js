@@ -19,7 +19,7 @@
 import { T, DREAMSCAPES, CELL, GAP, CONSTELLATION_NAMES } from '../core/constants.js';
 import { UPG, insightTokens, addInsightToken } from '../core/state.js';
 import { rnd, pick } from '../core/utils.js';
-import { SZ, buildDreamscape, CW, CH } from '../game/grid.js';
+import { SZ, buildDreamscape } from '../game/grid.js';
 import { burst } from '../game/particles.js';
 import { getStarField } from '../rendering/three-layer.js';
 
@@ -190,7 +190,7 @@ export class ConstellationMode {
     this.lastMove = 0;
 
     // Background stars
-    const w = CW(), h = CH();
+    const w = window.innerWidth, h = window.innerHeight;
     this.backgroundStars = [];
     for (let i = 0; i < 80; i++)
       this.backgroundStars.push({

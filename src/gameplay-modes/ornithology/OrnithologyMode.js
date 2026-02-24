@@ -137,8 +137,9 @@ function _applyPerceivedEffect(gameState, effect, description) {
 }
 
 function _drawPerceivedEffect(ctx, canvas, gameState, dt) {
-  const w = canvas.width;
-  const h = canvas.height;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = canvas.width / dpr;
+  const h = canvas.height / dpr;
 
   if (gameState._awePulse && gameState._awePulse.timer > 0) {
     const alpha = (gameState._awePulse.timer / 3.0) * gameState._awePulse.intensity * 0.15;
@@ -205,11 +206,12 @@ export class OrnithologyMode extends GameMode {
   }
 
   init(gameState, canvas, ctx) {
-    // Rectangular tiles fill the full canvas on wide screens
+    // Use logical (DPR-divided) dimensions so tiles fill the viewport correctly
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const gridSz = gameState.gridSize || 12;
     const HUD_H = 40;
-    this._tileW = Math.floor(canvas.width / gridSz);
-    this._tileH = Math.floor((canvas.height - HUD_H) / gridSz);
+    this._tileW = Math.floor((canvas.width / dpr) / gridSz);
+    this._tileH = Math.floor(((canvas.height / dpr) - HUD_H) / gridSz);
     this._xOff = 0;
     this._yOff = 0;
     gameState._birdNotebook = gameState._birdNotebook || {};
@@ -224,10 +226,11 @@ export class OrnithologyMode extends GameMode {
 
   onResize(canvas, gameState) {
     if (!gameState) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const gridSz = gameState.gridSize || 12;
     const HUD_H = 40;
-    this._tileW = Math.floor(canvas.width / gridSz);
-    this._tileH = Math.floor((canvas.height - HUD_H) / gridSz);
+    this._tileW = Math.floor((canvas.width / dpr) / gridSz);
+    this._tileH = Math.floor(((canvas.height / dpr) - HUD_H) / gridSz);
     this._xOff = 0;
     this._yOff = 0;
   }
@@ -440,42 +443,40 @@ export class OrnithologyMode extends GameMode {
     const tW = this._tileW || 1;
     const tH = this._tileH || 1;
     const fs = Math.min(tW, tH); // font-size base (smaller of the two)
-    const w = ctx.canvas.width;
-    const h = ctx.canvas.height;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = ctx.canvas.width / dpr;
+    const h = ctx.canvas.height / dpr;
     const xOff = this._xOff || 0;
     const yOff = this._yOff || 0;
 
-    // Background (full canvas)
-    ctx.fillStyle = '#0a120a';
-    ctx.fillRect(0, 0, w, h);
+    // Natural landscape background (full canvas) — sky above, ground below
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, h * 0.55);
+    skyGrad.addColorStop(0, '#040d14');
+    skyGrad.addColorStop(1, '#0d2818');
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, w, h * 0.55);
 
-    // Translate context so grid is centered in the full-screen canvas
-    ctx.save();
-    ctx.translate(xOff, yOff);
+    const gndGrad = ctx.createLinearGradient(0, h * 0.55, 0, h);
+    gndGrad.addColorStop(0, '#0a1a08');
+    gndGrad.addColorStop(1, '#050f04');
+    ctx.fillStyle = gndGrad;
+    ctx.fillRect(0, h * 0.55, w, h * 0.45);
 
-    // Render biome tiles
-    for (let y = 0; y < sz; y++) {
-      for (let x = 0; x < sz; x++) {
-        const biomeKey = this._biomeGrid[y]?.[x] || 'FOREST';
-        const biome = BIOMES[biomeKey];
-        ctx.fillStyle = biome.bg;
-        ctx.fillRect(x * tW, y * tH, tW, tH);
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x * tW, y * tH, tW, tH);
-        // Biome symbol (subtle)
-        if (fs >= 20) {
-          ctx.globalAlpha = 0.18;
-          ctx.font = `${Math.floor(fs * 0.45)}px monospace`;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillStyle = '#fff';
-          ctx.fillText(biome.sy, x * tW + tW / 2, y * tH + tH / 2);
-          ctx.globalAlpha = 1;
-        }
-      }
+    // Horizon glow
+    ctx.fillStyle = 'rgba(20,70,20,0.25)';
+    ctx.fillRect(0, h * 0.50, w, h * 0.12);
+
+    // Subtle stars in sky
+    for (let i = 0; i < 40; i++) {
+      const sx = (i * 137.5 % w);
+      const sy = (i * 83.7 % (h * 0.48));
+      ctx.fillStyle = `rgba(200,230,255,${0.3 + (i % 3) * 0.15})`;
+      ctx.fillRect(sx, sy, 1, 1);
     }
 
+    // Translate context so grid positions are within the landscape
+    ctx.save();
+    ctx.translate(xOff, yOff);
     // Render unobserved bird sightings (glow + symbol)
     const now = Date.now();
     for (const s of this._birdSightings) {
@@ -535,25 +536,25 @@ export class OrnithologyMode extends GameMode {
         ctx.save();
         ctx.globalAlpha = fade;
         ctx.fillStyle = `rgba(0,20,0,${fade * 0.88})`;
-        ctx.fillRect(0, h * 0.78, w, h * 0.22);
+        ctx.fillRect(0, h * 0.68, w, h * 0.22);
         ctx.fillStyle = rarityColor;
         ctx.font = `bold ${Math.floor(w / 24)}px monospace`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.shadowColor = rarityColor;
         ctx.shadowBlur = 8;
-        ctx.fillText(`${bird.symbol}  ${bird.name}  ${'★'.repeat(bird.rarity)}`, w / 2, h * 0.83);
+        ctx.fillText(`${bird.symbol}  ${bird.name}  ${'★'.repeat(bird.rarity)}`, w / 2, h * 0.73);
         ctx.shadowBlur = 0;
         // Fact text line
         ctx.fillStyle = '#778899';
         ctx.font = `${Math.floor(w / 36)}px monospace`;
         const noteText = this._sightingFlash.note || bird.notes?.[0] || '';
-        ctx.fillText(noteText, w / 2, h * 0.89);
+        ctx.fillText(noteText, w / 2, h * 0.80);
         // Bird language line (shown when call data exists)
         if (bird.call) {
           ctx.fillStyle = '#55bbaa';
           ctx.font = `italic ${Math.floor(w / 42)}px monospace`;
-          ctx.fillText(`🔊 ${bird.call.type}: ${bird.call.sound} — "${bird.call.meaning}"`, w / 2, h * 0.94);
+          ctx.fillText(`🔊 ${bird.call.type}: ${bird.call.sound} — "${bird.call.meaning}"`, w / 2, h * 0.86);
         }
         ctx.restore();
       } else {

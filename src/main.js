@@ -41,6 +41,7 @@ import { ArchitectureMode } from './gameplay-modes/architecture/ArchitectureMode
 import { MycologyMode }     from './gameplay-modes/mycology/MycologyMode.js';
 import { OrnithologyMode }  from './gameplay-modes/ornithology/OrnithologyMode.js';
 import { LearningHubMode }  from './gameplay-modes/learning-hub/LearningHubMode.js';
+import RPGMode              from './gameplay-modes/rpg/RPGMode.js';
 // ─── Phase 6: Learning Systems ───────────────────────────────────────────
 import { vocabularyEngine } from './systems/learning/vocabulary-engine.js';
 import { patternRecognition } from './systems/learning/pattern-recognition.js';
@@ -201,6 +202,7 @@ const architectureMode = new ArchitectureMode();
 const mycologyMode     = new MycologyMode();
 const ornithologyMode  = new OrnithologyMode();
 const learningHubMode  = new LearningHubMode();
+const rpgMode          = new RPGMode();
 let fpsMode = null; // Created lazily on first use (WebGL canvas takeover)
 let modeGame = null; // shared gameState object for gameplay-modes/ instances
 
@@ -832,6 +834,17 @@ function loop(ts) {
     return;
   }
 
+  // ── RPG mode ──────────────────────────────────────────────────────────
+  if (gameMode === 'rpg') {
+    rpgMode.update(modeGame, dt);
+    rpgMode.handleInput(modeGame, makeInputAdapter(keys));
+    rpgMode.render(modeGame, ctx);
+    updateModeHUD('rpg', modeGame);
+    drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
+    animId = requestAnimationFrame(loop);
+    return;
+  }
+
   // ── Alchemy mode ──────────────────────────────────────────────────────
   if (gameMode === 'alchemy') {
     alchemyMode.update(modeGame, dt);
@@ -1394,22 +1407,13 @@ function _startSelectedMode() {
     startGame(CFG.dreamIdx);
     if (game) game._currentModeType = 'shooter';
   } else if (chosen === 'rpg') {
-    gameMode = 'grid';
-    startGame(CFG.dreamIdx);
-    if (game) {
-      game._currentModeType = 'rpg';
-      game._dialogueActive  = true;
-      game.modeState = { quests: QUEST_DEFS.slice(0, 3).map(q => ({ id: q.id, name: q.name, active: true })) };
-      game._rpgState = { gridSize: 18 };
-      game._rpgNpcs  = [
-        { id: 'elder',    name: 'Elder',    x: 2, y: 2  },
-        { id: 'seer',     name: 'Seer',     x: 5, y: 3  },
-        { id: 'spark',    name: 'Spark',    x: 8, y: 5  },
-        { id: 'healer',   name: 'Healer',   x: 3, y: 8  },
-        { id: 'guardian', name: 'Guardian', x: 10, y: 2 },
-      ];
-      updateHUD({ ...game, state: 'PLAYING' });
-    }
+    gameMode = 'rpg';
+    modeGame = { gridSize: 18, level: 1, score: 0, peaceCollected: 0, peaceTotal: 5 };
+    rpgMode.init(modeGame, canvas, ctx);
+    updateHUD({ state: 'PLAYING', _currentModeType: 'rpg', player: { hp: 100, maxHp: 100 },
+      level: 1, score: 0, peaceTotal: 5, peaceCollected: 0 });
+    setPhase('playing');
+    cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
   } else if (chosen === 'ornithology') {
     gameMode = 'ornithology';
     modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };

@@ -921,6 +921,7 @@ function loop(ts) {
 
   // ── RPG mode ──────────────────────────────────────────────────────────
   if (gameMode === 'rpg') {
+    modeGame._currentModeType = 'rpg';
     rpgMode.update(modeGame, dt);
     rpgMode.handleInput(modeGame, makeInputAdapter(keys));
     rpgMode.render(modeGame, ctx);
@@ -932,6 +933,7 @@ function loop(ts) {
 
   // ── Alchemy mode ──────────────────────────────────────────────────────
   if (gameMode === 'alchemy') {
+    modeGame._currentModeType = 'alchemy';
     alchemyMode.update(modeGame, dt);
     alchemyMode.handleInput(modeGame, makeInputAdapter(keys));
     alchemyMode.render(modeGame, ctx);
@@ -943,6 +945,7 @@ function loop(ts) {
 
   // ── Architecture mode ─────────────────────────────────────────────────
   if (gameMode === 'architecture') {
+    modeGame._currentModeType = 'architecture';
     architectureMode.update(modeGame, dt);
     architectureMode.handleInput(modeGame, makeInputAdapter(keys));
     architectureMode.render(modeGame, ctx);
@@ -954,6 +957,7 @@ function loop(ts) {
 
   // ── Mycology mode ─────────────────────────────────────────────────────
   if (gameMode === 'mycology') {
+    modeGame._currentModeType = 'mycology';
     mycologyMode.update(modeGame, dt);
     mycologyMode.handleInput(modeGame, makeInputAdapter(keys));
     mycologyMode.render(modeGame, ctx);
@@ -965,6 +969,7 @@ function loop(ts) {
 
   // ── Ornithology mode ──────────────────────────────────────────────────
   if (gameMode === 'ornithology') {
+    modeGame._currentModeType = 'ornithology';
     ornithologyMode.update(modeGame, dt);
     ornithologyMode.handleInput(modeGame, makeInputAdapter(keys));
     ornithologyMode.render(modeGame, ctx);
@@ -977,6 +982,7 @@ function loop(ts) {
 
   // ── Learning Hub mode ─────────────────────────────────────────────────
   if (gameMode === 'learning_hub') {
+    modeGame._currentModeType = 'learning_hub';
     learningHubMode.update(modeGame, dt);
     learningHubMode.handleInput(modeGame, makeInputAdapter(keys));
     learningHubMode.render(modeGame, ctx);

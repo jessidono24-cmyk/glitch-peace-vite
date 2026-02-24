@@ -490,6 +490,8 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
 
       if (anomalyActive && (y === anomalyData.row || x === anomalyData.col)) { ctx.shadowColor = '#ffaa00'; ctx.shadowBlur = 10; }
       else if (tp.glow) { ctx.shadowColor = tp.glow; ctx.shadowBlur = 12; }
+      // Loop 1: HIDDEN tiles emit subtle glow at lucidity >= 25
+      else if (val === T.HIDDEN && window._lucidModifiers?.hiddenGlow) { ctx.shadowColor = '#6644cc'; ctx.shadowBlur = 6; }
       else ctx.shadowBlur = 0;
 
       ctx.fillStyle = tp.bg; ctx.beginPath(); ctx.roundRect(px, py, CELL, CELL, 4); ctx.fill();
@@ -670,6 +672,11 @@ export function drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, 
     }
   }
 
+  // Loop 1: LUCID STATE — subtle luminous blue tint overlay (alpha 0.08)
+  if (window._lucidModifiers?.lucidState) {
+    ctx.fillStyle = 'rgba(100,160,255,0.08)';
+    ctx.fillRect(0, 0, w, h);
+  }
 
   if (g.playModeId === 'skymap' || g.playModeId === 'ritual_space') {
     // Collect all INSIGHT (6) and ARCHETYPE (11) positions
@@ -1020,25 +1027,30 @@ function drawRealityCheck(ctx, w, h) {
   const alpha = dy.rcAlpha * 0.92;
   if (alpha < 0.02) return;
 
+  // Loop 1: gold color when LUCID STATE (lucidity >= 100)
+  const lucidState = window._lucidModifiers?.lucidState;
+  const rcAccent = lucidState ? '#ffdd44' : '#8844ff';
+  const rcTitle  = lucidState ? '#ffdd44' : '#cc88ff';
+
   ctx.globalAlpha = alpha;
   const bw = 280, bh = 64, x = (w - bw) / 2, y = h - 100;
   ctx.fillStyle = '#08080f';
   ctx.beginPath();
   ctx.roundRect ? ctx.roundRect(x, y, bw, bh, 8) : ctx.rect(x, y, bw, bh);
   ctx.fill();
-  ctx.strokeStyle = '#8844ff'; ctx.lineWidth = 1;
+  ctx.strokeStyle = rcAccent; ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.roundRect ? ctx.roundRect(x, y, bw, bh, 8) : ctx.rect(x, y, bw, bh);
   ctx.stroke();
 
   ctx.textAlign = 'center';
-  ctx.font = 'bold '+ fs(14, ctx.canvas) + "px " + FONT; ctx.fillStyle = '#cc88ff';
+  ctx.font = 'bold '+ fs(14, ctx.canvas) + "px " + FONT; ctx.fillStyle = rcTitle;
   ctx.fillText('REALITY CHECK', w / 2, y + 14);
   ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillStyle = '#aaaacc';
   ctx.fillText(dy.rcPrompt.q, w / 2, y + 28);
   ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillStyle = '#556655';
   ctx.fillText(dy.rcPrompt.hint, w / 2, y + 41);
-  ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillStyle = '#8844ff';
+  ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillStyle = rcAccent;
   ctx.fillText('[Y] I am aware', w / 2, y + 54);
 
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
@@ -1279,13 +1291,19 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     ctx.textAlign = 'left';
   }
 
-  // Lucidity bar (purple)
+  // Lucidity bar (purple) — pulses gold when LUCID STATE (Loop 1)
   const luc = window._dreamYoga?.lucidityPct ?? 0;
   if (luc > 0) {
     const lx = 14, ly = 130, lw = 60;
+    const lucState  = window._lucidModifiers?.lucidState;
+    const lucColor  = lucState ? '#ffdd44' : '#8844ff';
+    if (lucState) {
+      ctx.globalAlpha = 0.6 + 0.4 * Math.sin(ts * 0.006);
+    }
     ctx.fillStyle = '#1a0a2a'; ctx.fillRect(lx, ly, lw, 4);
-    ctx.fillStyle = '#8844ff'; ctx.fillRect(lx, ly, lw * luc, 4);
-    ctx.font = fs(11, ctx.canvas) + "px " + FONT; ctx.fillStyle = '#8844ff';
+    ctx.fillStyle = lucColor; ctx.fillRect(lx, ly, lw * luc, 4);
+    ctx.globalAlpha = 1;
+    ctx.font = fs(11, ctx.canvas) + "px " + FONT; ctx.fillStyle = lucColor;
     ctx.fillText('LUC', lx + lw + 3, ly + 4);
   }
 
@@ -1389,6 +1407,13 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       ctx.fillText(word + '  [' + pos + ']', w/2, sy - 44); ctx.shadowBlur = 0;
       ctx.fillStyle = '#886644'; ctx.font = fs(14, ctx.canvas) + "px " + FONT;
       ctx.fillText(def, w/2, sy - 30);
+    }
+    // Loop 2: emotional tag — show first-encounter context (bilingual mode only)
+    const emTag = vocabWord.emotionalTag;
+    if (emTag && emTag.emotion) {
+      ctx.fillStyle = '#664422'; ctx.font = fs(11, ctx.canvas) + "px " + FONT;
+      ctx.textAlign = 'center';
+      ctx.fillText('first seen: ' + emTag.emotion + ' · tile ' + (emTag.tile || '?'), w/2, sy - 2);
     }
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
     } // end vAlpha > 0

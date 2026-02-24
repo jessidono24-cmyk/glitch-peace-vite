@@ -44,11 +44,15 @@ export function buildDreamscape(ds, sz, level, prevScore, prevHp, maxHp, dreamHi
   const peaceCount = fibonacci(level + 2) + (sz - 13 > 0 ? sz - 13 : 0);
   const insCount   = 1 + Math.floor(level / 3);
 
+  // Apply flow-state difficulty adjustments (set by main.js adaptive loop)
+  const _fAdj = (typeof window !== 'undefined' && window._difficultyAdjust) || {};
+  const _fHazMul  = _fAdj.hazardMul  ?? 1.0;
+  const _fHealMul = _fAdj.healMul    ?? 1.0;
   ds.hazardSet.forEach((type, i) => {
-    const cnt = Math.round((ds.hazardCounts[i] || 4) * d.hazMul);
+    const cnt = Math.round((ds.hazardCounts[i] || 4) * d.hazMul * _fHazMul);
     spawnTile(grid, cnt, type, sz, true);
   });
-  spawnTile(grid, peaceCount, T.PEACE,   sz, true);
+  spawnTile(grid, Math.max(1, Math.round(peaceCount * _fHealMul)), T.PEACE, sz, true);
   spawnTile(grid, insCount,   T.INSIGHT, sz, true);
 
   ds.specialTiles.forEach(type => spawnTile(grid, 2, type, sz, true));

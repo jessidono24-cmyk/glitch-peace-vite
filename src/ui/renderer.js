@@ -1164,7 +1164,89 @@ function realmLabel(pd) {
   return               { name: 'HELL',         color: '#ff2200' };
 }
 
+// ── Overlay priority — only highest-priority active overlay shows ──────
+// Lower index = higher priority (shown first).
+// Achievement popup is intentionally excluded — it uses a separate rendering
+// path in main.js (drawAchievementPopup) and is spatially isolated (top-right).
+const OVERLAY_PRIORITY = [
+  'bossPhaseBanner',    // 0 — boss fight is the most critical
+  'questFlash',         // 1 — quest milestone
+  'archetypeDialogue',  // 2 — character speaks
+  'patternBanner',      // 3 — pattern recognition insight
+  'constellationFlash', // 4 — constellation discovered
+  'alchemyFlash',       // 5 — transmutation
+  'dreamYogaCheck',     // 6 — reality check
+  'sigilActivation',    // 7 — sigil charge
+  'tutorialHint',       // 8 — tutorial (lowest — suppress when anything else is active)
+];
+
+function getActiveOverlay() {
+  const checks = {
+    bossPhaseBanner:    () => window._bossPhaseBanner?.alpha > 0,
+    questFlash:         () => window._questFlash?.alpha > 0,
+    archetypeDialogue:  () => window._archetypeDialogue?.alpha > 0,
+    patternBanner:      () => window._patternBanner?.timer > 0,
+    constellationFlash: () => window._constellationFlash?.alpha > 0,
+    alchemyFlash:       () => window._alchemyFlash?.alpha > 0,
+    dreamYogaCheck:     () => !!window._dreamYoga?.rcActive,
+    sigilActivation:    () => (window._sigilAlpha || 0) > 0.1,
+    tutorialHint:       () => !!window._currentTutorialHint,
+  };
+  for (const key of OVERLAY_PRIORITY) {
+    if (checks[key]?.()) return key;
+  }
+  return null;
+}
+
+// ── Non-grid mode set for mode-aware HUD guard ─────────────────────────
+const NON_GRID_HUD_MODES = new Set([
+  'shooter', 'constellation', 'meditation', 'coop', 'rhythm',
+  'ornithology', 'mycology', 'alchemy', 'architecture',
+  'learning_hub', 'language_learning', 'fps',
+]);
+
 function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
+  // ── Mode gate — non-grid modes skip the grid HUD ──────────────────────
+  const currentModeType = g._currentModeType || '';
+  if (NON_GRID_HUD_MODES.has(currentModeType)) {
+    drawEmotionRow(ctx, w, window._emotionField || null);
+    const tm = window._tmods;
+    if (tm) {
+      ctx.font = fs(10, ctx.canvas) + 'px ' + FONT;
+      ctx.fillStyle = '#445566';
+      ctx.textAlign = 'right';
+      ctx.fillText((tm.lunarName || '') + ' · ' + (tm.planetName || ''), w - 12, 24);
+      ctx.textAlign = 'left';
+    }
+    const modeStatus = {
+      ornithology:       () => `BIRDS OBSERVED: ${window._ornithWorld?.observed || 0} / ${window._ornithWorld?.birds?.length || 0}`,
+      mycology:          () => `NODES CONNECTED: ${window._mycelWorld?.connected || 0} / ${window._mycelWorld?.nodes?.length || 0}`,
+      meditation:        () => `MEDITATION: ${window._meditationTime ? Math.round(window._meditationTime) + 's' : '--'}`,
+      shooter:           () => { const s = window._shooterState; return s ? `WAVE ${s.wave} · HP ${s.health} · SCORE ${s.score}` : ''; },
+      rhythm:            () => { const rtt = window._rhythmTimeToNext; return `BEAT IN: ${rtt ? (rtt / 1000).toFixed(1) + 's' : '--'}`; },
+      alchemy:           () => { const a = window._alchemySystem; return a ? `PHASE ${a.phase || 1}  TRANS ${a.transmutations || 0}` : ''; },
+      constellation:     () => 'STARS CONNECTED',
+      architecture:      () => 'ARCHITECTURE MODE',
+      rpg:               () => { const q = window._questData; return q?.activeQuest ? `QUEST: ${q.activeQuest.name}` : 'RPG MODE'; },
+      learning_hub:      () => { const ls = window._learnStats; return ls ? `WORDS ${ls.words}  PATTERNS ${ls.patterns}` : 'LEARNING'; },
+      language_learning: () => { const ls = window._learnStats; return ls ? `WORDS LEARNED: ${ls.words}` : 'LANGUAGE'; },
+    };
+    const statusFn = modeStatus[currentModeType];
+    if (statusFn) {
+      const statusText = statusFn();
+      if (statusText) {
+        ctx.font = fs(13, ctx.canvas) + 'px ' + FONT;
+        ctx.fillStyle = '#667788';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(statusText, w / 2, 8);
+        ctx.textBaseline = 'alphabetic';
+        ctx.textAlign = 'left';
+      }
+    }
+    return;
+  }
+
   const UPG_ref = UPG;
   const hudH = 120;
   ctx.fillStyle = '#070714'; ctx.fillRect(0, 0, w, hudH);
@@ -1361,7 +1443,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     g.msgTimer--;
   }
 
-  // ── Phase 6 + Lang: Vocabulary word flash (multilingual) ─────────────
+  // ── Phase 6 + Lang: Vocabulary word flash (multilingual) — fixed bottom-left ─
   const vocabWord = window._vocabWord;
   if (vocabWord) {
     // _vocabTimer counts 150→0; fade in during first 20 frames, fade out during last 25 frames
@@ -1378,23 +1460,25 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     const showTarget = hasMulti && dMode !== 'native';
     const showNative = !hasMulti || dMode !== 'target';
     const boxH = (showTarget && showNative) ? 56 : 36;
-    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(w/2 - 140, sy - 62, 280, boxH);
+    const vx = 12;
+    const vy = h - 56;  // fixed bottom-left, above the instruction bar
+    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(vx, vy, 280, boxH);
     ctx.strokeStyle = 'rgba(255,221,136,0.3)'; ctx.lineWidth = 1;
-    ctx.strokeRect(w/2 - 140, sy - 62, 280, boxH);
+    ctx.strokeRect(vx, vy, 280, boxH);
     if (showTarget) {
       // Target language word (primary in immersion, secondary in bilingual)
       const tl = vocabWord.targetLang;
       ctx.fillStyle = '#aaddff'; ctx.shadowColor = '#88bbff'; ctx.shadowBlur = 5;
-      ctx.font = 'bold '+ fs(16, ctx.canvas) + "px " + FONT; ctx.textAlign = 'center';
-      ctx.fillText(vocabWord.targetWord + '  [' + vocabWord.targetPos + ']', w/2, sy - 44); ctx.shadowBlur = 0;
+      ctx.font = 'bold '+ fs(16, ctx.canvas) + "px " + FONT; ctx.textAlign = 'left';
+      ctx.fillText(vocabWord.targetWord + '  [' + vocabWord.targetPos + ']', vx + 8, vy + 14); ctx.shadowBlur = 0;
       if (tl) {
         ctx.fillStyle = '#446688'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-        ctx.fillText((tl.emoji || '') + ' ' + tl.name + (tl.nativeName !== tl.name ? ' · ' + tl.nativeName : ''), w/2, sy - 30);
+        ctx.fillText((tl.emoji || '') + ' ' + tl.name + (tl.nativeName !== tl.name ? ' · ' + tl.nativeName : ''), vx + 8, vy + 28);
       }
       if (showNative) {
         // Bilingual: also show native definition below
         ctx.fillStyle = '#ffdd88'; ctx.font = fs(14, ctx.canvas) + "px " + FONT;
-        ctx.fillText(vocabWord.nativeDef || vocabWord.targetDef, w/2, sy - 14);
+        ctx.fillText(vocabWord.nativeDef || vocabWord.targetDef, vx + 8, vy + 44);
       }
     }
     if (!showTarget) {
@@ -1403,25 +1487,28 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
       const pos  = vocabWord.pos  || vocabWord.nativePos  || '';
       const def  = vocabWord.def  || vocabWord.nativeDef  || '';
       ctx.fillStyle = '#ffdd88'; ctx.shadowColor = '#ffcc44'; ctx.shadowBlur = 5;
-      ctx.font = 'bold '+ fs(16, ctx.canvas) + "px " + FONT; ctx.textAlign = 'center';
-      ctx.fillText(word + '  [' + pos + ']', w/2, sy - 44); ctx.shadowBlur = 0;
+      ctx.font = 'bold '+ fs(16, ctx.canvas) + "px " + FONT; ctx.textAlign = 'left';
+      ctx.fillText(word + '  [' + pos + ']', vx + 8, vy + 14); ctx.shadowBlur = 0;
       ctx.fillStyle = '#886644'; ctx.font = fs(14, ctx.canvas) + "px " + FONT;
-      ctx.fillText(def, w/2, sy - 30);
+      ctx.fillText(def, vx + 8, vy + 30);
     }
     // Loop 2: emotional tag — show first-encounter context (bilingual mode only)
     const emTag = vocabWord.emotionalTag;
     if (emTag && emTag.emotion) {
       ctx.fillStyle = '#664422'; ctx.font = fs(11, ctx.canvas) + "px " + FONT;
-      ctx.textAlign = 'center';
-      ctx.fillText('first seen: ' + emTag.emotion + ' · tile ' + (emTag.tile || '?'), w/2, sy - 2);
+      ctx.textAlign = 'left';
+      ctx.fillText('first seen: ' + emTag.emotion + ' · tile ' + (emTag.tile || '?'), vx + 8, vy + boxH - 4);
     }
       ctx.textAlign = 'left'; ctx.globalAlpha = 1;
     } // end vAlpha > 0
   }
 
+  // ── Single overlay slot (priority queue) ─────────────────────────────
+  const activeOverlay = getActiveOverlay();
+
   // ── Sigil system: pattern flash ─────────────────────────────────────
   const sigil = window._activeSigil;
-  if (sigil && (window._sigilAlpha || 0) > 0) {
+  if (activeOverlay === 'sigilActivation' && sigil && (window._sigilAlpha || 0) > 0) {
     ctx.globalAlpha = Math.min(1, window._sigilAlpha);
     const sgX = w - 160, sgY = 115;
     ctx.fillStyle = 'rgba(0,0,0,0.75)'; ctx.fillRect(sgX, sgY, 152, 62);
@@ -1444,7 +1531,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
 
   // ── Phase M5: Archetype dialogue panel ───────────────────────────────
   const ad = window._archetypeDialogue;
-  if (ad && ad.text && ad.alpha > 0.02) {
+  if (activeOverlay === 'archetypeDialogue' && ad && ad.text && ad.alpha > 0.02) {
     const ARCH_COLORS = { dragon:'#ffaa00', child:'#aaffcc', orb:'#aaddff', captor:'#ffaadd', protector:'#88ccff' };
     const adColor = ARCH_COLORS[ad.key] || '#ffdd88';
     const adW = 320, adX = w / 2 - adW / 2, adY = Math.round(h * 0.28) - 44;
@@ -1470,7 +1557,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
 
   // ── Phase 6: Pattern discovery banner ────────────────────────────────
   const banner = window._patternBanner;
-  if (banner) {
+  if (activeOverlay === 'patternBanner' && banner) {
     const bProg = banner.timer / banner.maxTimer;
     const bAlpha = bProg > 0.85 ? (1 - bProg) / 0.15 : bProg < 0.1 ? bProg / 0.1 : 1;
     ctx.globalAlpha = Math.min(1, bAlpha);
@@ -1489,7 +1576,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
 
   // ── Boss phase banner ─────────────────────────────────────────────────
   const bpb = window._bossPhaseBanner;
-  if (bpb && bpb.alpha > 0.02) {
+  if (activeOverlay === 'bossPhaseBanner' && bpb && bpb.alpha > 0.02) {
     ctx.globalAlpha = Math.min(1, bpb.alpha);
     ctx.fillStyle = 'rgba(0,0,0,0.88)'; ctx.fillRect(w/2 - 170, h * 0.14, 340, 60);
     ctx.strokeStyle = bpb.color + '88'; ctx.lineWidth = 2;
@@ -1506,7 +1593,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
 
   // ── Quest completion flash ────────────────────────────────────────────
   const qf = window._questFlash;
-  if (qf && qf.alpha > 0.02) {
+  if (activeOverlay === 'questFlash' && qf && qf.alpha > 0.02) {
     ctx.globalAlpha = Math.min(1, qf.alpha);
     ctx.fillStyle = 'rgba(0,0,0,0.88)'; ctx.fillRect(w/2 - 170, h * 0.82, 340, 54);
     ctx.strokeStyle = '#ffdd88aa'; ctx.lineWidth = 1;
@@ -1523,7 +1610,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
 
   // ── Skymap/Ritual: Named constellation reward flash ──────────────────
   const cfl = window._constellationFlash;
-  if (cfl && cfl.alpha > 0.02) {
+  if (activeOverlay === 'constellationFlash' && cfl && cfl.alpha > 0.02) {
     ctx.globalAlpha = Math.min(1, cfl.alpha);
     ctx.fillStyle = 'rgba(0,0,12,0.92)'; ctx.fillRect(w/2 - 190, h * 0.35, 380, 54);
     ctx.strokeStyle = 'rgba(0,238,255,0.55)'; ctx.lineWidth = 1;
@@ -1538,7 +1625,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
 
   // ── Alchemy flash ─────────────────────────────────────────────────────
   const af = window._alchemyFlash;
-  if (af && af.alpha > 0.02) {
+  if (activeOverlay === 'alchemyFlash' && af && af.alpha > 0.02) {
     ctx.globalAlpha = Math.min(1, af.alpha);
     const afColor = af.color || '#cc88ff';
     ctx.fillStyle = 'rgba(0,0,0,0.90)'; ctx.fillRect(w/2 - 175, h * 0.55, 350, 52);
@@ -1707,7 +1794,7 @@ function drawHUD(ctx, g, w, h, gp, sx, sy, matrixActive) {
     }
     // Phase M3: Tutorial hint overlay — cycles one hint at a time
     const tut = window._currentTutorialHint;
-    if (tut && tut.text) {
+    if (activeOverlay === 'tutorialHint' && tut && tut.text) {
       const ta = (tut.timer > 30 ? 1 : tut.timer / 30) * 0.95;
       ctx.globalAlpha = ta;
       ctx.fillStyle = 'rgba(0,14,4,0.94)'; ctx.fillRect(sx, sy - 50, gp, 44);

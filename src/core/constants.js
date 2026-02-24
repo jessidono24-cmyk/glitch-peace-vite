@@ -301,7 +301,7 @@ export const VISION_WORDS = [
 // ═══════════════════════════════════════════════════════════
 export const MAIN_MENU  = ['▶  NEW GAME', '📖 CAMPAIGN', 'MODE SELECT', 'HOW TO PLAY', 'OPTIONS', 'HIGH SCORES', 'UPGRADES'];
 export const MAIN_MENU_N = 7;
-export const PAUSE_MENU = ['RESUME', 'RESTART', 'TUTORIAL', 'HIGH SCORES', 'OPTIONS'];
+export const PAUSE_MENU = ['RESUME', 'RESTART', 'TUTORIAL', 'HIGH SCORES', 'OPTIONS', 'QUIT TO MENU'];
 export const OPT_GRID   = ['small', 'medium', 'large'];
 export const OPT_DIFF   = ['easy', 'normal', 'hard'];
 

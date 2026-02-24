@@ -6,7 +6,7 @@ import { DIFFICULTY_TIERS } from '../systems/difficulty/adaptive-difficulty.js';
 import { PLAY_MODES, PLAY_MODE_LIST, getPlayModeMeta } from '../systems/play-modes.js';
 import { getCosmologyForDreamscape } from '../systems/cosmology/cosmologies.js';
 import { isChapterUnlocked } from '../systems/campaign-story.js';
-// ── ARCH4: Timezone options (UTC offset in hours; null = auto-detect) ─────
+// ── TIMEZONE (UTC) options (UTC offset in hours; null = auto-detect) ──────
 export const TZ_OPTIONS = [
   { label: 'Auto-detect',          value: null },
   { label: 'UTC-12 (Baker Island)', value: -12  },
@@ -336,7 +336,7 @@ export function drawOptions(ctx, w, h, optIdx) {
     { label:'HIGH CONTRAST',  opts:['off','on'], cur: CFG.highContrast ? 'on' : 'off', hint: 'colorblind-friendly palette' },
     { label:'REDUCED MOTION', opts:['off','on'], cur: CFG.reducedMotion ? 'on' : 'off', hint: 'no screen shake or flash' },
     { label:'FONT SCALE',     opts:['S','M','L','XL'], cur: fontScaleLabel, hint: 'text size: S=80%  M=100%  L=120%  XL=140%' },
-    { label:'LOCAL TIME ZONE', opts:[tzCycleLabel], cur:tzCycleLabel, hint: '←→ cycle offset · sets planetary day for local time' },
+    { label:'TIMEZONE (UTC)',  opts:[tzCycleLabel], cur:tzCycleLabel, hint: '←→ cycle offset · sets planetary day for local time' },
     { label:'LANGUAGES',      opts:['OPEN →'], cur:'OPEN →', hint: (langMeta.emoji||'') + ' → ' + (tgtMeta.emoji||'') + ' ' + (tgtMeta.name||'') },
     { label:'',               opts:['← BACK'], cur:'← BACK' },
   ];

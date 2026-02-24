@@ -219,3 +219,139 @@ export function sessionRetention(ratings) {
   const correct = ratings.filter(r => r >= 2).length;
   return correct / ratings.length;
 }
+
+// ─── Class-based API (LANG1a) ─────────────────────────────────────────
+
+const FSRS_PARAMS = {
+  w: [0.4072, 1.1829, 3.1262, 15.4722, 7.2102, 0.5316, 1.0651, 0.0589,
+      1.5330, 0.1544, 0.9332, 1.9671, 0.1100, 0.2915, 2.2700, 0.2500,
+      2.9898, 0.5100, 0.4300],
+  DECAY: -0.5,
+  FACTOR: Math.pow(0.9, 1 / -0.5) - 1,
+  TARGET_RETENTION: 0.90,
+  MAX_INTERVAL: 36500,
+};
+
+export class FSRSCard {
+  constructor(id, word, meaning, context, language) {
+    this.id = id;
+    this.word = word;
+    this.meaning = meaning;
+    this.context = context;
+    this.language = language;
+    this.D = 5;
+    this.S = 0;
+    this.R = 0;
+    this.reviews = 0;
+    this.lapses = 0;
+    this.lastReview = null;
+    this.dueDate = Date.now();
+    this.state = 'new';
+    this.exposures = 0;
+  }
+
+  get isDue() {
+    return Date.now() >= this.dueDate;
+  }
+
+  getCurrentR() {
+    if (this.S === 0) return 0;
+    const t = this.lastReview ? (Date.now() - this.lastReview) / 86_400_000 : 0;
+    return Math.pow(1 + FSRS_PARAMS.FACTOR * t / this.S, FSRS_PARAMS.DECAY);
+  }
+
+  review(rating) {
+    const { w, DECAY, FACTOR, TARGET_RETENTION, MAX_INTERVAL } = FSRS_PARAMS;
+    const r = this.getCurrentR();
+    const prevS = this.S;
+
+    if (this.state === 'new' || this.S === 0) {
+      this.S = Math.max(0.01, w[rating - 1]);
+      this.D = Math.min(10, Math.max(1, w[4] - (rating - 3) * w[5]));
+    } else {
+      this.D = Math.min(10, Math.max(1, this.D - w[6] * (rating - 3)));
+      if (rating >= 3) {
+        const inc = Math.exp(w[8]) * (11 - this.D) * Math.pow(prevS, -w[9]) *
+          (Math.exp((1 - r) * w[10]) - 1) * (rating === 4 ? w[11] : 1);
+        this.S = prevS * (1 + inc);
+      } else {
+        this.S = w[17] * Math.pow(this.D, -w[15]) *
+          (Math.pow(prevS + 1, w[16]) - 1) *
+          Math.exp((1 - r) * w[18]);
+        this.lapses++;
+      }
+    }
+
+    this.S = Math.min(MAX_INTERVAL, Math.max(0.01, this.S));
+    this.reviews++;
+    this.lastReview = Date.now();
+
+    const interval = Math.max(1, Math.round(
+      this.S / FACTOR * (Math.pow(TARGET_RETENTION, 1 / DECAY) - 1)
+    ));
+    this.dueDate = Date.now() + interval * 86_400_000;
+    this.R = this.getCurrentR();
+
+    if (rating >= 3) {
+      this.state = this.reviews <= 1 ? 'learning' : 'review';
+    } else {
+      this.state = 'relearning';
+    }
+
+    return interval;
+  }
+
+  recordExposure() {
+    this.exposures++;
+    if (this.S === 0 && this.exposures >= 3) {
+      this.S = 0.1;
+    }
+  }
+}
+
+export class FSRSDeck {
+  constructor(language, dreamscape) {
+    this.language = language;
+    this.dreamscape = dreamscape;
+    this.cards = new Map();
+  }
+
+  addCard(word, meaning, context, language) {
+    const id = (language || this.language) + '_' + this.cards.size;
+    const card = new FSRSCard(id, word, meaning, context, language || this.language);
+    this.cards.set(id, card);
+    return card;
+  }
+
+  getDueCards() {
+    return [...this.cards.values()].filter(c => c.isDue);
+  }
+
+  getNextCard() {
+    const due = this.getDueCards();
+    if (!due.length) return null;
+    const prioritized = due.filter(c => c.exposures >= 3 || c.reviews > 0);
+    const pool = prioritized.length > 0 ? prioritized : due;
+    return pool.sort((a, b) => a.R - b.R)[0];
+  }
+
+  getAmbientCards(count = 5) {
+    return [...this.cards.values()]
+      .sort((a, b) => a.exposures - b.exposures)
+      .slice(0, count);
+  }
+
+  get stats() {
+    const cards = [...this.cards.values()];
+    const total = cards.length;
+    const due = cards.filter(c => c.isDue).length;
+    const reviewed = cards.filter(c => c.reviews > 0);
+    const retention = reviewed.length > 0
+      ? Math.round(reviewed.reduce((sum, c) => sum + c.R, 0) / reviewed.length * 100)
+      : 0;
+    const avgStability = reviewed.length > 0
+      ? Math.round(reviewed.reduce((sum, c) => sum + c.S, 0) / reviewed.length)
+      : 0;
+    return { total, due, retention, avgStability };
+  }
+}

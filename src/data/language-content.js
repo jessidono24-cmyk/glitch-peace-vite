@@ -2,191 +2,300 @@
 // ═══════════════════════════════════════════════════════════════════════
 //  GLITCH·PEACE — language-content.js
 //  Vocabulary for the Language Learning mode.
-//  Words organized by dreamscape context (not alphabetically) so they
-//  appear naturally as ambient labels in the immersion layer.
 //
-//  Each entry:
-//    id        — unique string key for FSRS deck
-//    word      — target-language word
-//    meaning   — English meaning
-//    context   — dreamscape theme ('nature','urban','sky','dream','body','action')
-//    ipa       — pronunciation (IPA notation)
-//    example   — short sentence using the word
+//  LANG1a structure:
+//    LANGUAGE_FAMILIES — groups languages by family
+//    LANGUAGE_CONTENT  — per-language data with core + byDreamscape vocab
+//    getDreamscapeVocab(language, dreamscape) — contextual words first
+//
+//  Each word entry has exactly these four fields:
+//    word    — target-language word/phrase
+//    meaning — English meaning
+//    ipa     — pronunciation (IPA or romaji syllables)
+//    context — full example sentence in target language
 // ═══════════════════════════════════════════════════════════════════════
+
+export const LANGUAGE_FAMILIES = {
+  romance: ['french', 'spanish'],
+  japonic: ['japanese'],
+};
 
 export const LANGUAGE_CONTENT = {
 
-  // ─── French ────────────────────────────────────────────────────────
-  fr: {
+  // ─── French ──────────────────────────────────────────────────────────
+  french: {
     name: 'French',
     nativeName: 'Français',
-    emoji: '🇫🇷',
-    words: [
-      // Nature / landscape
-      { id: 'fr_eau',       word: 'eau',         meaning: 'water',       context: 'nature',  ipa: '/o/',           example: "L'eau coule doucement." },
-      { id: 'fr_forêt',     word: 'forêt',       meaning: 'forest',      context: 'nature',  ipa: '/fɔ.ʁɛ/',       example: 'La forêt est calme.' },
-      { id: 'fr_montagne',  word: 'montagne',    meaning: 'mountain',    context: 'nature',  ipa: '/mɔ̃.taɲ/',      example: 'La montagne est haute.' },
-      { id: 'fr_ciel',      word: 'ciel',        meaning: 'sky',         context: 'sky',     ipa: '/sjɛl/',         example: 'Le ciel est bleu.' },
-      { id: 'fr_étoile',    word: 'étoile',      meaning: 'star',        context: 'sky',     ipa: '/e.twal/',       example: "L'étoile brille la nuit." },
-      { id: 'fr_lune',      word: 'lune',        meaning: 'moon',        context: 'sky',     ipa: '/lyn/',          example: 'La lune est pleine.' },
-      { id: 'fr_soleil',    word: 'soleil',      meaning: 'sun',         context: 'sky',     ipa: '/sɔ.lɛj/',       example: 'Le soleil se lève.' },
-      { id: 'fr_vent',      word: 'vent',        meaning: 'wind',        context: 'nature',  ipa: '/vɑ̃/',           example: 'Le vent souffle fort.' },
-      { id: 'fr_feu',       word: 'feu',         meaning: 'fire',        context: 'nature',  ipa: '/fø/',           example: 'Le feu réchauffe.' },
-      { id: 'fr_terre',     word: 'terre',       meaning: 'earth / land',context: 'nature',  ipa: '/tɛʁ/',          example: 'La terre est fertile.' },
-      // Dream / inner world
-      { id: 'fr_rêve',      word: 'rêve',        meaning: 'dream',       context: 'dream',   ipa: '/ʁɛv/',          example: "C'est un beau rêve." },
-      { id: 'fr_lumière',   word: 'lumière',     meaning: 'light',       context: 'dream',   ipa: '/ly.mjɛʁ/',      example: 'La lumière guide.' },
-      { id: 'fr_ombre',     word: 'ombre',       meaning: 'shadow',      context: 'dream',   ipa: '/ɔ̃bʁ/',          example: "L'ombre s'allonge." },
-      { id: 'fr_silence',   word: 'silence',     meaning: 'silence',     context: 'dream',   ipa: '/si.lɑ̃s/',       example: 'Le silence est apaisant.' },
-      { id: 'fr_paix',      word: 'paix',        meaning: 'peace',       context: 'dream',   ipa: '/pɛ/',           example: 'La paix intérieure.' },
-      // Action / movement
-      { id: 'fr_marcher',   word: 'marcher',     meaning: 'to walk',     context: 'action',  ipa: '/maʁ.ʃe/',       example: 'Je marche lentement.' },
-      { id: 'fr_courir',    word: 'courir',      meaning: 'to run',      context: 'action',  ipa: '/ku.ʁiʁ/',       example: 'Il court vite.' },
-      { id: 'fr_voir',      word: 'voir',        meaning: 'to see',      context: 'action',  ipa: '/vwaʁ/',         example: 'Je vois les étoiles.' },
-      { id: 'fr_écouter',   word: 'écouter',     meaning: 'to listen',   context: 'action',  ipa: '/e.ku.te/',      example: 'Écoute la forêt.' },
-      { id: 'fr_sentir',    word: 'sentir',      meaning: 'to feel/smell',context: 'body',   ipa: '/sɑ̃.tiʁ/',       example: 'Je sens la pluie.' },
-      // Body / self
-      { id: 'fr_cœur',      word: 'cœur',        meaning: 'heart',       context: 'body',    ipa: '/kœʁ/',          example: 'Le cœur bat.' },
-      { id: 'fr_main',      word: 'main',        meaning: 'hand',        context: 'body',    ipa: '/mɛ̃/',           example: 'La main touche.' },
-      { id: 'fr_voix',      word: 'voix',        meaning: 'voice',       context: 'body',    ipa: '/vwa/',          example: 'Sa voix est douce.' },
-      { id: 'fr_esprit',    word: 'esprit',      meaning: 'mind / spirit',context: 'dream',  ipa: '/ɛs.pʁi/',       example: "L'esprit s'éveille." },
-      // Urban / everyday
-      { id: 'fr_ville',     word: 'ville',       meaning: 'city',        context: 'urban',   ipa: '/vil/',          example: 'La ville dort.' },
-      { id: 'fr_maison',    word: 'maison',      meaning: 'house / home',context: 'urban',   ipa: '/mɛ.zɔ̃/',        example: 'La maison est grande.' },
-      { id: 'fr_porte',     word: 'porte',       meaning: 'door',        context: 'urban',   ipa: '/pɔʁt/',         example: 'La porte est ouverte.' },
-      { id: 'fr_chemin',    word: 'chemin',      meaning: 'path / way',  context: 'nature',  ipa: '/ʃə.mɛ̃/',        example: 'Le chemin mène loin.' },
-      { id: 'fr_pont',      word: 'pont',        meaning: 'bridge',      context: 'urban',   ipa: '/pɔ̃/',           example: 'Le pont traverse la rivière.' },
-      { id: 'fr_nuit',      word: 'nuit',        meaning: 'night',       context: 'sky',     ipa: '/nɥi/',          example: 'La nuit est profonde.' },
-      { id: 'fr_aube',      word: 'aube',        meaning: 'dawn',        context: 'sky',     ipa: '/ob/',           example: "L'aube arrive doucement." },
-      { id: 'fr_nuage',     word: 'nuage',       meaning: 'cloud',       context: 'sky',     ipa: '/nɥaʒ/',         example: 'Le nuage passe.' },
+    family: 'romance',
+    script: 'latin',
+    core: [
+      // Consciousness / inner life
+      { word: 'la conscience',  meaning: 'consciousness',  ipa: '/la kɔ̃sjɑ̃s/',  context: 'La conscience est un outil puissant.' },
+      { word: 'la paix',        meaning: 'peace',           ipa: '/la pɛ/',        context: 'La paix commence en soi.' },
+      { word: "l'éveil",        meaning: 'awakening',       ipa: '/levɛj/',        context: "L'éveil est un voyage, pas une destination." },
+      { word: "l'âme",          meaning: 'soul',            ipa: '/lam/',          context: "L'âme cherche toujours la lumière." },
+      { word: 'la sagesse',     meaning: 'wisdom',          ipa: '/la saʒɛs/',     context: 'La sagesse vient avec le temps.' },
+      { word: 'le rêve',        meaning: 'dream',           ipa: '/ʁɛv/',          context: 'Le rêve guide nos pas.' },
+      { word: 'la lumière',     meaning: 'light',           ipa: '/ly.mjɛʁ/',      context: 'La lumière guide.' },
+      { word: "l'esprit",       meaning: 'mind / spirit',   ipa: '/ɛs.pʁi/',       context: "L'esprit s'éveille." },
+      // High-frequency verbs
+      { word: 'être',           meaning: 'to be',           ipa: '/ɛtʁ/',          context: 'Être ici, maintenant.' },
+      { word: 'avoir',          meaning: 'to have',         ipa: '/avwaʁ/',        context: "Avoir la paix de l'esprit." },
+      { word: 'voir',           meaning: 'to see',          ipa: '/vwaʁ/',         context: 'Voir clairement.' },
+      { word: 'savoir',         meaning: 'to know',         ipa: '/savwaʁ/',       context: 'Savoir sans comprendre.' },
+      { word: 'guérir',         meaning: 'to heal',         ipa: '/ɡeʁiʁ/',        context: 'On peut toujours guérir.' },
+      { word: 'vouloir',        meaning: 'to want',         ipa: '/vulwaʁ/',       context: "Vouloir, c'est pouvoir." },
+      { word: 'pouvoir',        meaning: 'to be able',      ipa: '/puvwaʁ/',       context: 'Tout est possible.' },
+      { word: 'sentir',         meaning: 'to feel',         ipa: '/sɑ̃tiʁ/',        context: 'Sentir la terre sous ses pieds.' },
+      { word: 'respirer',       meaning: 'to breathe',      ipa: '/ʁɛspiʁe/',      context: 'Respirer profondément.' },
+      { word: 'choisir',        meaning: 'to choose',       ipa: '/ʃwaziʁ/',       context: 'Choisir son chemin.' },
+      // Time
+      { word: 'maintenant',     meaning: 'now',             ipa: '/mɛ̃tnɑ̃/',        context: 'Sois ici, maintenant.' },
+      { word: 'toujours',       meaning: 'always',          ipa: '/tuʒuʁ/',        context: "L'espoir est toujours là." },
+      { word: 'jamais',         meaning: 'never',           ipa: '/ʒamɛ/',         context: 'Ne dis jamais jamais.' },
+      // Numbers
+      { word: 'un',             meaning: 'one',             ipa: '/œ̃/',            context: 'Un seul moment suffit.' },
+      { word: 'deux',           meaning: 'two',             ipa: '/dø/',           context: "Deux chemins s'ouvrent." },
+      { word: 'trois',          meaning: 'three',           ipa: '/tʁwa/',         context: "Trois choix s'offrent à toi." },
+      // Colors
+      { word: 'rouge',          meaning: 'red',             ipa: '/ʁuʒ/',          context: 'Le rouge du coucher de soleil.' },
+      { word: 'bleu',           meaning: 'blue',            ipa: '/blø/',          context: 'Le ciel est bleu.' },
+      { word: 'vert',           meaning: 'green',           ipa: '/vɛʁ/',          context: 'La forêt est verte.' },
+      // Body / somatic
+      { word: 'le corps',       meaning: 'body',            ipa: '/kɔʁ/',          context: 'Le corps parle sa vérité.' },
+      { word: 'le cœur',        meaning: 'heart',           ipa: '/kœʁ/',          context: 'Le cœur bat.' },
+      { word: 'la voix',        meaning: 'voice',           ipa: '/vwa/',          context: 'La voix du silence.' },
     ],
+    byDreamscape: {
+      'Void State': [
+        { word: 'le vide',      meaning: 'void / emptiness', ipa: '/vid/',         context: 'Le vide est une porte.' },
+        { word: "l'infini",     meaning: 'infinity',         ipa: '/ɛ̃fini/',       context: "L'infini nous contient." },
+        { word: 'le néant',     meaning: 'nothingness',      ipa: '/neɑ̃/',         context: 'Le néant est calme.' },
+        { word: 'le silence',   meaning: 'silence',          ipa: '/si.lɑ̃s/',      context: 'Le silence parle.' },
+      ],
+      'Forest Cathedral': [
+        { word: 'la forêt',     meaning: 'forest',           ipa: '/fɔ.ʁɛ/',       context: 'La forêt respire lentement.' },
+        { word: "l'arbre",      meaning: 'tree',             ipa: '/aʁbʁ/',        context: "L'arbre touche le ciel." },
+        { word: 'la mousse',    meaning: 'moss',             ipa: '/mus/',         context: 'La mousse recouvre les pierres.' },
+        { word: 'la sève',      meaning: 'sap / life force', ipa: '/sɛv/',         context: 'La sève monte en silence.' },
+      ],
+      'Mountain Dragon Realm': [
+        { word: 'la montagne',  meaning: 'mountain',         ipa: '/mɔ̃.taɲ/',      context: 'La montagne porte les nuages.' },
+        { word: 'le dragon',    meaning: 'dragon',           ipa: '/dʁaɡɔ̃/',       context: 'Le dragon garde la cime.' },
+        { word: 'le sommet',    meaning: 'summit / peak',    ipa: '/sɔmɛ/',        context: 'Le sommet est enveloppé de brume.' },
+        { word: 'la force',     meaning: 'strength',         ipa: '/fɔʁs/',        context: 'La force vient du calme.' },
+      ],
+    },
   },
 
-  // ─── Spanish ───────────────────────────────────────────────────────
-  es: {
+  // ─── Spanish ─────────────────────────────────────────────────────────
+  spanish: {
     name: 'Spanish',
     nativeName: 'Español',
-    emoji: '🇪🇸',
-    words: [
-      // Nature
-      { id: 'es_agua',      word: 'agua',        meaning: 'water',       context: 'nature',  ipa: '/ˈa.ɣwa/',       example: 'El agua fluye.' },
-      { id: 'es_bosque',    word: 'bosque',      meaning: 'forest',      context: 'nature',  ipa: '/ˈbos.ke/',      example: 'El bosque es oscuro.' },
-      { id: 'es_montaña',   word: 'montaña',     meaning: 'mountain',    context: 'nature',  ipa: '/monˈta.ɲa/',    example: 'La montaña es alta.' },
-      { id: 'es_cielo',     word: 'cielo',       meaning: 'sky',         context: 'sky',     ipa: '/ˈθje.lo/',      example: 'El cielo es azul.' },
-      { id: 'es_estrella',  word: 'estrella',    meaning: 'star',        context: 'sky',     ipa: '/esˈtɾe.ʎa/',    example: 'La estrella brilla.' },
-      { id: 'es_luna',      word: 'luna',        meaning: 'moon',        context: 'sky',     ipa: '/ˈlu.na/',       example: 'La luna llena ilumina.' },
-      { id: 'es_sol',       word: 'sol',         meaning: 'sun',         context: 'sky',     ipa: '/sol/',          example: 'El sol calienta.' },
-      { id: 'es_viento',    word: 'viento',      meaning: 'wind',        context: 'nature',  ipa: '/ˈbjen.to/',     example: 'El viento sopla.' },
-      { id: 'es_fuego',     word: 'fuego',       meaning: 'fire',        context: 'nature',  ipa: '/ˈfwe.ɣo/',      example: 'El fuego arde.' },
-      { id: 'es_tierra',    word: 'tierra',      meaning: 'earth / land',context: 'nature',  ipa: '/ˈtje.ra/',      example: 'La tierra es fértil.' },
-      // Dream / inner
-      { id: 'es_sueño',     word: 'sueño',       meaning: 'dream / sleep',context: 'dream', ipa: '/ˈswe.ɲo/',      example: 'Tengo un sueño.' },
-      { id: 'es_luz',       word: 'luz',         meaning: 'light',       context: 'dream',   ipa: '/luθ/',          example: 'La luz guía.' },
-      { id: 'es_sombra',    word: 'sombra',      meaning: 'shadow',      context: 'dream',   ipa: '/ˈsom.bɾa/',     example: 'La sombra se alarga.' },
-      { id: 'es_silencio',  word: 'silencio',    meaning: 'silence',     context: 'dream',   ipa: '/siˈlen.θjo/',   example: 'El silencio es profundo.' },
-      { id: 'es_paz',       word: 'paz',         meaning: 'peace',       context: 'dream',   ipa: '/paθ/',          example: 'La paz interior.' },
-      // Action
-      { id: 'es_caminar',   word: 'caminar',     meaning: 'to walk',     context: 'action',  ipa: '/ka.miˈnaɾ/',    example: 'Camino despacio.' },
-      { id: 'es_correr',    word: 'correr',      meaning: 'to run',      context: 'action',  ipa: '/koˈreɾ/',       example: 'Corro rápido.' },
-      { id: 'es_ver',       word: 'ver',         meaning: 'to see',      context: 'action',  ipa: '/beɾ/',          example: 'Veo las estrellas.' },
-      { id: 'es_escuchar',  word: 'escuchar',    meaning: 'to listen',   context: 'action',  ipa: '/es.kuˈt͡ʃaɾ/',   example: 'Escucha el bosque.' },
-      { id: 'es_sentir',    word: 'sentir',      meaning: 'to feel',     context: 'body',    ipa: '/senˈtiɾ/',      example: 'Siento la lluvia.' },
-      // Body
-      { id: 'es_corazón',   word: 'corazón',     meaning: 'heart',       context: 'body',    ipa: '/ko.ɾaˈθon/',    example: 'El corazón late.' },
-      { id: 'es_mano',      word: 'mano',        meaning: 'hand',        context: 'body',    ipa: '/ˈma.no/',       example: 'La mano toca.' },
-      { id: 'es_voz',       word: 'voz',         meaning: 'voice',       context: 'body',    ipa: '/boθ/',          example: 'Su voz es suave.' },
-      { id: 'es_mente',     word: 'mente',       meaning: 'mind',        context: 'dream',   ipa: '/ˈmen.te/',      example: 'La mente descansa.' },
-      // Urban
-      { id: 'es_ciudad',    word: 'ciudad',      meaning: 'city',        context: 'urban',   ipa: '/θjuˈðað/',      example: 'La ciudad duerme.' },
-      { id: 'es_casa',      word: 'casa',        meaning: 'house / home',context: 'urban',   ipa: '/ˈka.sa/',       example: 'La casa es cálida.' },
-      { id: 'es_puerta',    word: 'puerta',      meaning: 'door',        context: 'urban',   ipa: '/ˈpweɾ.ta/',     example: 'La puerta está abierta.' },
-      { id: 'es_camino',    word: 'camino',      meaning: 'path / road', context: 'nature',  ipa: '/kaˈmi.no/',     example: 'El camino es largo.' },
-      { id: 'es_puente',    word: 'puente',      meaning: 'bridge',      context: 'urban',   ipa: '/ˈpwen.te/',     example: 'El puente es viejo.' },
-      { id: 'es_noche',     word: 'noche',       meaning: 'night',       context: 'sky',     ipa: '/ˈno.t͡ʃe/',      example: 'La noche es oscura.' },
-      { id: 'es_amanecer',  word: 'amanecer',    meaning: 'dawn / sunrise',context: 'sky',   ipa: '/a.ma.neˈθeɾ/',  example: 'El amanecer llega.' },
-      { id: 'es_nube',      word: 'nube',        meaning: 'cloud',       context: 'sky',     ipa: '/ˈnu.βe/',       example: 'La nube pasa.' },
+    family: 'romance',
+    script: 'latin',
+    core: [
+      // Consciousness / inner life
+      { word: 'la conciencia',  meaning: 'consciousness',   ipa: '/la konˈθjenθja/', context: 'La conciencia es el primer paso.' },
+      { word: 'la paz',         meaning: 'peace',            ipa: '/la paθ/',         context: 'La paz comienza adentro.' },
+      { word: 'el alma',        meaning: 'soul',             ipa: '/el ˈalma/',       context: 'El alma nunca miente.' },
+      { word: 'la sabiduría',   meaning: 'wisdom',           ipa: '/la saβiðuˈɾia/',  context: 'La sabiduría llega con calma.' },
+      { word: 'el sueño',       meaning: 'dream',            ipa: '/ˈswe.ɲo/',        context: 'El sueño guía el camino.' },
+      { word: 'la luz',         meaning: 'light',            ipa: '/luθ/',            context: 'La luz guía.' },
+      { word: 'la mente',       meaning: 'mind',             ipa: '/ˈmen.te/',        context: 'La mente descansa.' },
+      // High-frequency verbs
+      { word: 'ser',            meaning: 'to be (essence)',  ipa: '/seɾ/',            context: 'Ser, no parecer.' },
+      { word: 'estar',          meaning: 'to be (state)',    ipa: '/esˈtaɾ/',         context: 'Estar completamente presente.' },
+      { word: 'sanar',          meaning: 'to heal',          ipa: '/saˈnaɾ/',         context: 'Es posible sanar.' },
+      { word: 'despertar',      meaning: 'to awaken',        ipa: '/despeɾˈtaɾ/',     context: 'Es hora de despertar.' },
+      { word: 'respirar',       meaning: 'to breathe',       ipa: '/respiˈɾaɾ/',      context: 'Respirar es vivir.' },
+      { word: 'sentir',         meaning: 'to feel',          ipa: '/senˈtiɾ/',        context: 'Sentir el momento presente.' },
+      { word: 'ver',            meaning: 'to see',           ipa: '/beɾ/',            context: 'Ver con claridad.' },
+      { word: 'saber',          meaning: 'to know',          ipa: '/saˈβeɾ/',         context: 'Saber escuchar.' },
+      { word: 'querer',         meaning: 'to want',          ipa: '/keˈɾeɾ/',         context: 'Querer es poder.' },
+      { word: 'poder',          meaning: 'to be able',       ipa: '/poˈðeɾ/',         context: 'Poder cambiar.' },
+      { word: 'elegir',         meaning: 'to choose',        ipa: '/eleˈxiɾ/',        context: 'Elegir con sabiduría.' },
+      // Time
+      { word: 'ahora',          meaning: 'now',              ipa: '/aˈoɾa/',          context: 'Vive ahora.' },
+      { word: 'siempre',        meaning: 'always',           ipa: '/ˈsjempɾe/',       context: 'Siempre hay esperanza.' },
+      { word: 'nunca',          meaning: 'never',            ipa: '/ˈnunka/',         context: 'Nunca te rindas.' },
+      // Numbers
+      { word: 'uno',            meaning: 'one',              ipa: '/ˈuno/',           context: 'Un solo momento.' },
+      { word: 'dos',            meaning: 'two',              ipa: '/dos/',            context: 'Dos caminos se abren.' },
+      { word: 'tres',           meaning: 'three',            ipa: '/tɾes/',           context: 'Tres opciones.' },
+      // Colors
+      { word: 'rojo',           meaning: 'red',              ipa: '/ˈroxo/',          context: 'El rojo del amanecer.' },
+      { word: 'azul',           meaning: 'blue',             ipa: '/aˈθul/',          context: 'El cielo azul.' },
+      { word: 'verde',          meaning: 'green',            ipa: '/ˈbeɾðe/',         context: 'El bosque verde.' },
+      // Body / somatic
+      { word: 'el cuerpo',      meaning: 'body',             ipa: '/el ˈkweɾpo/',     context: 'El cuerpo habla.' },
+      { word: 'el corazón',     meaning: 'heart',            ipa: '/ko.ɾaˈθon/',      context: 'El corazón siente.' },
+      { word: 'la voz',         meaning: 'voice',            ipa: '/boθ/',            context: 'La voz del silencio.' },
     ],
+    byDreamscape: {
+      'Void State': [
+        { word: 'el vacío',     meaning: 'void / emptiness', ipa: '/baˈθio/',         context: 'El vacío es una puerta.' },
+        { word: 'el infinito',  meaning: 'infinity',         ipa: '/infiˈnito/',      context: 'El infinito nos contiene.' },
+        { word: 'la nada',      meaning: 'nothingness',      ipa: '/ˈnaða/',          context: 'En la nada, todo existe.' },
+        { word: 'el silencio',  meaning: 'silence',          ipa: '/siˈlenθjo/',      context: 'El silencio habla.' },
+      ],
+      'Forest Cathedral': [
+        { word: 'el bosque',    meaning: 'forest',           ipa: '/ˈbos.ke/',        context: 'El bosque respira despacio.' },
+        { word: 'el árbol',     meaning: 'tree',             ipa: '/ˈaɾβol/',         context: 'El árbol toca el cielo.' },
+        { word: 'el musgo',     meaning: 'moss',             ipa: '/ˈmusɣo/',         context: 'El musgo cubre las piedras.' },
+        { word: 'la raíz',      meaning: 'root',             ipa: '/raˈiθ/',          context: 'La raíz sostiene todo.' },
+      ],
+      'Mountain Dragon Realm': [
+        { word: 'la montaña',   meaning: 'mountain',         ipa: '/monˈta.ɲa/',      context: 'La montaña guarda secretos.' },
+        { word: 'el dragón',    meaning: 'dragon',           ipa: '/dɾaˈɣon/',        context: 'El dragón guarda la cima.' },
+        { word: 'la cima',      meaning: 'summit / peak',    ipa: '/ˈθima/',          context: 'La cima está entre las nubes.' },
+        { word: 'la fuerza',    meaning: 'strength',         ipa: '/ˈfweɾθa/',        context: 'La fuerza nace en calma.' },
+      ],
+    },
   },
 
-  // ─── Japanese ──────────────────────────────────────────────────────
-  ja: {
+  // ─── Japanese ────────────────────────────────────────────────────────
+  japanese: {
     name: 'Japanese',
     nativeName: '日本語',
-    emoji: '🇯🇵',
-    words: [
-      // Nature
-      { id: 'ja_mizu',      word: '水 (mizu)',    meaning: 'water',       context: 'nature',  ipa: '/mi.zɯ/',        example: '水が流れる。' },
-      { id: 'ja_mori',      word: '森 (mori)',    meaning: 'forest',      context: 'nature',  ipa: '/mo.ɾi/',        example: '森は静かだ。' },
-      { id: 'ja_yama',      word: '山 (yama)',    meaning: 'mountain',    context: 'nature',  ipa: '/ja.ma/',        example: '山は高い。' },
-      { id: 'ja_sora',      word: '空 (sora)',    meaning: 'sky',         context: 'sky',     ipa: '/so.ɾa/',        example: '空は青い。' },
-      { id: 'ja_hoshi',     word: '星 (hoshi)',   meaning: 'star',        context: 'sky',     ipa: '/ho.ɕi/',        example: '星が輝く。' },
-      { id: 'ja_tsuki',     word: '月 (tsuki)',   meaning: 'moon',        context: 'sky',     ipa: '/tsɯ.ki/',       example: '月が丸い。' },
-      { id: 'ja_taiyou',    word: '太陽 (taiyō)', meaning: 'sun',         context: 'sky',     ipa: '/ta.i.joː/',     example: '太陽が昇る。' },
-      { id: 'ja_kaze',      word: '風 (kaze)',    meaning: 'wind',        context: 'nature',  ipa: '/ka.ze/',        example: '風が吹く。' },
-      { id: 'ja_hi',        word: '火 (hi)',      meaning: 'fire',        context: 'nature',  ipa: '/çi/',           example: '火が燃える。' },
-      { id: 'ja_tsuchi',    word: '土 (tsuchi)',  meaning: 'earth / soil',context: 'nature',  ipa: '/tsɯ.t͡ɕi/',     example: '土が暖かい。' },
-      // Dream / inner
-      { id: 'ja_yume',      word: '夢 (yume)',    meaning: 'dream',       context: 'dream',   ipa: '/jɯ.me/',        example: '夢を見る。' },
-      { id: 'ja_hikari',    word: '光 (hikari)',  meaning: 'light',       context: 'dream',   ipa: '/çi.ka.ɾi/',     example: '光が差す。' },
-      { id: 'ja_kage',      word: '影 (kage)',    meaning: 'shadow',      context: 'dream',   ipa: '/ka.ɡe/',        example: '影が伸びる。' },
-      { id: 'ja_shizukesa', word: '静けさ',       meaning: 'silence / stillness', context: 'dream', ipa: '/ɕi.zɯ.ke.sa/', example: '静けさが広がる。' },
-      { id: 'ja_heiwa',     word: '平和 (heiwa)', meaning: 'peace',       context: 'dream',   ipa: '/he.i.wa/',      example: '平和を願う。' },
-      // Action
-      { id: 'ja_aruku',     word: '歩く (aruku)', meaning: 'to walk',     context: 'action',  ipa: '/a.ɾɯ.kɯ/',     example: 'ゆっくり歩く。' },
-      { id: 'ja_hashiru',   word: '走る (hashiru)',meaning: 'to run',     context: 'action',  ipa: '/ha.ɕi.ɾɯ/',    example: '速く走る。' },
-      { id: 'ja_miru',      word: '見る (miru)',  meaning: 'to see / look',context: 'action', ipa: '/mi.ɾɯ/',        example: '星を見る。' },
-      { id: 'ja_kiku',      word: '聞く (kiku)',  meaning: 'to listen',   context: 'action',  ipa: '/ki.kɯ/',        example: '音を聞く。' },
-      { id: 'ja_kanjiru',   word: '感じる (kanjiru)',meaning: 'to feel',  context: 'body',    ipa: '/kan.dʑi.ɾɯ/',   example: '風を感じる。' },
-      // Body
-      { id: 'ja_kokoro',    word: '心 (kokoro)',  meaning: 'heart / mind',context: 'body',    ipa: '/ko.ko.ɾo/',     example: '心が静かだ。' },
-      { id: 'ja_te',        word: '手 (te)',      meaning: 'hand',        context: 'body',    ipa: '/te/',           example: '手が触れる。' },
-      { id: 'ja_koe',       word: '声 (koe)',     meaning: 'voice',       context: 'body',    ipa: '/ko.e/',         example: '声が響く。' },
-      { id: 'ja_tamashii',  word: '魂 (tamashii)',meaning: 'soul / spirit',context: 'dream',  ipa: '/ta.ma.ɕiː/',    example: '魂が目覚める。' },
-      // Urban / everyday
-      { id: 'ja_machi',     word: '町 (machi)',   meaning: 'town / city', context: 'urban',   ipa: '/ma.t͡ɕi/',       example: '町は静かだ。' },
-      { id: 'ja_ie',        word: '家 (ie)',      meaning: 'house / home',context: 'urban',   ipa: '/i.e/',          example: '家に帰る。' },
-      { id: 'ja_tobira',    word: '扉 (tobira)',  meaning: 'door / gate', context: 'urban',   ipa: '/to.bi.ɾa/',     example: '扉が開く。' },
-      { id: 'ja_michi',     word: '道 (michi)',   meaning: 'path / road / way', context: 'nature', ipa: '/mi.t͡ɕi/',  example: '道が続く。' },
-      { id: 'ja_hashi',     word: '橋 (hashi)',   meaning: 'bridge',      context: 'urban',   ipa: '/ha.ɕi/',        example: '橋を渡る。' },
-      { id: 'ja_yoru',      word: '夜 (yoru)',    meaning: 'night',       context: 'sky',     ipa: '/jo.ɾɯ/',        example: '夜は深い。' },
-      { id: 'ja_yoake',     word: '夜明け (yoake)',meaning: 'dawn',       context: 'sky',     ipa: '/jo.a.ke/',      example: '夜明けが来る。' },
-      { id: 'ja_kumo',      word: '雲 (kumo)',    meaning: 'cloud',       context: 'sky',     ipa: '/kɯ.mo/',        example: '雲が流れる。' },
+    family: 'japonic',
+    script: 'mixed',
+    core: [
+      // Consciousness / inner life
+      { word: '意識 (ishiki)',    meaning: 'consciousness',  ipa: 'i·shi·ki',       context: '意識を高める。' },
+      { word: '平和 (heiwa)',     meaning: 'peace',          ipa: 'hei·wa',         context: '平和な心を保つ。' },
+      { word: '魂 (tamashii)',    meaning: 'soul',           ipa: 'ta·ma·shi·i',    context: '魂の声を聞く。' },
+      { word: '知恵 (chie)',      meaning: 'wisdom',         ipa: 'chi·e',          context: '知恵は経験から生まれる。' },
+      { word: '癒し (iyashi)',    meaning: 'healing',        ipa: 'i·ya·shi',       context: '心の癒しを求める。' },
+      { word: '目覚め (mezame)',  meaning: 'awakening',      ipa: 'me·za·me',       context: '新しい目覚めが来た。' },
+      { word: '道 (michi)',       meaning: 'path / way',     ipa: 'mi·chi',         context: '自分の道を歩む。' },
+      { word: '夢 (yume)',        meaning: 'dream',          ipa: 'yu·me',          context: '夢を見る。' },
+      { word: '光 (hikari)',      meaning: 'light',          ipa: 'hi·ka·ri',       context: '光が差す。' },
+      { word: '心 (kokoro)',      meaning: 'heart / mind',   ipa: 'ko·ko·ro',       context: '心が静かだ。' },
+      // High-frequency verbs
+      { word: '呼吸 (kokyū)',     meaning: 'breathing',      ipa: 'ko·kyū',         context: '深い呼吸をする。' },
+      { word: '感じる (kanjiru)', meaning: 'to feel',        ipa: 'kan·ji·ru',      context: '今を感じる。' },
+      { word: '選ぶ (erabu)',     meaning: 'to choose',      ipa: 'e·ra·bu',        context: '自分で選ぶ。' },
+      { word: '見る (miru)',      meaning: 'to see',         ipa: 'mi·ru',          context: '星を見る。' },
+      { word: '知る (shiru)',     meaning: 'to know',        ipa: 'shi·ru',         context: '真実を知る。' },
+      { word: '歩く (aruku)',     meaning: 'to walk',        ipa: 'a·ru·ku',        context: 'ゆっくり歩く。' },
+      // Time
+      { word: '今 (ima)',         meaning: 'now',            ipa: 'i·ma',           context: '今ここにいる。' },
+      { word: 'いつも (itsumo)', meaning: 'always',          ipa: 'i·tsu·mo',       context: 'いつも前を向く。' },
+      { word: '決して (kesshite)', meaning: 'never',         ipa: 'ke·sshi·te',     context: '決して諦めない。' },
+      // Numbers
+      { word: '一 (ichi)',        meaning: 'one',            ipa: 'i·chi',          context: '一つの道がある。' },
+      { word: '二 (ni)',          meaning: 'two',            ipa: 'ni',             context: '二つの選択がある。' },
+      { word: '三 (san)',         meaning: 'three',          ipa: 'san',            context: '三つの答えがある。' },
+      // Colors
+      { word: '赤 (aka)',         meaning: 'red',            ipa: 'a·ka',           context: '赤い空が広がる。' },
+      { word: '青 (ao)',          meaning: 'blue',           ipa: 'a·o',            context: '青い海が続く。' },
+      { word: '緑 (midori)',      meaning: 'green',          ipa: 'mi·do·ri',       context: '緑の森が広がる。' },
+      // Body / somatic
+      { word: '体 (karada)',      meaning: 'body',           ipa: 'ka·ra·da',       context: '体の声を聞く。' },
+      { word: '空 (sora)',        meaning: 'sky',            ipa: 'so·ra',          context: '空は広い。' },
+      { word: '森 (mori)',        meaning: 'forest',         ipa: 'mo·ri',          context: '森は静かだ。' },
+      { word: '声 (koe)',         meaning: 'voice',          ipa: 'ko·e',           context: '声が響く。' },
+      { word: '息 (iki)',         meaning: 'breath',         ipa: 'i·ki',           context: '深い息を吸う。' },
     ],
+    byDreamscape: {
+      'Void State': [
+        { word: '虚空 (kokū)',    meaning: 'void / emptiness', ipa: 'ko·kū',        context: '虚空に溶けていく。' },
+        { word: '無限 (mugen)',   meaning: 'infinity',         ipa: 'mu·gen',       context: '無限の宇宙を感じる。' },
+        { word: '無 (mu)',        meaning: 'nothingness',      ipa: 'mu',           context: '無の境地に達する。' },
+        { word: '静寂 (seijaku)', meaning: 'silence / stillness', ipa: 'sei·ja·ku', context: '静寂が広がる。' },
+      ],
+      'Forest Cathedral': [
+        { word: '木 (ki)',        meaning: 'tree',             ipa: 'ki',           context: '木が空に伸びる。' },
+        { word: '苔 (koke)',      meaning: 'moss',             ipa: 'ko·ke',        context: '苔が岩を覆う。' },
+        { word: '根 (ne)',        meaning: 'root',             ipa: 'ne',           context: '根が大地に広がる。' },
+        { word: '葉 (ha)',        meaning: 'leaf',             ipa: 'ha',           context: '葉が風に揺れる。' },
+      ],
+      'Mountain Dragon Realm': [
+        { word: '山 (yama)',      meaning: 'mountain',         ipa: 'ya·ma',        context: '山は高くそびえる。' },
+        { word: '龍 (ryū)',       meaning: 'dragon',           ipa: 'ryū',          context: '龍が空を舞う。' },
+        { word: '頂 (itadaki)',   meaning: 'summit / peak',    ipa: 'i·ta·da·ki',   context: '頂に近づく。' },
+        { word: '嵐 (arashi)',    meaning: 'storm',            ipa: 'a·ra·shi',     context: '嵐の中に静けさがある。' },
+      ],
+    },
   },
 };
 
 /**
- * Get all words for a language as a flat array.
- * @param {string} langCode - e.g. 'fr', 'es', 'ja'
- * @returns {Array} words array or []
+ * Returns contextual dreamscape words first, then core words.
+ * @param {string} language - e.g. 'french', 'spanish', 'japanese'
+ * @param {string} dreamscape - e.g. 'Forest Cathedral'
+ * @returns {Array} combined word list, contextual words first
+ */
+export function getDreamscapeVocab(language, dreamscape) {
+  const lang = LANGUAGE_CONTENT[language];
+  if (!lang) return [];
+  const contextual = lang.byDreamscape?.[dreamscape] || [];
+  return [...contextual, ...lang.core];
+}
+
+// ─── Backward-compatible helpers (used by language-mode.js) ──────────
+
+const CODE_TO_NAME = { fr: 'french', es: 'spanish', ja: 'japanese' };
+
+/**
+ * Get all words for a language as a flat array with id/example fields
+ * added for backward compatibility.
+ * @param {string} langCode - e.g. 'fr', 'es', 'ja', or full name
+ * @returns {Array} words array
  */
 export function getWords(langCode) {
-  return LANGUAGE_CONTENT[langCode]?.words || [];
+  const name = CODE_TO_NAME[langCode] || langCode;
+  const lang = LANGUAGE_CONTENT[name];
+  if (!lang) return [];
+
+  const seen = new Set();
+  const result = [];
+
+  const addWords = (words, prefix) => {
+    words.forEach((w, i) => {
+      if (seen.has(w.word)) return;
+      seen.add(w.word);
+      result.push({ ...w, id: `${langCode}_${prefix}_${i}`, example: w.context });
+    });
+  };
+
+  addWords(lang.core, 'core');
+  for (const [scene, words] of Object.entries(lang.byDreamscape || {})) {
+    addWords(words, scene.replace(/\s+/g, '_'));
+  }
+  return result;
 }
 
 /**
- * Get words filtered by dreamscape context.
+ * Get words filtered by dreamscape context label.
  * @param {string} langCode
- * @param {string} context - 'nature','sky','dream','body','action','urban'
+ * @param {string} dreamscape - dreamscape name key
  * @returns {Array}
  */
-export function getWordsByContext(langCode, context) {
-  return getWords(langCode).filter(w => w.context === context);
+export function getWordsByDreamscape(langCode, dreamscape) {
+  const name = CODE_TO_NAME[langCode] || langCode;
+  const lang = LANGUAGE_CONTENT[name];
+  if (!lang) return [];
+  return (lang.byDreamscape?.[dreamscape] || []).map((w, i) => ({
+    ...w,
+    id: `${langCode}_${dreamscape.replace(/\s+/g, '_')}_${i}`,
+    example: w.context,
+  }));
 }
 
 /**
  * Get random distractors (wrong answers) for a quiz item.
- * Returns 3 other meanings from the same language that are NOT the correct answer.
  * @param {string} langCode
  * @param {string} correctId - id of the correct word
  * @param {number} count - how many distractors
  * @returns {string[]} array of distractor meanings
  */
 export function getDistractors(langCode, correctId, count = 3) {
-  const words   = getWords(langCode);
+  const words = getWords(langCode);
   const correct = words.find(w => w.id === correctId);
   if (!correct) return [];
-  const others  = words.filter(w => w.id !== correctId);
+  const others = words.filter(w => w.id !== correctId);
   const shuffled = others.sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count).map(w => w.meaning);
 }

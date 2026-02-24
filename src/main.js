@@ -806,7 +806,14 @@ function loop(ts) {
     }
     // Loop 1: live insight multiplier — +50% when LUCID STATE active
     if (game) game.insightMul = window._lucidModifiers.lucidState ? 1.5 : 1.0;
-    alchemySystem.tick();
+    if (!window._alchemyDisabled) {
+      try {
+        alchemySystem.tick();
+      } catch(e) {
+        console.error('[Alchemy] tick crashed:', e);
+        window._alchemyDisabled = true;
+      }
+    }
     emergenceIndicators.tick();
     const domEmotion0 = emotionalField.getDominantEmotion();
     const biomeEmotion0 = (domEmotion0.value > EMOTION_THRESHOLD ? domEmotion0.id : null) || (game?.ds?.emotion);
@@ -1476,7 +1483,14 @@ function loop(ts) {
     if (cf.timer === 0) window._constellationFlash = null;
   }
   // ── Alchemy system tick ──────────────────────────────────────────────
-  alchemySystem.tick();
+  if (!window._alchemyDisabled) {
+    try {
+      alchemySystem.tick();
+    } catch(e) {
+      console.error('[Alchemy] tick crashed:', e);
+      window._alchemyDisabled = true;
+    }
+  }
   // Aurora phase quest trigger: only fire once on phase transition to 'aurora'
   const _curAlchPhase = alchemySystem.phase;
   if (_curAlchPhase === 'aurora' && _prevAlchemyPhase !== 'aurora') questSystem.onAuroraPhase();
@@ -1970,8 +1984,8 @@ window.addEventListener('keydown', e => {
     e.preventDefault(); return;
   }
   if (phase === 'paused') {
-    if (e.key==='ArrowUp')   { CURSOR.pause=(CURSOR.pause-1+5)%5; sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='ArrowDown') { CURSOR.pause=(CURSOR.pause+1)%5; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowUp')   { CURSOR.pause=(CURSOR.pause-1+6)%6; sfxManager.resume(); sfxManager.playMenuNav(); }
+    if (e.key==='ArrowDown') { CURSOR.pause=(CURSOR.pause+1)%6; sfxManager.resume(); sfxManager.playMenuNav(); }
     // B key: cycle breathing patterns (Phase 7)
     if (e.key==='b'||e.key==='B') {
       const patterns = ['box', '4-7-8', 'coherent'];
@@ -2008,6 +2022,18 @@ window.addEventListener('keydown', e => {
       else if(CURSOR.pause===2) { setPhase('howtoplay'); } // TUTORIAL
       else if(CURSOR.pause===3) { setPhase('highscores'); } // HIGH SCORES
       else if(CURSOR.pause===4) { CURSOR.opt=0; CURSOR.optFrom='paused'; setPhase('options'); } // OPTIONS
+      else if(CURSOR.pause===5) { // QUIT TO MENU
+        if(gameMode==='shooter') shooterMode.paused=false;
+        sessionTracker.endSession(0,0);
+        gameMode='grid';
+        window._placeholderMode=null;
+        window._ornithWorld=null;
+        window._mycelWorld=null;
+        setPhase('title');
+        CURSOR.menu=0;
+        CURSOR.pause=0;
+        game=null;
+      }
     }
     if (e.key==='Escape') {
       if(gameMode==='shooter') { shooterMode.paused=false; setPhase('playing'); }

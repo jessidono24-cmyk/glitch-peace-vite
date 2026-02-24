@@ -18,7 +18,7 @@ import { stepEnemies } from './game/enemy.js';
 import { tryMove, triggerGlitchPulse, stepTileSpread, setEmotion, showMsg,
          activateArchetype, executeArchetypePower } from './game/player.js';
 import { burst, resonanceWave } from './game/particles.js';
-import { drawGame } from './ui/renderer.js';
+import { drawGame, drawArchetypeMessage } from './ui/renderer.js';
 import { updateHUD } from './ui/hud.js';
 import { spritePlayer } from './rendering/sprite-player.js';
 import { drawTitle, drawDreamSelect, drawOptions, drawHighScores,
@@ -104,6 +104,8 @@ import { drawArchetypeSelect } from './ui/menus.js';
 import { ModeManager } from './modes/mode-manager.js';
 // ─── LANG1: Language Learning Mode ────────────────────────────────────────
 import { LanguageMode } from './modes/language-mode.js';
+// ─── BOT1: Archetype Character Bots ──────────────────────────────────────
+import { ArchetypeBot } from './systems/ai-characters/archetype-bot.js';
 
 // ─── Canvas setup ───────────────────────────────────────────────────────
 const canvas = document.getElementById('c');
@@ -192,6 +194,11 @@ const shooterSharedSystems = {
   impulseBuffer: null, consequencePreview,
 };
 const shooterMode = new ShooterMode(shooterSharedSystems);
+
+// BOT1: Archetype character bots — always running, reads live consciousness state.
+const archetypeBot = new ArchetypeBot({
+  emotionalField, dreamYoga, temporalSystem, impulseBuffer, languageSystem,
+});
 
 // ARCH1: ModeManager — wired here so new modes can register through it.
 // Existing mode instances are managed directly; this provides a registry for
@@ -640,6 +647,12 @@ function startGame(dreamIdx) {
   _flowMoveTimes = []; _flowHitTimes = [];
   _sessionTiles = []; _sessionInsightCount = 0;
   _sessionMatrixSwitches = 0; _sessionImpulseProceeds = 0; _sessionImpulseStops = 0;
+  // BOT1: Reset per-session tracking on game object
+  if (game) {
+    game._sessionStart  = Date.now();
+    game._sessionDeaths = 0;
+    game._recentTiles   = [];
+  }
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -1062,6 +1075,12 @@ function loop(ts) {
         // Loop 4-5: session tile tracking
         _sessionTiles.push(targetTile);
         if (targetTile === 6) _sessionInsightCount++;
+        // BOT1: rolling recent tiles window (last 15) + tile-triggered archetype messages
+        if (game._recentTiles) {
+          game._recentTiles.push(targetTile);
+          if (game._recentTiles.length > 15) game._recentTiles.shift();
+        }
+        archetypeBot.onTileEvent(targetTile, game);
         // Skymap/Ritual Space: track star-tile collections and reward named constellation
         if ((game.playModeId === 'skymap' || game.playModeId === 'ritual_space') && (targetTile === 6 || targetTile === 11)) {
           game._starsCollected = (game._starsCollected || 0) + 1;
@@ -1479,6 +1498,8 @@ function loop(ts) {
   if (game.hp <= 0) {
     sfxManager.playDeath();
     deadGame = game; // snapshot for death screen
+    // BOT1: track session deaths for protector bot
+    game._sessionDeaths = (game._sessionDeaths || 0) + 1;
     sessionTracker.endSession(game.score, sessionTracker.dreamscapesCompleted);
     saveScore(game.score, game.level, game.ds);
     setPhase('dead'); animId=requestAnimationFrame(loop); return;
@@ -1488,6 +1509,9 @@ function loop(ts) {
   drawGame(ctx, ts, game, matrixActive, backgroundStars, visions, hallucinations, anomalyActive, anomalyData, glitchFrames, DPR, consequencePreview.getGhostPath());
   updateHUD({ ...game, state: 'PLAYING' });
   drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
+  // BOT1: tick archetype bot and render overlay
+  archetypeBot.tick(ts, game);
+  drawArchetypeMessage(ctx, w, h, archetypeBot.pendingMessage);
   animId = requestAnimationFrame(loop);
 }
 
@@ -2042,6 +2066,8 @@ window.addEventListener('keydown', e => {
     }
     if (e.key==='Escape') { CURSOR.pause=0; sessionTracker.pauseSession(); emergenceIndicators.record('pause_frequency'); characterStats.onPauseUsed(); questSystem.onPause(); dashboardOpen = false; setPhase('paused'); }
     if ((e.key==='h'||e.key==='H') && !e.repeat) dashboardOpen = !dashboardOpen;
+    // BOT1: SPACE dismisses archetype bot message
+    if (e.key === ' ' && archetypeBot.pendingMessage) { archetypeBot.pendingMessage = null; e.preventDefault(); return; }
     if (e.key==='Shift' && !e.repeat) {
       const next = matrixActive === 'A' ? 'B' : 'A';
       setMatrix(next); setMatrixHoldTime(0);

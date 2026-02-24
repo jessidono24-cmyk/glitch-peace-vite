@@ -640,6 +640,19 @@ class LanguageSystem {
     return isNew;
   }
 
+  /** Mark a word as emotionally tagged (high-arousal encoding) */
+  markEmotionallyTagged(wordId, { emotion, tile, arousal }) {
+    if (!this._emotionalTags) this._emotionalTags = new Map();
+    if (!this._emotionalTags.has(wordId)) {
+      this._emotionalTags.set(wordId, { emotion, tile, arousal });
+    }
+  }
+
+  /** Retrieve the emotional tag for a word (or null) */
+  getEmotionalTag(wordId) {
+    return this._emotionalTags?.get(wordId) || null;
+  }
+
   /** Get word entry for display, respecting displayMode + vocab tier */
   getWord(wordId, vocabTier = 'advanced') {
     const bank = vocabTier === 'simple' ? SIMPLE_VOCAB : CORE_VOCABULARY;

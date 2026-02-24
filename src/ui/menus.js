@@ -489,6 +489,19 @@ export function drawPause(ctx, w, h, game, pauseIdx) {
     ctx.fillText('B = start breathing exercise (Box / 4-7-8 / Coherent)', w / 2, h - 34);
   }
 
+  // ── Loop 5: Patterns display ─────────────────────────────────────────
+  const patterns = window._sessionPatterns;
+  if (patterns && (patterns.impulseTotal > 0 || patterns.insightCount > 0)) {
+    const total = patterns.impulseTotal || 0;
+    const stops = patterns.impulseStops || 0;
+    const ins   = patterns.insightCount || 0;
+    const hazard = patterns.hazardSteps || 0;
+    const stopRatio = total > 0 ? Math.min(10, Math.round(stops / total * 10)) : 0;
+    const stopBar = '█'.repeat(stopRatio) + '░'.repeat(10 - stopRatio);
+    ctx.fillStyle = '#223344'; ctx.font = fs(11, ctx.canvas) + "px " + FONT;
+    ctx.fillText('PATTERNS  impulse×' + total + '  paused: ' + stops + '  ' + stopBar + '  ◆×' + ins + '  ⚠×' + hazard, w / 2, h - 52);
+  }
+
   PAUSE_MENU.forEach((txt, i) => {
     const sel = i === pauseIdx, y = h / 2 + 30 + i * 32;
     if (sel) {
@@ -633,6 +646,14 @@ export function drawInterlude(ctx, w, h, interludeState, ts) {
     ctx.fillStyle = '#ffdd44'; ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 8;
     ctx.font = 'bold '+ fs(13, ctx.canvas) + "px " + FONT;
     ctx.fillText('✦  ' + interludeState.milestone, w / 2, h / 2 + 152); ctx.shadowBlur = 0;
+    ctx.globalAlpha = alpha;
+  }
+
+  // ── Loop 4: Session insight (5.8 s) — one behavioral observation ─────────
+  if (interludeState.sessionInsight) {
+    ctx.globalAlpha = alpha * elemAlpha(5800);
+    ctx.fillStyle = '#446644'; ctx.font = 'italic '+ fs(13, ctx.canvas) + "px " + FONT;
+    ctx.fillText(interludeState.sessionInsight, w / 2, h / 2 + 168);
     ctx.globalAlpha = alpha;
   }
 

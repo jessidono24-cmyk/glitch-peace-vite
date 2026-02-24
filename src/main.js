@@ -13,7 +13,7 @@ import { CFG, UPG, CURSOR, phase, setPhase, resetUpgrades, resetSession,
          PLAYER_PROFILE, savePlayerProfile } from './core/state.js';
 import { rnd, pick } from './core/utils.js';
 import { saveHighScores, loadHighScores, loadTimezoneOffset, saveTimezoneOffset, loadAllSlots, deleteSlot } from './core/storage.js';
-import { SZ, DIFF, GP, CW, CH, buildDreamscape } from './game/grid.js';
+import { SZ, DIFF, GP, CW, CH, buildDreamscape, spawnTile } from './game/grid.js';
 import { stepEnemies } from './game/enemy.js';
 import { tryMove, triggerGlitchPulse, stepTileSpread, setEmotion, showMsg,
          activateArchetype, executeArchetypePower } from './game/player.js';
@@ -328,6 +328,28 @@ const MOVE_SPEED_FAST_THR   = 2.5;   // moves/sec → agitation/anticipation sig
 const MOVE_SPEED_SLOW_THR   = 0.4;   // moves/sec → sadness/disconnection signal
 let _recentMoveTimes = [];           // timestamps of recent moves (rolling window)
 
+// ─── Flow state tracking (Loop 3: adaptive difficulty) ───────────────────
+const FLOW_WINDOW_MS = 30000;   // 30-second rolling window for flow detection
+let _flowMoveTimes   = [];      // timestamps of player moves in flow window
+let _flowHitTimes    = [];      // timestamps of damage events in flow window
+
+// ─── Session behavior tracking (Loop 4 + 5) ──────────────────────────────
+let _sessionTiles          = [];  // tile types stepped this session
+let _sessionInsightCount   = 0;   // INSIGHT tiles collected
+let _sessionMatrixSwitches = 0;   // matrix switches
+let _sessionImpulseProceeds = 0;  // impulse buffer: proceeded into hazard
+let _sessionImpulseStops    = 0;  // impulse buffer: held back from hazard
+
+// ─── Flow state thresholds (Loop 3) ──────────────────────────────────────
+// Spec values: detectFlowState from FEEDBACK1 RESEARCH.md
+const FLOW_TOO_HARD_HITS    = 3;    // damage events in 30s → reduce difficulty
+const FLOW_TOO_EASY_HP      = 80;   // HP threshold for boredom detection
+const FLOW_TOO_EASY_MOVES   = 8;    // moves in 30s below this → too easy
+const FLOW_HAZARD_REDUCE    = 0.7;  // hazardMul when too hard
+const FLOW_HEAL_BOOST       = 1.5;  // healMul when too hard
+const FLOW_ENEMY_BOOST      = 1.15; // enemySpeedMul when too easy
+const FLOW_HAZARD_BOOST     = 1.2;  // hazardMul when too easy
+
 // ─── Nature facts state ───────────────────────────────────────────────────
 const NATURE_FACT_PROB = 0.04;  // probability per move of showing a new fact mid-exploration
 let _birdFactIdx      = 0;
@@ -355,6 +377,21 @@ function spawnVisions(w, h) {
 
 // ─── Helpers shared across systems ──────────────────────────────────────
 function _showMsg(text, color, timer) { if (game) { game.msg = text; game.msgColor = color; game.msgTimer = timer; } }
+
+// ─── Loop 4: Generate one behavioral insight from session data ───────────
+function generateSessionInsight() {
+  const despairSteps  = _sessionTiles.filter(t => t === T.DESPAIR).length;
+  const selfHarmSteps = _sessionTiles.filter(t => t === T.SELF_HARM).length;
+  const peaceCollected = _sessionTiles.filter(t => t === T.PEACE).length;
+  if (selfHarmSteps > 3) return `You stepped into SELF_HARM ${selfHarmSteps} times. Notice the pull.`;
+  if (_sessionImpulseProceeds > _sessionImpulseStops * 2 && (_sessionImpulseProceeds + _sessionImpulseStops) > 0)
+    return `${_sessionImpulseProceeds} times the impulse won. ${_sessionImpulseStops} times you paused. The pause is growing.`;
+  if (despairSteps > 6) return `Despair tiles drew you ${despairSteps} times. Something is seeking expression.`;
+  if (_sessionInsightCount > 5) return `${_sessionInsightCount} insight tiles — your curiosity was active today.`;
+  if (_sessionMatrixSwitches > 4) return `${_sessionMatrixSwitches} matrix switches — you're learning to move between states.`;
+  if (peaceCollected >= 10) return `${peaceCollected} peace nodes. The grid is becoming safer.`;
+  return null;
+}
 
 function saveScore(score, level, ds) {
   const scores = loadHighScores();
@@ -525,6 +562,14 @@ function initGame(dreamIdx, prevScore, prevLevel, prevHp) {
   g.cosmology = getCosmologyForDreamscape(ds.id);
   // Apply active play mode
   applyPlayMode(g, CFG.playMode || 'arcade');
+  // Loop 1: Lucid state archetype bonus — spawn one extra ARCHETYPE tile
+  if (window._lucidModifiers?.archetypeBonus) {
+    spawnTile(g.grid, 1, T.ARCHETYPE, g.sz, true);
+  }
+  // Loop 3: Apply flow difficulty enemy speed for next level
+  if (window._difficultyAdjust?.enemySpeedMul && window._difficultyAdjust.enemySpeedMul !== 1.0) {
+    g.enemySpeedMul = (g.enemySpeedMul || 1.0) * window._difficultyAdjust.enemySpeedMul;
+  }
   spawnVisions(window.innerWidth, window.innerHeight); hallucinations = []; glitchTimer = 500 + rnd(500);
   initStars(window.innerWidth, window.innerHeight);
   return g;
@@ -591,6 +636,10 @@ function startGame(dreamIdx) {
   // Reset movement speed tracking + nature facts state
   _recentMoveTimes = [];
   _lastNatureDsId = null;
+  // Loop 3-5: Reset flow + session tracking vars
+  _flowMoveTimes = []; _flowHitTimes = [];
+  _sessionTiles = []; _sessionInsightCount = 0;
+  _sessionMatrixSwitches = 0; _sessionImpulseProceeds = 0; _sessionImpulseStops = 0;
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
@@ -672,6 +721,7 @@ function nextDreamscape() {
     vocabWord,
     empathyReflection,
     milestone,
+    sessionInsight: generateSessionInsight(),
   };
   setPhase('interlude');
 }
@@ -732,6 +782,17 @@ function loop(ts) {
     emotionalField.weekdayCoherenceMul = coherenceMul0;
     emotionalField.decay(dt / 1000);
     dreamYoga.tick(dt);
+    // Loop 1: lucidity modifiers (read once per frame after tick so always fresh)
+    { const luc = dreamYoga.lucidity;
+      window._lucidModifiers = {
+        hiddenGlow:     luc >= 25,
+        enemySlow:      luc >= 50 ? 0.9 : 1.0,
+        archetypeBonus: luc >= 75,
+        lucidState:     luc >= 100,
+      };
+    }
+    // Loop 1: live insight multiplier — +50% when LUCID STATE active
+    if (game) game.insightMul = window._lucidModifiers.lucidState ? 1.5 : 1.0;
     alchemySystem.tick();
     emergenceIndicators.tick();
     const domEmotion0 = emotionalField.getDominantEmotion();
@@ -998,6 +1059,9 @@ function loop(ts) {
         // Phase 8: Record emergence events on tile step
         if (targetTile === 6) { emergenceIndicators.record('insight_accumulation'); dreamYoga.onInsightCollect(); questSystem.onInsightCollect(); }
         if (targetTile === 4 && UPG.comboCount >= 4) emergenceIndicators.record('peace_chain'); // T.PEACE
+        // Loop 4-5: session tile tracking
+        _sessionTiles.push(targetTile);
+        if (targetTile === 6) _sessionInsightCount++;
         // Skymap/Ritual Space: track star-tile collections and reward named constellation
         if ((game.playModeId === 'skymap' || game.playModeId === 'ritual_space') && (targetTile === 6 || targetTile === 11)) {
           game._starsCollected = (game._starsCollected || 0) + 1;
@@ -1100,11 +1164,14 @@ function loop(ts) {
       // 3D-A: signal hit if HP dropped from tile damage
       if (game.hp < _hpBeforeMove) spritePlayer.onHit();
       lastMove = ts;
+      // Loop 5: track hazard proceed before reset clears isHazard
+      if (impulseBuffer.isHazard) _sessionImpulseProceeds++;
       impulseBuffer.reset();
 
       // ── Movement speed → emotion tracking ──────────────────────────────
       _recentMoveTimes.push(ts);
       _recentMoveTimes = _recentMoveTimes.filter(t => ts - t < MOVE_SPEED_WINDOW_MS);
+      _flowMoveTimes.push(ts);       // Loop 3: flow window move tracking
       const _movesPerSec = _recentMoveTimes.length / (MOVE_SPEED_WINDOW_MS / 1000);
       window._moveSpeedMPS = _movesPerSec;
       if (_movesPerSec > MOVE_SPEED_FAST_THR) {
@@ -1153,7 +1220,10 @@ function loop(ts) {
     }
   } else if (!activeDir) {
     // Phase 9: track impulse cancellations (buffer was active, key released)
-    if (impulseBuffer.activeDirection) strategicThinking.onImpulseCancel();
+    if (impulseBuffer.activeDirection) {
+      if (impulseBuffer.isHazard) _sessionImpulseStops++; // Loop 5: hazard stop
+      strategicThinking.onImpulseCancel();
+    }
     impulseBuffer.cancel();
     window._impulseProgress = 0;
   }
@@ -1175,7 +1245,8 @@ function loop(ts) {
   const _hpBeforeEnemies = game.hp;
   // Play mode: scale enemy timing by enemySpeedMul (zenMode enemies already cleared)
   if (!game.zenMode) {
-    const eSpeedDt = dt * (game.enemySpeedMul || 1);
+    // Loop 1+3: apply lucid slow and flow difficulty multipliers to enemy speed
+    const eSpeedDt = dt * (game.enemySpeedMul || 1) * (window._lucidModifiers?.enemySlow ?? 1.0);
     stepEnemies(game, eSpeedDt, keys, matrixActive, hallucinations, _showMsg, setEmotion);
   }
   // Phase 9: track damage events for strategic analysis
@@ -1183,7 +1254,30 @@ function loop(ts) {
     strategicThinking.onDamage(matrixActive);
     dreamYoga.onHazardHit();
     spritePlayer.onHit(); // 3D-A: enemy damage signal
+    // Loop 3: flow tracking — record damage event
+    _flowHitTimes.push(ts);
   }
+  // Loop 3: flow state detection → adaptive difficulty
+  _flowHitTimes  = _flowHitTimes.filter(t => ts - t < FLOW_WINDOW_MS);
+  _flowMoveTimes = _flowMoveTimes.filter(t => ts - t < FLOW_WINDOW_MS);
+  { const _hitRate    = _flowHitTimes.length;
+    const _moveRate30 = _flowMoveTimes.length;
+    if (_hitRate >= FLOW_TOO_HARD_HITS) {
+      window._difficultyAdjust = { hazardMul: FLOW_HAZARD_REDUCE, healMul: FLOW_HEAL_BOOST, enemySpeedMul: 1.0 };
+    } else if (game.hp > FLOW_TOO_EASY_HP && _hitRate === 0 && _moveRate30 < FLOW_TOO_EASY_MOVES) {
+      window._difficultyAdjust = { hazardMul: FLOW_HAZARD_BOOST, healMul: 1.0, enemySpeedMul: FLOW_ENEMY_BOOST };
+    } else {
+      window._difficultyAdjust = { hazardMul: 1.0, healMul: 1.0, enemySpeedMul: 1.0 };
+    }
+  }
+  // Loop 5: expose session patterns for pause menu
+  window._sessionPatterns = {
+    impulseTotal:    _sessionImpulseProceeds + _sessionImpulseStops,
+    impulseStops:    _sessionImpulseStops,
+    impulseProceeds: _sessionImpulseProceeds,
+    hazardSteps:     _sessionTiles.filter(t => HAZARD_TILES.has(t)).length,
+    insightCount:    _sessionInsightCount,
+  };
   // 3D-A: tick sprite player animation each frame
   spritePlayer.tick(dt);
 
@@ -1208,6 +1302,17 @@ function loop(ts) {
         multiWord.tileType = tileType;
         // Record word as seen for progressive unlock (once per word, not per frame)
         languageSystem.onWordSeen(multiWord.id, languageSystem.targetLang);
+        // Loop 2: emotional encoding — tag word if encountered during high-arousal state
+        const _arousal = emotionalField.distortion || 0;
+        if (_arousal > 0.6) {
+          languageSystem.markEmotionallyTagged(multiWord.id, {
+            emotion: emotionalField.getDominantEmotion().id,
+            tile: tileType,
+            arousal: _arousal,
+          });
+        }
+        // Attach current emotional tag for renderer display
+        multiWord.emotionalTag = languageSystem.getEmotionalTag(multiWord.id);
       }
       _lastRawVocab  = rawVocab;
       _lastMultiWord = multiWord || null;
@@ -1947,6 +2052,7 @@ window.addEventListener('keydown', e => {
       logicPuzzles.onMatrixSwitch();  // Phase 9
       strategicThinking.onMatrixSwitch?.();
       dreamYoga.onMatrixSwitch();     // Phase 2.5
+      _sessionMatrixSwitches++;       // Loop 4: session tracking
       const lbl = next==='A'?'MATRIX·A  ⟨ERASURE⟩':'MATRIX·B  ⟨COHERENCE⟩';
       const col = next==='A'?'#ff0055':'#00ff88';
       _showMsg(lbl, col, 55);

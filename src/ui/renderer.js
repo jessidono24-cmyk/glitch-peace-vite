@@ -1803,3 +1803,84 @@ function drawDashboard(ctx, w, h) {
   ctx.fillText('scores update live during play', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
+
+// ─── BOT1: Archetype Character Bot overlay ───────────────────────────────────
+// Renders the archetype message box bottom-left, above the HUD bar.
+// message = { archetype, text, timer } — timer counts down from 6000ms.
+const ARCHETYPE_FADE_MS = 800; // fade in/out window at each end of the display duration
+export function drawArchetypeMessage(ctx, w, h, message) {
+  if (!message) return;
+  const alpha = Math.min(1, message.timer / ARCHETYPE_FADE_MS); // fade in/out
+
+  const COLORS = {
+    dragon:      '#ff6b35',
+    child_guide: '#88ccff',
+    orb:         '#cc88ff',
+    teacher:     '#ccaa44',
+    protector:   '#44cc88',
+  };
+
+  const NAMES = {
+    dragon:      '🔥 DRAGON',
+    child_guide: '✨ CHILD GUIDE',
+    orb:         '◯ ORB',
+    teacher:     '⊕ TEACHER',
+    protector:   '◈ PROTECTOR',
+  };
+
+  const color = COLORS[message.archetype] || '#ffffff';
+  const name  = NAMES[message.archetype]  || message.archetype.toUpperCase();
+
+  // Box dimensions
+  const bw = Math.min(420, w * 0.4);
+  const bh = 90;
+  const bx = 16;
+  const by = h - bh - 70; // above bottom HUD bar
+
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.9;
+
+  // Background
+  ctx.fillStyle = 'rgba(0,0,0,0.85)';
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.rect(bx, by, bw, bh);
+  ctx.fill();
+  ctx.stroke();
+
+  // Archetype name
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = color;
+  ctx.font = '11px monospace';
+  ctx.fillText(name, bx + 10, by + 18);
+
+  // Message text (word-wrap to box width)
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font = '13px monospace';
+  _wrapText(ctx, '"' + message.text + '"', bx + 10, by + 36, bw - 20, 18);
+
+  // Dismiss hint
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.font = '10px monospace';
+  ctx.fillText('[SPACE dismiss]', bx + bw - 110, by + bh - 8);
+
+  ctx.restore();
+}
+
+function _wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  let line = '';
+  let cy = y;
+  for (const word of words) {
+    const test = line + word + ' ';
+    if (ctx.measureText(test).width > maxWidth && line !== '') {
+      ctx.fillText(line, x, cy);
+      line = word + ' ';
+      cy += lineHeight;
+    } else {
+      line = test;
+    }
+  }
+  ctx.fillText(line, x, cy);
+}

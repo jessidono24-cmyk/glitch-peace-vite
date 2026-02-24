@@ -584,8 +584,11 @@ export class OrnithologyMode extends GameMode {
       }
     }
 
-    // Observations counter (top-left) — minimal: 3 lines max during active play
+    // Observations counter (top-left) — clip to HUD band so text never overflows canvas
     ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, w, 32);
+    ctx.clip();
     ctx.fillStyle = '#aaffaa';
     const hudFs = Math.max(14, Math.floor(w / 36));
     ctx.font = `${hudFs}px monospace`;

@@ -8,6 +8,9 @@ export function DIFF(){ return DIFF_CFG[CFG.difficulty]; }
 export function GP()  { return SZ() * CELL + (SZ() - 1) * GAP; }
 export function CW()  { return GP() + 48; }
 export function CH()  { return GP() + 148; }
+// Viewport dimensions — use these instead of CW()/CH() for full-canvas modes
+export function VW()  { return (typeof window !== 'undefined' ? window.innerWidth  : 1280); }
+export function VH()  { return (typeof window !== 'undefined' ? window.innerHeight : 720); }
 
 export function makeGrid(sz) {
   const g = Array.from({ length: sz }, () => new Array(sz).fill(T.VOID));

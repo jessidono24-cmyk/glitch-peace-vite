@@ -32,15 +32,22 @@
       "public/**/*"
     ],
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "Game"
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "public/favicon.ico"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "category": "public.app-category.games"
     }
   },
@@ -54,7 +61,7 @@
     "@anthropic-ai/sdk": "^0.74.0",
     "matter-js": "^0.20.0",
     "openai": "^6.22.0",
-    "three": "^0.183.0",
+    "three": "^0.183.1",
     "tone": "^15.4.3"
   }
 }

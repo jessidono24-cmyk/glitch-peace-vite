@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════════════════════
 if (import.meta.env.DEV) console.info('[BOOT] main.js loaded', new Date().toISOString());
 import { T, DREAMSCAPES, ARCHETYPES, UPGRADE_SHOP, VISION_WORDS, CELL, GAP, PAL_A, PAL_B, CONSTELLATION_NAMES, BIRD_FACTS, MUSHROOM_FACTS, PREDATOR_FACTS } from './core/constants.js';
-import { CFG, UPG, CURSOR, phase, setPhase, resetUpgrades, resetSession,
+import { CFG, UPG, CURSOR, phase, setPhase as _setPhase, resetUpgrades, resetSession,
          checkOwned, matrixActive, setMatrix, matrixHoldTime, setMatrixHoldTime, addMatrixHoldTime,
          insightTokens, addInsightToken, spendInsightTokens,
          sessionRep, addSessionRep, dreamHistory, pushDreamHistory,
@@ -105,6 +105,14 @@ import { EVENTS } from './core/events.js';
 import { resolveInitialBootPhase, clearOnboardingProfileKeys } from './core/bootRouter.js';
 // ─── BOT1: Archetype Character Bots ──────────────────────────────────────
 import { ArchetypeBot } from './systems/ai-characters/archetype-bot.js';
+
+function setPhase(nextPhase) {
+  const prevPhase = phase;
+  _setPhase(nextPhase);
+  if (import.meta.env.DEV && prevPhase !== nextPhase) {
+    console.info('[PHASE]', prevPhase, '→', nextPhase);
+  }
+}
 
 // ─── Canvas setup ───────────────────────────────────────────────────────
 const canvas = document.getElementById('c');

@@ -161,16 +161,16 @@ Audit basis:
 
 ## DOCUMENTED ONLY
 
-- Markdown file: `docs/creative inspiration/TASKS_FOR_CLAUDE.md`
+- Markdown file: `creative inspiration/TASKS_FOR_CLAUDE.md`
   - Missing code symbol/module path: `realmRegistry` module (e.g., `src/data/realmRegistry.*`) is not present in reachable runtime.
 
-- Markdown file: `docs/creative inspiration/TASKS_FOR_CLAUDE.md`
+- Markdown file: `creative inspiration/TASKS_FOR_CLAUDE.md`
   - Missing code symbol/module path: `enterRealm(realmId)` function is documented but no such symbol exists in `src/`.
 
-- Markdown file: `docs/creative inspiration/REALM_SPECS.md`
+- Markdown file: `creative inspiration/REALM_SPECS.md`
   - Missing code symbol/module path: documented realm IDs `civic_center_maze`, `mansion_compound`, `water_park`, `ethereal_bog`, `mountain_summit`, `castle_region` have no corresponding realm module/registry entries in `src/`.
 
-- Markdown file: `docs/creative inspiration/CLAUDE_PROMPT_STARTER.md`
+- Markdown file: `creative inspiration/CLAUDE_PROMPT_STARTER.md`
   - Missing code symbol/module path: process rule “run universal prompt” has no runtime-enforced module or validator (no `src/...` enforcement component).
 
 - Markdown file: `docs/research/INDEX.md`

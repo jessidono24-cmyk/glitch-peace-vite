@@ -95,6 +95,10 @@ import { biomeSystem } from './systems/biome-system.js';
 // ─── Archetype Select UI ──────────────────────────────────────────────────
 import { drawArchetypeSelect } from './ui/menus.js';
 import { ModeManager } from './modes/mode-manager.js';
+// ─── Mooncycle Run: Lake Hub + RunSpec ──────────────────────────────────
+import { lakeHub } from './hub/lakeHub.js';
+import { runSpecManager } from './core/runSpecManager.js';
+import { EVENTS } from './core/events.js';
 // ─── BOT1: Archetype Character Bots ──────────────────────────────────────
 import { ArchetypeBot } from './systems/ai-characters/archetype-bot.js';
 
@@ -882,6 +886,7 @@ function loop(ts) {
   if (phase === 'langopts')    { drawLanguageOptions(ctx, w, h, langOptState); animId=requestAnimationFrame(loop); return; }
   if (phase === 'howtoplay')   { drawHowToPlay(ctx, w, h); animId=requestAnimationFrame(loop); return; }
   if (phase === 'title')       { drawTitle(ctx, w, h, backgroundStars, ts, CURSOR.menu, gameMode); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); animId=requestAnimationFrame(loop); return; }
+  if (phase === 'lake_hub')    { lakeHub.draw(ctx, w, h, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'memory_select') { drawMemorySlots(ctx, canvas, memorySlots, CURSOR_slot); animId=requestAnimationFrame(loop); return; }
   if (phase === 'modeselect')  { drawModeSelect(ctx, w, h, CURSOR.modesel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
   if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, dreamselFiltered, CURSOR_dream, dreamPage); animId=requestAnimationFrame(loop); return; }
@@ -1823,6 +1828,18 @@ window.addEventListener('keydown', e => {
       else if (CURSOR.menu===3) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
       else if (CURSOR.menu===4) setPhase('highscores');
     }
+    // L key = enter Lake Hub (Mooncycle Run)
+    if (e.key === 'l' || e.key === 'L') {
+      sfxManager.resume(); sfxManager.playMenuSelect();
+      runSpecManager.resetToDefault();
+      bus.emit(EVENTS.RUN_START, { spec: runSpecManager.get() });
+      setPhase('lake_hub');
+    }
+    e.preventDefault(); return;
+  }
+  // ── Lake Hub (Mooncycle Run diegetic menu) ───────────────────────────
+  if (phase === 'lake_hub') {
+    if (e.key === 'Escape') { setPhase('title'); }
     e.preventDefault(); return;
   }
   // ── Memory slot selection screen ──────────────────────────────────────
@@ -2314,6 +2331,14 @@ window.addEventListener('gamepaddisconnected', e => { console.log('[Gamepad] dis
 // ─── Mouse events for shooter mode ────────────────────────────────────
 canvas.addEventListener('mousemove', e => {
   if (phase === 'playing' && gameMode === 'shooter') shooterMode.handleInput(null, 'mousemove', e);
+  if (phase === 'lake_hub') {
+    const rect = canvas.getBoundingClientRect();
+    lakeHub.handleMouseMove(
+      (e.clientX - rect.left) * (canvas.width / rect.width),
+      (e.clientY - rect.top) * (canvas.height / rect.height),
+      canvas.width, canvas.height
+    );
+  }
 });
 canvas.addEventListener('mousedown', e => {
   if (phase === 'playing' && gameMode === 'shooter') { sfxManager.resume(); shooterMode.handleInput(null, 'mousedown', e); }
@@ -2333,9 +2358,49 @@ function dpadBtn(id, key) {
 }
 dpadBtn('btn-up','ArrowUp'); dpadBtn('btn-down','ArrowDown');
 dpadBtn('btn-left','ArrowLeft'); dpadBtn('btn-right','ArrowRight');
-canvas.addEventListener('click', () => { if(phase==='title')startGame(CFG.dreamIdx); });
+canvas.addEventListener('click', (e) => {
+  if (phase === 'title') startGame(CFG.dreamIdx);
+  if (phase === 'lake_hub') {
+    const rect = canvas.getBoundingClientRect();
+    lakeHub.handleClick(
+      (e.clientX - rect.left) * (canvas.width / rect.width),
+      (e.clientY - rect.top) * (canvas.height / rect.height),
+      canvas.width, canvas.height
+    );
+  }
+});
 
 // ─── Boot ─────────────────────────────────────────────────────────────────
+// ── Mooncycle Run: Lake Hub zone callbacks ─────────────────────────────
+lakeHub.onZoneClick('portal_stones', () => {
+  // Stub: transition to realm select (will be replaced by in-world portal UI in Task 5-7)
+  bus.emit(EVENTS.REALM_EXIT, { realmId: 'lake_realm' });
+  runSpecManager.set({ realmId: 'leaping_field', moonPhase: '🌒 Waxing Crescent — Build & Expand' });
+  bus.emit(EVENTS.REALM_ENTER, { realmId: 'leaping_field' });
+  console.log('[LakeHub] Portal → leaping_field (stub)');
+});
+lakeHub.onZoneClick('godform_altar', () => {
+  console.log('[LakeHub] Godform Altar clicked (stub — Task 8)');
+});
+lakeHub.onZoneClick('dream_log', () => {
+  console.log('[LakeHub] Dream Log clicked (stub — Task 8+)');
+});
+lakeHub.onZoneClick('mirror_lake', () => {
+  console.log('[LakeHub] Mirror Lake clicked — RunSpec:', JSON.stringify(runSpecManager.get()));
+});
+lakeHub.onZoneClick('lodge', () => {
+  setPhase('options');
+});
+lakeHub.onZoneClick('lily_ring', () => {
+  console.log('[LakeHub] Lily Ring / upgrades clicked (stub — Task 12)');
+});
+lakeHub.onZoneClick('herb_bench', () => {
+  console.log('[LakeHub] Herb Bench clicked (stub)');
+});
+lakeHub.onZoneClick('moonlit_dock', () => {
+  console.log('[LakeHub] Moonlit Dock clicked — current phase:', runSpecManager.peek().moonPhase);
+});
+lakeHub.setCurrency(insightTokens);
 setHighScores(loadHighScores());
 // ARCH4: Apply saved timezone offset to temporal system on boot
 const _savedTzOffset = loadTimezoneOffset();
@@ -2385,6 +2450,7 @@ const _gpAPI = {};
 Object.defineProperties(_gpAPI, {
   state:    { get() {
     if (phase === 'title' || phase === 'onboarding') return 'MENU';
+    if (phase === 'lake_hub') return 'LAKE_HUB';
     if (phase === 'paused') return 'PAUSED';
     if (phase === 'playing') return 'PLAYING';
     return phase ? phase.toUpperCase() : null;

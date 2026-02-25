@@ -1,66 +1,180 @@
-# AUDIT_REPORT_2
+# AUDIT_REPORT_2.md
 
-Audit basis: static import-chain walk starting at `src/main.js` (current entrypoint) plus direct loop/phase usage checks in `src/main.js`.
+Audit basis:
+- Reachability is determined from `src/main.js` import chain (static imports + dynamic `import()` targets resolvable at build time).
+- “Implemented” means both reachable from `src/main.js` and currently capable of visible browser output.
+- “Broken/Unwired” means real logic exists but is not reached from `src/main.js` runtime flow.
 
-- `src/*.js` files found: **122**
-- Reachable from `src/main.js`: **70**
-- Not reachable from `src/main.js`: **52**
+## HOW TO RUN
 
-Only items reachable from `src/main.js` and producing browser-visible behavior are counted as implemented.
+- Dev server: `npm run dev`
+  - Output appears in terminal (Vite startup logs), then in browser at the local URL Vite prints (typically `http://localhost:5173`).
+  - Runtime visuals appear in the browser canvas (menus/hub/gameplay), with console logs in browser DevTools.
+- Production build: `npm run build`
+  - Output appears in terminal build logs.
+  - Bundled assets are written to `dist/`.
+- Local preview of build: `npm run preview`
+  - Output appears in terminal with a preview URL.
+  - Rendered output appears in browser at the preview URL.
 
----
+## TOP 5 BLOCKERS (RANKED)
 
-## 1) ACTUALLY IMPLEMENTED
+1. `src/main.js` — Legacy spine still dominates flow (`title -> memory_select -> modeselect -> dreamselect -> cosmologysel`), so Mooncycle Run is not the canonical default path.
+   - Why blocker: prevents required single-spine navigation and keeps legacy mode-select as primary UX.
+   - Fix sketch: route fresh start directly to `dreamselect` (Dreamscape Map) and then `lake_hub` entry, keeping `modeselect` behind a dev/backdoor path.
 
-- **`src/main.js`** — Initializes full-viewport canvas, game loop, phase state machine, input handling, and runtime mode switching that is visibly rendered in the browser.
-- **`src/ui/menus.js`** — Renders title/options/dream-select/campaign/memory-slot/play-mode/cosmology selection screens that are shown during menu phases.
-- **`src/ui/renderer.js`** — Draws the active gameplay scene, overlays, mode labels, and effect layers during play.
-- **`src/ui/hud.js`** — Updates the on-screen HUD with health/score/level and mode-specific status every frame.
-- **`src/game/grid.js`** — Builds dreamscape tile grids and spawns gameplay tiles that appear directly on the playfield.
-- **`src/game/player.js`** — Executes movement, tile interactions, archetype activation, and gameplay feedback messages visible during play.
-- **`src/game/enemy.js`** — Advances enemy behavior in live gameplay and affects what the player sees on the board.
-- **`src/systems/play-modes.js`** — Applies mode modifiers that visibly alter grid behavior (e.g., mode-specific tile/environment transformations).
-- **`src/systems/awareness/dream-yoga.js`** — Runs lucidity/reality-check progression and feeds dream-yoga state used by visible UI overlays.
-- **`src/systems/awareness/emergence-indicators.js`** — Tracks emergence progress and drives visible emergence flashes/labels exposed to the renderer.
-- **`src/systems/cosmology/chakra-system.js`** — Updates chakra openness/dominance state and triggers chakra awakening visual feedback.
-- **`src/systems/achievements.js`** — Processes unlock conditions and powers visible achievement popups.
-- **`src/audio/sfx-manager.js`** — Plays menu/gameplay sound effects tied to interactions (collect, damage, level-up, etc.).
-- **`src/audio/music-engine.js`** — Runs adaptive background music that changes with emotion/game mode during runtime.
-- **`src/modes/mode-manager.js`** — Dispatches registered non-grid mode instances (shooter/constellation/meditation/coop/rhythm) into active runtime flow.
+2. `src/main.js` + `src/hub/lakeHub.js` — No always-on DEV truth overlay for phase/stance/runSpec in top-left.
+   - Why blocker: wiring bugs are hard to diagnose and requirement explicitly mandates always-visible DEV overlay.
+   - Fix sketch: add `src/ui/devOverlay.js` with safe draw function and call it from main draw loop in all phases under `import.meta.env.DEV`.
 
----
+3. `src/gameplay-modes/ModeRegistry.js` (and `src/gameplay-modes/*/index.js`) — Registry/registration architecture exists but is unreachable from `src/main.js`.
+   - Why blocker: mini-game integration is fragmented and duplicated across `modes/` and `gameplay-modes/` with no canonical registry spine.
+   - Fix sketch: create a new reachable `src/minigames/MiniGameRegistry.js` and adapt launch/return contracts for all 7 required mini-games.
 
-## 2) CODE EXISTS BUT BROKEN/UNWIRED
+4. `src/main.js` — Escape/exit behavior returns many modes to `title`, not `lake_hub`.
+   - Why blocker: breaks required “launch mini-game from hub -> return to hub -> bank reward” loop.
+   - Fix sketch: centralize mini-game exit callback to `setPhase('lake_hub')`, apply reward banking before transition, and remove title fallback for hub-launched runs.
 
-These files contain real logic but are not import-reachable from `src/main.js`, so they never execute in the current runtime.
+5. `src/ui/menus.js` — Tutorial/how-to-play is a single long page; no shared layout helper preventing overlap across key screens.
+   - Why blocker: fails explicit legibility and pagination requirements (including no-overlap constraints).
+   - Fix sketch: add shared `src/ui/layout.js` primitives, migrate core menu screens to common stack layout, and split tutorial into paged rendering with next/prev controls.
 
-- **`src/systems/integration/progress-dashboard.js`** — Dashboard rendering logic exists, but no current import/call path draws it; needs import from `src/main.js` and invocation in an active render phase.
-- **`src/systems/leaderboard.js`** — Leaderboard state/UI logic exists, but it is never imported by the active entrypoint; needs wiring into menu flow and persistence hooks.
-- **`src/systems/cosmology/tarot-archetypes.js`** — Extended tarot archetype logic exists, but the `main.js` tarot import path is currently reserved/commented; needs active import and call sites during archetype selection.
-- **`src/core/game-engine/GameStateManager.js`** — Engine-level state orchestration exists, but the live app uses direct state flow in `src/main.js`; needs replacement/refactor of current loop to route through this manager.
-- **`src/core/game-engine/InputManager.js`** — Centralized input abstraction exists, but `src/main.js` currently handles keyboard/gamepad directly; needs event binding delegation and consumer migration.
-- **`src/modes/grid-mode.js`** — Alternate grid mode class has logic but is not instantiated from current mode-selection/runtime wiring; needs registration and dispatch from the active mode manager path.
-- **`src/gameplay-modes/constellation/Constellation3DMode.js`** — 3D constellation mode logic exists but is disconnected from current runtime imports; needs mode registration plus rendering/canvas ownership wiring.
-- **`src/gameplay-modes/constellation/ConstellationMode.js`** — Parallel constellation implementation exists in this folder but current runtime uses `src/modes/constellation-mode.js`; needs consolidation or explicit routing.
-- **`src/services/apiAgents.js`** — Generative API agent service logic exists but no runtime call path in `src/main.js` uses it; needs UI trigger + environment key handling + async integration points.
-- **`src/systems/recovery-tools.js`** — Recovery utility systems exist in this legacy module path, but active runtime uses other systems folders; needs import-chain wiring or archival removal.
+## ACTUALLY IMPLEMENTED
 
----
+- File path: `src/main.js`
+  - Visible now: Runs the canvas game loop and phase routing that visibly renders onboarding, language options, title, menu screens, lake hub, and gameplay states in browser.
 
-## 3) DOCUMENTED ONLY
+- File path: `src/ui/menus.js`
+  - Visible now: Draws all currently reachable menu UIs (onboarding, language, title, mode select, dream select, cosmology select, options, highscores, how-to-play).
 
-Items below are documented in markdown but have no corresponding code feature in `src/` (no import chain and no source matches for the topic terms used here).
+- File path: `src/hub/lakeHub.js`
+  - Visible now: Renders the Lake Realm hub scene with clickable/hoverable zones and visible zone labels/tooltips.
 
-- **`docs/research/biology/chronobiology.md`** — Chronobiology research notes exist, but no chronobiology mechanic/system is implemented in runtime code.
-- **`docs/research/biology/extremophiles.md`** — Extremophile concept documentation exists, but no extremophile gameplay/content system exists in `src/`.
-- **`docs/research/neuroscience/bioelectric-fields.md`** — Bioelectric-fields theory is documented, but there is no code module implementing it as a game mechanic.
-- **`docs/research/neuroscience/somatic-fascia.md`** — Somatic-fascia research exists in docs only, with no corresponding executable feature.
-- **`docs/research/synthesis/MULTIDIMENSIONAL_INTEGRATION.md`** — Multidimensional integration plan exists in docs, but no dedicated implementation module is wired.
-- **`docs/CREATIVITY_CHANNEL.md`** — Creativity-channel concept is documented, but no named creativity-channel runtime system is present.
+- File path: `src/core/bootRouter.js`
+  - Visible now: Determines whether browser boot lands on onboarding/langopts/title, which changes first visible screen.
 
----
+- File path: `src/core/runSpecManager.js`
+  - Visible now: Persists run data that appears in lake hub header/debug text and updates when portal interactions modify run state.
 
-### Notes
+- File path: `src/game/grid.js`
+  - Visible now: Builds the tile map and dreamscape grid content rendered during active grid gameplay.
 
-- This report intentionally applies your rule: if a module is not reachable from `src/main.js`, it is not counted as implemented.
-- “Unwired” above means **currently unreachable in the active app entrypoint**, even if code quality inside the file is good.
+- File path: `src/game/player.js`
+  - Visible now: Processes movement/actions that visibly move the player and trigger on-screen gameplay feedback.
+
+- File path: `src/game/enemy.js`
+  - Visible now: Updates enemy behavior that visibly animates/moves hostile entities during play.
+
+- File path: `src/ui/renderer.js`
+  - Visible now: Draws live gameplay visuals/effects and dashboard overlay elements in gameplay phases.
+
+- File path: `src/ui/hud.js`
+  - Visible now: Displays live HUD values (HP, score, mode state) as visible browser overlay during play.
+
+- File path: `src/modes/constellation-mode.js`
+  - Visible now: Constellation mode launches from active selection path and renders playable constellation screen.
+
+- File path: `src/modes/rhythm-mode.js`
+  - Visible now: Rhythm mode launches from active selection path and renders note columns/timing gameplay.
+
+- File path: `src/modes/fps-mode.js`
+  - Visible now: FPS mode launches from active selection path and renders first-person scene in browser canvas.
+
+- File path: `src/gameplay-modes/alchemy/AlchemyMode.js`
+  - Visible now: Alchemy mode is lazy-loaded from runtime selector and renders an alchemy gameplay screen.
+
+- File path: `src/gameplay-modes/architecture/ArchitectureMode.js`
+  - Visible now: Architecture mode is lazy-loaded and renders architecture gameplay UI.
+
+- File path: `src/gameplay-modes/mycology/MycologyMode.js`
+  - Visible now: Mycology mode is lazy-loaded and renders mycology gameplay UI.
+
+- File path: `src/gameplay-modes/ornithology/OrnithologyMode.js`
+  - Visible now: Ornithology mode is lazy-loaded and renders ornithology gameplay UI.
+
+- File path: `src/gameplay-modes/rpg/RPGMode.js`
+  - Visible now: RPG mode is lazy-loaded and renders RPG gameplay screen in the browser.
+
+- File path: `src/gameplay-modes/learning-hub/LearningHubMode.js`
+  - Visible now: Learning Hub mode is lazy-loaded and renders a learning-hub gameplay UI.
+
+- File path: `src/modes/language-mode.js`
+  - Visible now: Language-learning mode initializes and renders language practice UI in browser.
+
+## CODE EXISTS BUT BROKEN/UNWIRED
+
+- File path: `src/gameplay-modes/ModeRegistry.js`
+  - Why unwired: never imported from reachable runtime chain; registration side effects do not execute.
+  - What would wire it: import a registry bootstrap module from `src/main.js` and use registry lookup for launches.
+
+- File path: `src/gameplay-modes/grid-based/GridGameMode.js`
+  - Why unwired: legacy grid path in `src/main.js` uses `src/game/*` directly, not `GridGameMode`.
+  - What would wire it: route grid launch through `GridGameMode` adapter in canonical mini-game registry.
+
+- File path: `src/gameplay-modes/grid-based/grid-logic.js`
+  - Why unwired: only consumed by unwired `GridGameMode` path.
+  - What would wire it: wiring `GridGameMode` into runtime launch pipeline.
+
+- File path: `src/gameplay-modes/grid-based/grid-player.js`
+  - Why unwired: only consumed by unwired `GridGameMode` path.
+  - What would wire it: wiring `GridGameMode` into runtime launch pipeline.
+
+- File path: `src/gameplay-modes/grid-based/grid-enemy.js`
+  - Why unwired: only consumed by unwired `GridGameMode` path.
+  - What would wire it: wiring `GridGameMode` into runtime launch pipeline.
+
+- File path: `src/gameplay-modes/grid-based/grid-particles.js`
+  - Why unwired: only consumed by unwired `GridGameMode` path.
+  - What would wire it: wiring `GridGameMode` into runtime launch pipeline.
+
+- File path: `src/gameplay-modes/constellation/Constellation3DMode.js`
+  - Why unwired: no active UI path sets mode selection to `constellation-3d`.
+  - What would wire it: add a selectable launcher/adaptor and return-to-hub path in runtime spine.
+
+- File path: `src/gameplay-modes/shooter/ShooterMode.js`
+  - Why unwired: runtime uses `src/modes/shooter-mode.js`; this parallel implementation is not referenced.
+  - What would wire it: switch launcher to this mode or remove duplication by consolidating to one shooter implementation.
+
+- File path: `src/gameplay-modes/rhythm/RhythmMode.js`
+  - Why unwired: runtime uses `src/modes/rhythm-mode.js`; this parallel implementation is not referenced.
+  - What would wire it: switch launcher to this mode or consolidate to one rhythm implementation.
+
+- File path: `src/core/game-engine/InputManager.js`
+  - Why unwired: runtime input is handled directly in `src/main.js` listeners.
+  - What would wire it: replace direct handlers with InputManager dispatch and adapt mode input APIs.
+
+- File path: `src/core/game-engine/GameStateManager.js`
+  - Why unwired: state/phase transitions are in `src/main.js`, not this manager.
+  - What would wire it: migrate phase/state transitions to manager and call it from main loop.
+
+- File path: `src/systems/integration/progress-dashboard.js`
+  - Why unwired: no import/call path from active renderer pipeline.
+  - What would wire it: import and invoke its draw function from the active render pass when dashboard is open.
+
+- File path: `src/services/apiAgents.js`
+  - Why unwired: no runtime UI or game-loop caller invokes this service.
+  - What would wire it: add explicit trigger path (menu/dev action) and render returned outputs.
+
+- File path: `src/services/runApiExamples.js`
+  - Why unwired: example harness is never called from app startup or runtime controls.
+  - What would wire it: execute from a dev command/hotkey or explicit startup hook.
+
+## DOCUMENTED ONLY
+
+- Markdown file: `docs/creative inspiration/TASKS_FOR_CLAUDE.md`
+  - Missing code symbol/module path: `realmRegistry` module (e.g., `src/data/realmRegistry.*`) is not present in reachable runtime.
+
+- Markdown file: `docs/creative inspiration/TASKS_FOR_CLAUDE.md`
+  - Missing code symbol/module path: `enterRealm(realmId)` function is documented but no such symbol exists in `src/`.
+
+- Markdown file: `docs/creative inspiration/REALM_SPECS.md`
+  - Missing code symbol/module path: documented realm IDs `civic_center_maze`, `mansion_compound`, `water_park`, `ethereal_bog`, `mountain_summit`, `castle_region` have no corresponding realm module/registry entries in `src/`.
+
+- Markdown file: `docs/creative inspiration/CLAUDE_PROMPT_STARTER.md`
+  - Missing code symbol/module path: process rule “run universal prompt” has no runtime-enforced module or validator (no `src/...` enforcement component).
+
+- Markdown file: `docs/research/INDEX.md`
+  - Missing code symbol/module path: “minimum 10 references per subdirectory” governance rule has no checker module (e.g., no `tools/research-audit.*` in runtime path).
+
+- Markdown file: `docs/wiring-audit-2026-02-24.md`
+  - Missing code symbol/module path: architecture recommendations are documented only; no corresponding migration/orchestrator module was found in reachable `src/main.js` chain.

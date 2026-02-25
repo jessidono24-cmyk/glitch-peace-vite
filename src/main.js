@@ -29,6 +29,7 @@ import { drawTitle, drawDreamSelect, drawOptions, drawHighScores,
          drawAchievementPopup, drawAchievements,
          drawCampaignSelect, drawMemorySlots,
          GAME_MODES, MODE_DREAMSCAPES, TZ_OPTIONS } from './ui/menus.js';
+import { drawDevTruthOverlay } from './ui/devOverlay.js';
 // ─── Phase 2-5 systems ───────────────────────────────────────────────────
 import { sfxManager } from './audio/sfx-manager.js';
 import { temporalSystem } from './systems/temporal-system.js';
@@ -811,6 +812,36 @@ function buyUpgrade(id) {
   if (id==='pulse')  UPG.glitchPulse = true;
 }
 
+function _enterDreamscapeMap() {
+  gameMode = 'grid-classic';
+  dreamselFiltered = [...DREAMSCAPES];
+  const N = dreamselFiltered.length || DREAMSCAPES.length;
+  CURSOR_dream = Math.max(0, Math.min(CFG.dreamIdx || 0, N - 1));
+  dreamPage = Math.floor(CURSOR_dream / 8);
+  setPhase('dreamselect');
+}
+
+function _beginRunFromDreamscapeMap() {
+  runSpecManager.resetToDefault();
+  bus.emit(EVENTS.RUN_START, {
+    spec: runSpecManager.get(),
+    dreamscapeId: DREAMSCAPES[CFG.dreamIdx]?.id || null,
+  });
+  setPhase('lake_hub');
+}
+
+function _scheduleNextFrame() {
+  if (import.meta.env.DEV) {
+    drawDevTruthOverlay(ctx, {
+      phase,
+      stance: runSpecManager.peek()?.stance ?? null,
+      runSpec: runSpecManager.peek(),
+      currency: insightTokens,
+    });
+  }
+  animId = requestAnimationFrame(loop);
+}
+
 // ─── Main loop ───────────────────────────────────────────────────────────
 function loop(ts) {
   const dt = Math.min(ts - prevTs, 100); prevTs = ts; // cap at 100 ms to absorb tab-switch spikes
@@ -885,29 +916,29 @@ function loop(ts) {
     if (hudEl) hudEl.style.display = 'none';
   }
 
-  if (phase === 'onboarding')  { drawOnboarding(ctx, w, h, onboardState); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'langopts')    { drawLanguageOptions(ctx, w, h, langOptState); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'howtoplay')   { drawHowToPlay(ctx, w, h); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'title')       { drawTitle(ctx, w, h, backgroundStars, ts, CURSOR.menu, gameMode); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'lake_hub')    { lakeHub.draw(ctx, w, h, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'memory_select') { drawMemorySlots(ctx, canvas, memorySlots, CURSOR_slot); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'modeselect')  { drawModeSelect(ctx, w, h, CURSOR.modesel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, dreamselFiltered, CURSOR_dream, dreamPage); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'playmodesel') { drawPlayModeSelect(ctx, w, h, CURSOR_playmode, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'cosmologysel'){ drawCosmologySelect(ctx, w, h, CURSOR_cosmology, cosmologyList, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'campaignsel') { drawCampaignSelect(ctx, w, h, CURSOR_campaign, CAMPAIGN_CHAPTERS, loadCampaignProgress(), backgroundStars, ts, emergenceIndicators.emergenceLevel); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'archsel')     { drawArchetypeSelect(ctx, w, h, CURSOR.archsel, backgroundStars, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'options')     { drawOptions(ctx, w, h, CURSOR.opt); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'highscores')  { drawHighScores(ctx, w, h, highScores); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'achievements'){ drawAchievements(ctx, w, h, achievementSystem, CURSOR.achieveScroll); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'upgrade')     { drawUpgradeShop(ctx, w, h, CURSOR.shop, insightTokens, checkOwned); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'dead')        { drawDead(ctx, w, h, deadGame, highScores, dreamHistory, insightTokens, sessionRep); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); animId=requestAnimationFrame(loop); return; }
-  if (phase === 'paused')      { drawPause(ctx, w, h, game, CURSOR.pause); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); animId=requestAnimationFrame(loop); return; }
+  if (phase === 'onboarding')  { drawOnboarding(ctx, w, h, onboardState); _scheduleNextFrame(); return; }
+  if (phase === 'langopts')    { drawLanguageOptions(ctx, w, h, langOptState); _scheduleNextFrame(); return; }
+  if (phase === 'howtoplay')   { drawHowToPlay(ctx, w, h); _scheduleNextFrame(); return; }
+  if (phase === 'title')       { drawTitle(ctx, w, h, backgroundStars, ts, CURSOR.menu, gameMode); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); _scheduleNextFrame(); return; }
+  if (phase === 'lake_hub')    { lakeHub.draw(ctx, w, h, ts); _scheduleNextFrame(); return; }
+  if (phase === 'memory_select') { drawMemorySlots(ctx, canvas, memorySlots, CURSOR_slot); _scheduleNextFrame(); return; }
+  if (phase === 'modeselect')  { drawModeSelect(ctx, w, h, CURSOR.modesel, backgroundStars, ts); _scheduleNextFrame(); return; }
+  if (phase === 'dreamselect') { drawDreamSelect(ctx, w, h, dreamselFiltered, CURSOR_dream, dreamPage); _scheduleNextFrame(); return; }
+  if (phase === 'playmodesel') { drawPlayModeSelect(ctx, w, h, CURSOR_playmode, backgroundStars, ts); _scheduleNextFrame(); return; }
+  if (phase === 'cosmologysel'){ drawCosmologySelect(ctx, w, h, CURSOR_cosmology, cosmologyList, backgroundStars, ts); _scheduleNextFrame(); return; }
+  if (phase === 'campaignsel') { drawCampaignSelect(ctx, w, h, CURSOR_campaign, CAMPAIGN_CHAPTERS, loadCampaignProgress(), backgroundStars, ts, emergenceIndicators.emergenceLevel); _scheduleNextFrame(); return; }
+  if (phase === 'archsel')     { drawArchetypeSelect(ctx, w, h, CURSOR.archsel, backgroundStars, ts); _scheduleNextFrame(); return; }
+  if (phase === 'options')     { drawOptions(ctx, w, h, CURSOR.opt); _scheduleNextFrame(); return; }
+  if (phase === 'highscores')  { drawHighScores(ctx, w, h, highScores); _scheduleNextFrame(); return; }
+  if (phase === 'achievements'){ drawAchievements(ctx, w, h, achievementSystem, CURSOR.achieveScroll); _scheduleNextFrame(); return; }
+  if (phase === 'upgrade')     { drawUpgradeShop(ctx, w, h, CURSOR.shop, insightTokens, checkOwned); _scheduleNextFrame(); return; }
+  if (phase === 'dead')        { drawDead(ctx, w, h, deadGame, highScores, dreamHistory, insightTokens, sessionRep); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); _scheduleNextFrame(); return; }
+  if (phase === 'paused')      { drawPause(ctx, w, h, game, CURSOR.pause); drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts); _scheduleNextFrame(); return; }
   if (phase === 'interlude') {
     interludeState.elapsed = (interludeState.elapsed || 0) + dt;
     drawInterlude(ctx, w, h, interludeState, ts);
     if (interludeState.elapsed >= interludeState.duration) _advanceFromInterlude();
-    animId = requestAnimationFrame(loop); return;
+    _scheduleNextFrame(); return;
   }
 
   // ── Non-grid modes (shooter / constellation / meditation / coop / rhythm) ──
@@ -942,7 +973,7 @@ function loop(ts) {
       game = null;
       setPhase('dead');
     }
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -954,7 +985,7 @@ function loop(ts) {
     rpgMode.render(modeGame, ctx);
     updateModeHUD('rpg', modeGame);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -966,7 +997,7 @@ function loop(ts) {
     alchemyMode.render(modeGame, ctx);
     updateModeHUD('alchemy', modeGame);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -978,7 +1009,7 @@ function loop(ts) {
     architectureMode.render(modeGame, ctx);
     updateModeHUD('architecture', modeGame);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -990,7 +1021,7 @@ function loop(ts) {
     mycologyMode.render(modeGame, ctx);
     updateModeHUD('mycology', modeGame);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -1002,7 +1033,7 @@ function loop(ts) {
     ornithologyMode.render(modeGame, ctx);
     updateModeHUD('ornithology', modeGame);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -1015,7 +1046,7 @@ function loop(ts) {
     learningHubMode.render(modeGame, ctx);
     updateModeHUD('learning_hub', modeGame);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -1024,7 +1055,7 @@ function loop(ts) {
     languageMode.update(dt / 1000);
     languageMode.render(ctx);
     drawAchievementPopup(ctx, w, h, achievementSystem.popup, ts);
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -1036,7 +1067,7 @@ function loop(ts) {
       fpsMode.update(dt, fpsKeys);
       fpsMode.render();
     }
-    animId = requestAnimationFrame(loop);
+    _scheduleNextFrame();
     return;
   }
 
@@ -1572,7 +1603,7 @@ function loop(ts) {
     game._sessionDeaths = (game._sessionDeaths || 0) + 1;
     sessionTracker.endSession(game.score, sessionTracker.dreamscapesCompleted);
     saveScore(game.score, game.level, game.ds);
-    setPhase('dead'); animId=requestAnimationFrame(loop); return;
+    setPhase('dead'); _scheduleNextFrame(); return;
   }
 
   window._dashboardOpen = dashboardOpen;
@@ -1582,7 +1613,7 @@ function loop(ts) {
   // BOT1: tick archetype bot and render overlay
   archetypeBot.tick(ts, game);
   drawArchetypeMessage(ctx, w, h, archetypeBot.pendingMessage);
-  animId = requestAnimationFrame(loop);
+  _scheduleNextFrame();
 }
 
 // ─── ARCH1: Start the game mode selected in modeselect screen ─────────────
@@ -1816,7 +1847,11 @@ window.addEventListener('keydown', e => {
       languageSystem.setNativeLang(nCode);
       languageSystem.setTargetLang(tCode);
       languageSystem.setDisplayMode(mode);
-      setPhase(CURSOR.optFrom === 'paused' ? 'paused' : 'title');
+      if (CURSOR.optFrom === 'onboarding') {
+        _enterDreamscapeMap();
+      } else {
+        setPhase(CURSOR.optFrom === 'paused' ? 'paused' : 'title');
+      }
       if (CURSOR.optFrom === 'onboarding') CURSOR.optFrom = 'title';
     }
     if (e.key === 'Escape') {
@@ -1857,6 +1892,12 @@ window.addEventListener('keydown', e => {
       else if (CURSOR.menu===3) { CURSOR.opt=0; CURSOR.optFrom='title'; setPhase('options'); }
       else if (CURSOR.menu===4) setPhase('highscores');
     }
+    // Backdoor for legacy mode-select spine
+    if (e.key === 'm' || e.key === 'M') {
+      sfxManager.resume(); sfxManager.playMenuSelect();
+      CURSOR.modesel = 0;
+      setPhase('modeselect');
+    }
     // L key = enter Lake Hub (Mooncycle Run)
     if (e.key === 'l' || e.key === 'L') {
       sfxManager.resume(); sfxManager.playMenuSelect();
@@ -1879,7 +1920,7 @@ window.addEventListener('keydown', e => {
     if (e.key==='Enter'||e.key===' ') {
       sfxManager.resume(); sfxManager.playMenuSelect();
       CURSOR.modesel=0; CURSOR_cosmology=0; CURSOR_playmode=0;
-      setPhase('modeselect');
+      _enterDreamscapeMap();
     }
     if (e.key==='Delete'||e.key==='Backspace') {
       deleteSlot(CURSOR_slot);
@@ -1919,8 +1960,8 @@ window.addEventListener('keydown', e => {
     if (e.key==='ArrowDown')  { CURSOR_dream=(CURSOR_dream+1)%N;   dreamPage=Math.floor(CURSOR_dream/ITEMS_PER_PAGE); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowRight') { dreamPage=Math.min(dreamPage+1, totalPages-1); CURSOR_dream=Math.min(dreamPage*ITEMS_PER_PAGE+(CURSOR_dream%2), N-1); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
     if (e.key==='ArrowLeft')  { dreamPage=Math.max(dreamPage-1, 0); CURSOR_dream=Math.min(dreamPage*ITEMS_PER_PAGE+(CURSOR_dream%2), N-1); _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuNav(); }
-    if (e.key==='Enter')     { _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuSelect(); CURSOR_cosmology=0; setPhase('cosmologysel'); }
-    if (e.key==='Escape')    setPhase('modeselect');
+    if (e.key==='Enter')     { _syncDreamIdx(); sfxManager.resume(); sfxManager.playMenuSelect(); _beginRunFromDreamscapeMap(); }
+    if (e.key==='Escape')    setPhase('title');
     e.preventDefault(); return;
   }
   // ── Play mode selector (ARCH1: step 2.5 — between dreamselect and cosmologysel) ──

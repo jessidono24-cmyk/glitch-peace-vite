@@ -248,10 +248,10 @@ export function drawDreamSelect(ctx, w, h, dreamscapes, dreamIdx, dreamPage) {
   ctx.fillStyle = '#02020a'; ctx.fillRect(0, 0, w, h);
   ctx.textAlign = 'center';
   ctx.fillStyle = '#00ff88'; ctx.shadowColor = '#00ff88'; ctx.shadowBlur = 18;
-  ctx.font = 'bold '+ fs(24, ctx.canvas) + "px " + FONT; ctx.fillText('SELECT DREAMSCAPE', w / 2, 50); ctx.shadowBlur = 0;
+  ctx.font = 'bold '+ fs(24, ctx.canvas) + "px " + FONT; ctx.fillText('DREAMSCAPE MAP', w / 2, 50); ctx.shadowBlur = 0;
   ctx.fillStyle = '#223322'; ctx.font = fs(13, ctx.canvas) + "px " + FONT; ctx.fillText('choose your symbolic environment', w / 2, 68);
   ctx.fillStyle = '#334433'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-  ctx.fillText('STEP 2 of 3  ·  Mode → Dreamscape → Cosmology', w / 2, 84);
+  ctx.fillText('STEP 1 of 1  ·  Dreamscape → Begin Run', w / 2, 84);
 
   const cols = 2;
   const cardW = w * 0.38;
@@ -299,7 +299,7 @@ export function drawDreamSelect(ctx, w, h, dreamscapes, dreamIdx, dreamPage) {
     ctx.fillText('Page ' + (page + 1) + ' / ' + totalPages + (pageHints ? '  ·  ' + pageHints : ''), w / 2, h - 36);
   }
   ctx.fillStyle = '#131328'; ctx.font = fs(13, ctx.canvas) + "px " + FONT;
-  ctx.fillText('↑↓ ←→ navigate  ·  ENTER select  ·  ESC back', w / 2, h - 20);
+  ctx.fillText('↑↓ ←→ navigate  ·  ENTER begin run  ·  ESC title', w / 2, h - 20);
   ctx.textAlign = 'left';
 }
 

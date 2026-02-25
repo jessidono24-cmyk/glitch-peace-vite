@@ -35,13 +35,6 @@ import { EmotionalField } from './systems/emotional-engine.js';
 import { ConsequencePreview } from './recovery/consequence-preview.js';
 import { ImpulseBuffer } from './recovery/impulse-buffer.js';
 import { ShooterMode } from './modes/shooter-mode.js';
-import { FPSMode } from './modes/fps-mode.js';
-import { AlchemyMode }      from './gameplay-modes/alchemy/AlchemyMode.js';
-import { ArchitectureMode } from './gameplay-modes/architecture/ArchitectureMode.js';
-import { MycologyMode }     from './gameplay-modes/mycology/MycologyMode.js';
-import { OrnithologyMode }  from './gameplay-modes/ornithology/OrnithologyMode.js';
-import { LearningHubMode }  from './gameplay-modes/learning-hub/LearningHubMode.js';
-import RPGMode              from './gameplay-modes/rpg/RPGMode.js';
 // ─── Phase 6: Learning Systems ───────────────────────────────────────────
 import { vocabularyEngine } from './systems/learning/vocabulary-engine.js';
 import { patternRecognition } from './systems/learning/pattern-recognition.js';
@@ -102,8 +95,6 @@ import { biomeSystem } from './systems/biome-system.js';
 // ─── Archetype Select UI ──────────────────────────────────────────────────
 import { drawArchetypeSelect } from './ui/menus.js';
 import { ModeManager } from './modes/mode-manager.js';
-// ─── LANG1: Language Learning Mode ────────────────────────────────────────
-import { LanguageMode } from './modes/language-mode.js';
 // ─── BOT1: Archetype Character Bots ──────────────────────────────────────
 import { ArchetypeBot } from './systems/ai-characters/archetype-bot.js';
 
@@ -111,6 +102,34 @@ import { ArchetypeBot } from './systems/ai-characters/archetype-bot.js';
 const canvas = document.getElementById('c');
 const ctx    = canvas.getContext('2d');
 const DPR    = Math.min(window.devicePixelRatio || 1, 2);
+
+// ── Lazy mode loaders — loaded only when player selects the mode ──────────
+// This preserves all mode behavior; only the loading timing changes.
+const MODE_LOADERS = {
+  alchemy:      () => import('./gameplay-modes/alchemy/AlchemyMode.js').then(m => m.AlchemyMode),
+  architecture: () => import('./gameplay-modes/architecture/ArchitectureMode.js').then(m => m.ArchitectureMode),
+  mycology:     () => import('./gameplay-modes/mycology/MycologyMode.js').then(m => m.MycologyMode),
+  ornithology:  () => import('./gameplay-modes/ornithology/OrnithologyMode.js').then(m => m.OrnithologyMode),
+  learning_hub: () => import('./gameplay-modes/learning-hub/LearningHubMode.js').then(m => m.LearningHubMode),
+  rpg:          () => import('./gameplay-modes/rpg/RPGMode.js').then(m => m.default),
+};
+
+// Cache of already-loaded mode instances
+const _modeInstances = {};
+
+async function getModeInstance(modeId) {
+  if (_modeInstances[modeId]) return _modeInstances[modeId];
+  const loader = MODE_LOADERS[modeId];
+  if (!loader) return null;
+  try {
+    const ModeClass = await loader();
+    _modeInstances[modeId] = new ModeClass();
+    return _modeInstances[modeId];
+  } catch (err) {
+    console.error(`[GLITCH·PEACE] Failed to load mode: ${modeId}`, err);
+    return null;
+  }
+}
 
 function resizeCanvas() {
   const vw = window.innerWidth;
@@ -220,14 +239,14 @@ modeManager.registerModeInstance('meditation',    meditationMode);
 modeManager.registerModeInstance('coop',          coopMode);
 modeManager.registerModeInstance('rhythm',        rhythmMode);
 
-// ─── gameplay-modes/ instances (use their own gameState object) ──────────
-const alchemyMode      = new AlchemyMode();
-const architectureMode = new ArchitectureMode();
-const mycologyMode     = new MycologyMode();
-const ornithologyMode  = new OrnithologyMode();
-const learningHubMode  = new LearningHubMode();
-const rpgMode          = new RPGMode();
-const languageMode     = new LanguageMode(canvas, { dreamscape: null });
+// ─── gameplay-modes/ instances (lazy-loaded on first selection) ──────────
+let alchemyMode      = null;
+let architectureMode = null;
+let mycologyMode     = null;
+let ornithologyMode  = null;
+let learningHubMode  = null;
+let rpgMode          = null;
+let languageMode     = null;
 let fpsMode = null; // Created lazily on first use (WebGL canvas takeover)
 let modeGame = null; // shared gameState object for gameplay-modes/ instances
 
@@ -1560,7 +1579,7 @@ function loop(ts) {
 
 // ─── ARCH1: Start the game mode selected in modeselect screen ─────────────
 // Called from playmodesel Enter after Mode→Dreamscape→Cosmology→Playstyle chain.
-function _startSelectedMode() {
+async function _startSelectedMode() {
   const chosen = gameMode;
   if (chosen === 'grid-classic' || chosen === 'grid') {
     gameMode = 'grid'; // normalise: grid-classic is rendered by the grid path
@@ -1573,6 +1592,8 @@ function _startSelectedMode() {
   } else if (chosen === 'rpg') {
     gameMode = 'rpg';
     modeGame = { gridSize: 18, level: 1, score: 0, peaceCollected: 0, peaceTotal: 5 };
+    rpgMode = await getModeInstance('rpg');
+    if (!rpgMode) { setPhase('title'); return; }
     rpgMode.init(modeGame, canvas, ctx);
     updateHUD({ state: 'PLAYING', _currentModeType: 'rpg', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: 5, peaceCollected: 0 });
@@ -1581,6 +1602,8 @@ function _startSelectedMode() {
   } else if (chosen === 'ornithology') {
     gameMode = 'ornithology';
     modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
+    ornithologyMode = await getModeInstance('ornithology');
+    if (!ornithologyMode) { setPhase('title'); return; }
     ornithologyMode.init(modeGame, canvas, ctx);
     updateHUD({ state: 'PLAYING', _currentModeType: 'ornithology', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
@@ -1589,6 +1612,8 @@ function _startSelectedMode() {
   } else if (chosen === 'mycology') {
     gameMode = 'mycology';
     modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 0 };
+    mycologyMode = await getModeInstance('mycology');
+    if (!mycologyMode) { setPhase('title'); return; }
     mycologyMode.init(modeGame, canvas, ctx);
     updateHUD({ state: 'PLAYING', _currentModeType: 'mycology', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
@@ -1597,6 +1622,8 @@ function _startSelectedMode() {
   } else if (chosen === 'architecture') {
     gameMode = 'architecture';
     modeGame = { gridSize: 14, level: 1, score: 0, peaceCollected: 0, peaceTotal: 6 };
+    architectureMode = await getModeInstance('architecture');
+    if (!architectureMode) { setPhase('title'); return; }
     architectureMode.init(modeGame, canvas, ctx);
     updateHUD({ state: 'PLAYING', _currentModeType: 'architecture', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: modeGame.peaceTotal, peaceCollected: 0 });
@@ -1612,6 +1639,8 @@ function _startSelectedMode() {
   } else if (chosen === 'alchemy') {
     gameMode = 'alchemy';
     modeGame = { gridSize: 12, level: 1, score: 0, peaceCollected: 0, peaceTotal: 8 };
+    alchemyMode = await getModeInstance('alchemy');
+    if (!alchemyMode) { setPhase('title'); return; }
     try {
       alchemyMode.init(modeGame, canvas, ctx);
     } catch (e) {
@@ -1634,6 +1663,7 @@ function _startSelectedMode() {
   } else if (chosen === 'fps') {
     gameMode = 'fps';
     if (fpsMode) fpsMode.destroy();
+    const { FPSMode } = await import('./modes/fps-mode.js');
     fpsMode = new FPSMode(canvas, null);
     fpsMode.init();
     updateHUD({ state: 'PLAYING', _currentModeType: 'fps', player: { hp: 100, maxHp: 100 },
@@ -1643,6 +1673,8 @@ function _startSelectedMode() {
   } else if (chosen === 'learning_hub') {
     gameMode = 'learning_hub';
     modeGame = { gridSize: 10, level: 1, score: 0, peaceCollected: 0, peaceTotal: 5 };
+    learningHubMode = await getModeInstance('learning_hub');
+    if (!learningHubMode) { setPhase('title'); return; }
     learningHubMode.init(modeGame, canvas, ctx);
     updateHUD({ state: 'PLAYING', _currentModeType: 'learning_hub', player: { hp: 100, maxHp: 100 },
       level: 1, score: 0, peaceTotal: 5, peaceCollected: 0 });
@@ -1650,6 +1682,10 @@ function _startSelectedMode() {
     cancelAnimationFrame(animId); animId = requestAnimationFrame(loop);
   } else if (chosen === 'language_learning') {
     gameMode = 'language_learning';
+    if (!languageMode) {
+      const { LanguageMode } = await import('./modes/language-mode.js');
+      languageMode = new LanguageMode(canvas, { dreamscape: null });
+    }
     const dsName = DREAMSCAPES?.[CFG?.dreamIdx]?.name || 'Void State';
     languageMode.gameState = { dreamscape: dsName };
     languageMode.init();

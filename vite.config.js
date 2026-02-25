@@ -8,17 +8,12 @@ export default defineConfig({
     sourcemap: true
   },
   server: {
-    port: 3000,
-    open: true,
+    open: false,
     watch: {
       ignored: ['**/old-game-archive/**']
     }
   },
   optimizeDeps: {
-    exclude: ['old-game-archive'],
-  },
-  // FIX6: Exclude legacy old-game-archive directory from all Vite processing
-  resolve: {
     exclude: ['old-game-archive'],
   },
 });

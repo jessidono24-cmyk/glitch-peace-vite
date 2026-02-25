@@ -4,6 +4,7 @@
 //  Entry point: state machine + game loop.
 //  All game logic lives in src/game/, src/ui/, src/core/.
 // ═══════════════════════════════════════════════════════════════════════
+console.info("[BOOT] main.js loaded", new Date().toISOString());
 import { T, DREAMSCAPES, ARCHETYPES, UPGRADE_SHOP, VISION_WORDS, CELL, GAP, PAL_A, PAL_B, CONSTELLATION_NAMES, BIRD_FACTS, MUSHROOM_FACTS, PREDATOR_FACTS } from './core/constants.js';
 import { CFG, UPG, CURSOR, phase, setPhase, resetUpgrades, resetSession,
          checkOwned, matrixActive, setMatrix, matrixHoldTime, setMatrixHoldTime, addMatrixHoldTime,

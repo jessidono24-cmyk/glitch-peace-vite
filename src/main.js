@@ -4,7 +4,7 @@
 //  Entry point: state machine + game loop.
 //  All game logic lives in src/game/, src/ui/, src/core/.
 // ═══════════════════════════════════════════════════════════════════════
-console.info("[BOOT] main.js loaded", new Date().toISOString());
+if (import.meta.env.DEV) console.info('[BOOT] main.js loaded', new Date().toISOString());
 import { T, DREAMSCAPES, ARCHETYPES, UPGRADE_SHOP, VISION_WORDS, CELL, GAP, PAL_A, PAL_B, CONSTELLATION_NAMES, BIRD_FACTS, MUSHROOM_FACTS, PREDATOR_FACTS } from './core/constants.js';
 import { CFG, UPG, CURSOR, phase, setPhase, resetUpgrades, resetSession,
          checkOwned, matrixActive, setMatrix, matrixHoldTime, setMatrixHoldTime, addMatrixHoldTime,
@@ -101,6 +101,7 @@ import { lakeHub } from './hub/lakeHub.js';
 import { runSpecManager } from './core/runSpecManager.js';
 import { bus } from './core/event-bus.js';
 import { EVENTS } from './core/events.js';
+import { resolveInitialBootPhase, clearOnboardingProfileKeys } from './core/bootRouter.js';
 // ─── BOT1: Archetype Character Bots ──────────────────────────────────────
 import { ArchetypeBot } from './systems/ai-characters/archetype-bot.js';
 
@@ -1728,48 +1729,65 @@ window.addEventListener('keydown', e => {
   keys.add(e.key);
   if (!e.repeat) justPressed.add(e.key); // track single-frame presses for test compatibility
 
+  // ── DEV: deterministic onboarding reset (Shift+R) ───────────────────
+  if (import.meta.env.DEV && e.shiftKey && (e.key === 'R' || e.key === 'r') && !e.repeat) {
+    const cleared = clearOnboardingProfileKeys();
+    PLAYER_PROFILE.onboardingDone = false;
+    PLAYER_PROFILE.ageGroup = null;
+    PLAYER_PROFILE.diffTier = null;
+    PLAYER_PROFILE.nativeLang = null;
+    PLAYER_PROFILE.targetLang = null;
+    savePlayerProfile();
+    onboardState.step = 0;
+    onboardState.ageIdx = 4;
+    onboardState.nativeIdx = 0;
+    onboardState.targetIdx = 0;
+    langOptState.row = 0;
+    langOptState.nativeIdx = 0;
+    langOptState.targetIdx = 0;
+    langOptState.modeIdx = 1;
+    adaptiveDifficulty.setAgeGroup('adult');
+    adaptiveDifficulty.setTier('standard');
+    languageSystem.setNativeLang('en');
+    languageSystem.setTargetLang('no');
+    const nextPhase = resolveInitialBootPhase();
+    setPhase(nextPhase);
+    if (import.meta.env.DEV) console.info('[DEV] Onboarding reset (Shift+R):', cleared.join(', '), '→', nextPhase);
+    e.preventDefault();
+    return;
+  }
+
   // ── Onboarding screen ───────────────────────────────────────────────
   if (phase === 'onboarding') {
     const AGE_OPTS_N = 5;
-    const path = LANGUAGE_PATHS[LANG_LIST[onboardState.nativeIdx] || 'en'] || LANGUAGE_PATHS.en;
     if (e.key === 'ArrowUp') {
-      if (onboardState.step === 0) onboardState.ageIdx = (onboardState.ageIdx - 1 + AGE_OPTS_N) % AGE_OPTS_N;
-      else if (onboardState.step === 1) onboardState.nativeIdx = (onboardState.nativeIdx - 1 + LANG_LIST.length) % LANG_LIST.length;
-      else if (onboardState.step === 2) onboardState.targetIdx = (onboardState.targetIdx - 1 + Math.min(8, path.length)) % Math.min(8, path.length);
+      onboardState.ageIdx = (onboardState.ageIdx - 1 + AGE_OPTS_N) % AGE_OPTS_N;
       sfxManager.resume(); sfxManager.playMenuNav();
     }
     if (e.key === 'ArrowDown') {
-      if (onboardState.step === 0) onboardState.ageIdx = (onboardState.ageIdx + 1) % AGE_OPTS_N;
-      else if (onboardState.step === 1) onboardState.nativeIdx = (onboardState.nativeIdx + 1) % LANG_LIST.length;
-      else if (onboardState.step === 2) onboardState.targetIdx = (onboardState.targetIdx + 1) % Math.min(8, path.length);
+      onboardState.ageIdx = (onboardState.ageIdx + 1) % AGE_OPTS_N;
       sfxManager.resume(); sfxManager.playMenuNav();
     }
     if (e.key === 'Enter') {
       sfxManager.resume(); sfxManager.playMenuSelect();
-      if (onboardState.step < 3) {
-        onboardState.step++;
-      } else {
-        // Confirm: save profile
-        const AGE_TIERS = ['tiny','gentle','explorer','standard','standard'];
-        const ageKey  = ['child5','child8','teen12','teen16','adult'][onboardState.ageIdx] || 'adult';
-        const tierKey = AGE_TIERS[onboardState.ageIdx] || 'standard';
-        const nCode   = LANG_LIST[onboardState.nativeIdx] || 'en';
-        const tCode   = path[onboardState.targetIdx] || path[0] || 'no';
-        PLAYER_PROFILE.onboardingDone = true;
-        PLAYER_PROFILE.ageGroup   = ageKey;
-        PLAYER_PROFILE.diffTier   = tierKey;
-        PLAYER_PROFILE.nativeLang = nCode;
-        PLAYER_PROFILE.targetLang = tCode;
-        savePlayerProfile();
-        adaptiveDifficulty.setAgeGroup(ageKey);
-        adaptiveDifficulty.setTier(tierKey);
-        languageSystem.setNativeLang(nCode);
-        languageSystem.setTargetLang(tCode);
-        setPhase('title');
-      }
+      const AGE_TIERS = ['tiny','gentle','explorer','standard','standard'];
+      const ageKey = ['child5','child8','teen12','teen16','adult'][onboardState.ageIdx] || 'adult';
+      const tierKey = AGE_TIERS[onboardState.ageIdx] || 'standard';
+      PLAYER_PROFILE.ageGroup = ageKey;
+      PLAYER_PROFILE.diffTier = tierKey;
+      PLAYER_PROFILE.onboardingDone = false;
+      savePlayerProfile();
+      adaptiveDifficulty.setAgeGroup(ageKey);
+      adaptiveDifficulty.setTier(tierKey);
+      langOptState.row = 0;
+      langOptState.nativeIdx = LANG_LIST.indexOf(PLAYER_PROFILE.nativeLang || 'en');
+      if (langOptState.nativeIdx < 0) langOptState.nativeIdx = 0;
+      langOptState.targetIdx = 0;
+      langOptState.modeIdx = 1;
+      CURSOR.optFrom = 'onboarding';
+      setPhase('langopts');
     }
-    if (e.key === 'Backspace' && onboardState.step > 0) onboardState.step--;
-    if (e.key === 'Escape') { PLAYER_PROFILE.onboardingDone = true; savePlayerProfile(); setPhase('title'); }
+    if (e.key === 'Backspace' || e.key === 'Escape') { setPhase('title'); }
     e.preventDefault(); return;
   }
 
@@ -1787,17 +1805,26 @@ window.addEventListener('keydown', e => {
       else if (langOptState.row === 2) langOptState.modeIdx   = (langOptState.modeIdx   + dir + modeList.length) % modeList.length;
       sfxManager.resume(); sfxManager.playMenuNav();
     }
-    if (e.key === 'Enter' || e.key === 'Escape') {
+    if (e.key === 'Enter') {
       // Save language selections
       const nCode = nativeList[langOptState.nativeIdx] || 'en';
       const tCode = targetPath[langOptState.targetIdx] || targetPath[0] || 'no';
       const mode  = modeList[langOptState.modeIdx] || 'bilingual';
       PLAYER_PROFILE.nativeLang = nCode; PLAYER_PROFILE.targetLang = tCode;
+      if (CURSOR.optFrom === 'onboarding') PLAYER_PROFILE.onboardingDone = true;
       savePlayerProfile();
       languageSystem.setNativeLang(nCode);
       languageSystem.setTargetLang(tCode);
       languageSystem.setDisplayMode(mode);
       setPhase(CURSOR.optFrom === 'paused' ? 'paused' : 'title');
+      if (CURSOR.optFrom === 'onboarding') CURSOR.optFrom = 'title';
+    }
+    if (e.key === 'Escape') {
+      if (CURSOR.optFrom === 'onboarding') {
+        setPhase('onboarding');
+      } else {
+        setPhase(CURSOR.optFrom === 'paused' ? 'paused' : 'title');
+      }
     }
     e.preventDefault(); return;
   }
@@ -2430,11 +2457,11 @@ window.AudioManager = {
     } catch (_) { /* silently ignore if audio unavailable */ }
   },
 };
-// Show onboarding screen on first ever launch (no saved profile); otherwise loading → title
-const _onboardNeeded = !PLAYER_PROFILE.onboardingDone;
-if (_onboardNeeded) {
-  onboardState.step = 0; onboardState.ageIdx = 4; onboardState.nativeIdx = 0; onboardState.targetIdx = 0;
-}
+// Deterministic onboarding boot state is resolved via bootRouter
+onboardState.step = 0;
+onboardState.ageIdx = 4;
+onboardState.nativeIdx = 0;
+onboardState.targetIdx = 0;
 // ─── Test / Debug API ─────────────────────────────────────────────────────
 // Helper: spawn a boss on a game object (for test API and internal use)
 const BOSS_TYPE_IDS = ['fear_guardian', 'chaos_bringer', 'pattern_master', 'void_keeper', 'integration_boss'];
@@ -2532,7 +2559,7 @@ const _loadTimer = setInterval(() => {
   drawLoadingScreen(_loadProg);
   if (_loadProg >= 1) {
     clearInterval(_loadTimer);
-    setPhase(_onboardNeeded ? 'onboarding' : 'title');
+    setPhase(resolveInitialBootPhase());
     animId = requestAnimationFrame(loop);
   }
 }, 80);

@@ -98,6 +98,7 @@ import { ModeManager } from './modes/mode-manager.js';
 // ─── Mooncycle Run: Lake Hub + RunSpec ──────────────────────────────────
 import { lakeHub } from './hub/lakeHub.js';
 import { runSpecManager } from './core/runSpecManager.js';
+import { bus } from './core/event-bus.js';
 import { EVENTS } from './core/events.js';
 // ─── BOT1: Archetype Character Bots ──────────────────────────────────────
 import { ArchetypeBot } from './systems/ai-characters/archetype-bot.js';
@@ -1834,6 +1835,7 @@ window.addEventListener('keydown', e => {
       runSpecManager.resetToDefault();
       bus.emit(EVENTS.RUN_START, { spec: runSpecManager.get() });
       setPhase('lake_hub');
+      if (import.meta.env.DEV) console.info('[Mooncycle] Entered lake_hub', runSpecManager.get());
     }
     e.preventDefault(); return;
   }
